@@ -4,7 +4,33 @@ import { instance } from "@/lib/schema";
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { deleteServer, powerOn, powerOff } from "@/lib/hetzner";
+import { deleteServer, powerOn, powerOff, deleteSSHKey } from "@/lib/hetzner";
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+
+  const [inst] = await db
+    .select()
+    .from(instance)
+    .where(and(eq(instance.id, id), eq(instance.userId, session.user.id)));
+
+  if (!inst) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(inst);
+}
 
 export async function PATCH(
   request: Request,
@@ -98,6 +124,15 @@ export async function DELETE(
       console.error("Hetzner delete failed:", error);
       // Continue with DB deletion even if Hetzner fails —
       // orphaned servers can be cleaned up via the Hetzner console
+    }
+  }
+
+  // Delete the Hetzner SSH key (if it exists)
+  if (current.providerSshKeyId) {
+    try {
+      await deleteSSHKey(current.providerSshKeyId);
+    } catch (error) {
+      console.error("Hetzner SSH key delete failed:", error);
     }
   }
 

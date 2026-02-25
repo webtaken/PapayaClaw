@@ -70,7 +70,9 @@ export const instance = pgTable("instance", {
   provider: text("provider").notNull().default("hetzner"),
   providerServerId: integer("provider_server_id"),
   providerServerIp: text("provider_server_ip"),
+  providerSshKeyId: integer("provider_ssh_key_id"),
   callbackSecret: text("callback_secret"),
+  sshPrivateKey: text("ssh_private_key"),
   userId: text("user_id")
     .notNull()
     .references(() => user.id),

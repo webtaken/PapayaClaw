@@ -1,0 +1,1 @@
+ALTER TABLE "instance" ADD COLUMN "provider_ssh_key_id" integer;

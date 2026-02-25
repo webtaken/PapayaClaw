@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 
+import { Toaster } from "@/components/ui/sonner";
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -69,6 +71,7 @@ export default async function DashboardLayout({
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+      <Toaster theme="dark" />
     </div>
   );
 }

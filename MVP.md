@@ -49,7 +49,7 @@ Step 1: Name & Model     →  Step 2: Channel & Token  →  Step 3: Review & Dep
 
 ### 5. 🔴 VPS Provisioning Backend (NOT BUILT — critical MVP gap)
 The actual server-side logic to:
-- Provision a VPS (DigitalOcean / Hetzner / your own fleet)
+- Provision a VPS (Hetzner Cloud)
 - Install OpenClaw via Docker on the VPS
 - Configure the selected AI model + Telegram bot token
 - Report status back to the dashboard (deploying → running)
@@ -71,7 +71,7 @@ The actual server-side logic to:
 | **Auth** | better-auth (Google OAuth) | ✅ |
 | **Database** | PostgreSQL + Drizzle ORM | ✅ |
 | **API** | Next.js Route Handlers | ✅ |
-| **VPS Provider** | DigitalOcean / Hetzner (TBD) | 🔴 |
+| **VPS Provider** | Hetzner Cloud | 🔴 |
 | **Provisioning** | Docker + SSH (or provider API) | 🔴 |
 | **Payments** | Stripe (TBD) | 🔴 |
 
@@ -109,8 +109,7 @@ graph TD
 - [x] Header navigation update
 
 ### Phase 2 — Provisioning Backend 🔴 Next Priority
-- [ ] Choose VPS provider (DigitalOcean Droplets API or Hetzner Cloud API)
-- [ ] Build provisioning service (create VPS → install Docker → deploy OpenClaw)
+- [ ] Build Hetzner provisioning service (create VPS via API → install Docker → deploy OpenClaw)
 - [ ] Wire deploy wizard to provisioning (on "Deploy" → actually create a server)
 - [ ] Implement start/stop/delete via provider API
 - [ ] Store VPS metadata (IP, provider ID) in `instance` table
@@ -140,8 +139,7 @@ graph TD
 
 | Decision | Options | Impact |
 |----------|---------|--------|
-| **VPS Provider** | DigitalOcean (well-documented API) vs Hetzner (cheaper) vs own bare-metal fleet | Cost, reliability, margins |
-| **Provisioning method** | Provider API (create droplet) vs pre-provisioned pool (faster deploys) | Deploy speed, complexity |
+| **Provisioning method** | Hetzner Cloud API vs pre-provisioned pool (faster deploys) | Deploy speed, complexity |
 | **Pricing model** | Monthly subscription vs pay-per-hour vs flat fee | Revenue, churn |
 | **Instance limit** | Fixed per plan vs unlimited | Server costs |
 | **OpenClaw version** | Pin to specific release vs auto-update | Stability |

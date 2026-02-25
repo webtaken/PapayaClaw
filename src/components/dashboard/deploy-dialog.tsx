@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -12,58 +13,113 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Rocket, Check } from "lucide-react";
+import { toast } from "sonner";
 import type { Instance } from "./dashboard-content";
+import { ClaudeAI } from "@/components/icons/claudeai";
+import { OpenAI } from "@/components/icons/openai";
+import { MistralAI } from "@/components/icons/mistralai";
+import { OpenRouter } from "@/components/icons/openrouter";
+import { OpenCode } from "@/components/icons/opencode";
+import { Telegram } from "../icons/telegram";
+import { Discord } from "../icons/discord";
+import { WhatsApp } from "../icons/whatsapp";
+import { Slack } from "../icons/slack";
+import Image from "next/image";
 
-const models = [
+const PROVDERS = [
   {
-    id: "claude-opus-4.5",
-    name: "Claude Opus 4.5",
-    icon: "🟣",
-    provider: "Anthropic",
+    id: "anthropic",
+    name: "Anthropic",
+    icon: <ClaudeAI className="h-5 w-5" />,
+  },
+  { id: "openai", name: "OpenAI", icon: <OpenAI className="h-5 w-5" /> },
+  {
+    id: "zai",
+    name: "Z.AI",
+    icon: (
+      <Image
+        src="/icons/Zai.png"
+        alt="Z.AI"
+        width={20}
+        height={20}
+        className="object-contain"
+      />
+    ),
+  },
+  { id: "mistral", name: "Mistral", icon: <MistralAI className="h-5 w-5" /> },
+  {
+    id: "minimax",
+    name: "MiniMax",
+    icon: (
+      <Image
+        src="/icons/MiniMax.jpg"
+        alt="MiniMax"
+        width={20}
+        height={20}
+        className="object-contain"
+      />
+    ),
+    badge: "Recommended",
   },
   {
-    id: "gpt-5.2",
-    name: "GPT-5.2",
-    icon: "🟢",
-    provider: "OpenAI",
+    id: "openrouter",
+    name: "OpenRouter",
+    icon: <OpenRouter className="h-5 w-5 fill-current" />,
   },
   {
-    id: "gemini-3-flash",
-    name: "Gemini 3 Flash Preview",
-    icon: "🔵",
-    provider: "Google",
-  },
-  {
-    id: "custom",
-    name: "Custom / Other",
-    icon: "⚪",
-    provider: "Bring your own API key",
+    id: "opencode",
+    name: "OpenCode Zen",
+    icon: <OpenCode className="h-5 w-5" />,
   },
 ];
+
+const MODELS_BY_PROVIDER: Record<
+  string,
+  { id: string; name: string; badge?: string }[]
+> = {
+  anthropic: [
+    { id: "claude-opus-4-6", name: "Claude Opus 4.6" },
+    { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
+    { id: "claude-haiku-4-5", name: "Claude Haiku 4.5" },
+  ],
+  openai: [
+    { id: "gpt-5.2", name: "GPT-5.2" },
+    { id: "gpt-5.1-codex", name: "GPT-5.1 Codex" },
+    { id: "gpt-5.1-codex-mini", name: "GPT-5.1 Codex-Mini" },
+    { id: "gpt-5-mini", name: "GPT-5 Mini" },
+    { id: "gpt-4.1-mini", name: "GPT-4.1 Mini" },
+  ],
+  mistral: [{ id: "mistral-large-latest", name: "Mistral Large" }],
+  zai: [
+    { id: "glm-4.7", name: "GLM 4.7" },
+    { id: "glm-5", name: "GLM 5", badge: "Requires Pro+" },
+  ],
+  minimax: [{ id: "MiniMax-M2.1", name: "MiniMax M2.1" }],
+};
 
 const channels = [
   {
     id: "telegram",
     name: "Telegram",
-    icon: "✈️",
+    icon: <Telegram className="h-5 w-5" />,
     available: true,
   },
   {
     id: "discord",
     name: "Discord",
-    icon: "🎮",
+    icon: <Discord className="h-5 w-5" />,
     available: false,
   },
   {
     id: "whatsapp",
     name: "WhatsApp",
-    icon: "💬",
+    icon: <WhatsApp className="h-5 w-5" />,
     available: false,
   },
   {
     id: "slack",
     name: "Slack",
-    icon: "💼",
+    icon: <Slack className="h-5 w-5" />,
     available: false,
   },
 ];
@@ -83,9 +139,13 @@ export function DeployDialog({
   onOpenChange: (open: boolean) => void;
   onInstanceCreated: (instance: Instance) => void;
 }) {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [customModelId, setCustomModelId] = useState("");
+  const [billingMode, setBillingMode] = useState<"byok" | "premium">("byok");
   const [modelApiKey, setModelApiKey] = useState("");
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [botToken, setBotToken] = useState("");
@@ -94,7 +154,10 @@ export function DeployDialog({
   const resetForm = () => {
     setStep(1);
     setName("");
+    setSelectedProvider(null);
     setSelectedModel(null);
+    setCustomModelId("");
+    setBillingMode("byok");
     setModelApiKey("");
     setSelectedChannel(null);
     setBotToken("");
@@ -106,7 +169,23 @@ export function DeployDialog({
     onOpenChange(newOpen);
   };
 
-  const canProceedStep1 = name.trim() && selectedModel;
+  const isCustomProvider =
+    selectedProvider === "openrouter" || selectedProvider === "opencode";
+
+  const finalModelId = isCustomProvider
+    ? `${selectedProvider}/${customModelId}`
+    : selectedModel;
+
+  const isPremiumSupported =
+    selectedProvider === "anthropic" || selectedProvider === "openai";
+
+  const activeApiKey =
+    isPremiumSupported && billingMode === "premium"
+      ? "PREMIUM_SUBSCRIPTION"
+      : modelApiKey.trim();
+
+  const canProceedStep1 =
+    name.trim() && selectedProvider && finalModelId && activeApiKey;
   const canProceedStep2 = selectedChannel && botToken.trim();
 
   const handleDeploy = async () => {
@@ -117,8 +196,8 @@ export function DeployDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          model: selectedModel,
-          modelApiKey: selectedModel === "custom" ? modelApiKey : null,
+          model: finalModelId,
+          modelApiKey: activeApiKey,
           channel: selectedChannel,
           botToken: botToken.trim(),
         }),
@@ -128,18 +207,49 @@ export function DeployDialog({
         const newInstance = await res.json();
         onInstanceCreated(newInstance);
         resetForm();
+        router.push(`/dashboard/${newInstance.id}`);
+      } else {
+        const data = await res.json().catch(() => null);
+        toast.error(
+          data?.error || "Failed to deploy instance. Please try again.",
+        );
+        setIsDeploying(false);
       }
     } catch {
+      toast.error(
+        "Network error — could not reach the server. Please try again.",
+      );
       setIsDeploying(false);
     }
   };
 
-  const selectedModelData = models.find((m) => m.id === selectedModel);
+  const selectedProviderData = PROVDERS.find((p) => p.id === selectedProvider);
   const selectedChannelData = channels.find((c) => c.id === selectedChannel);
+
+  // We need to find the human readable name of the model if it's a standard one
+  const getModelName = () => {
+    if (isCustomProvider) return finalModelId;
+    if (!selectedProvider || !selectedModel) return "—";
+    const modelObj = MODELS_BY_PROVIDER[selectedProvider]?.find(
+      (m) => m.id === selectedModel,
+    );
+    return modelObj ? modelObj.name : selectedModel;
+  };
+
+  // Enforce specific models when Premium is selected
+  const handleBillingModeChange = (mode: "byok" | "premium") => {
+    setBillingMode(mode);
+    if (mode === "premium") {
+      if (selectedProvider === "anthropic")
+        setSelectedModel("claude-sonnet-4-6");
+      if (selectedProvider === "openai") setSelectedModel("gpt-5.2");
+      setModelApiKey(""); // Clear any entered key
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg border-zinc-800 bg-zinc-900 p-0 sm:max-w-xl">
+      <DialogContent className="max-w-xl sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] overflow-y-auto border-zinc-800 bg-zinc-900 p-0 text-white">
         <DialogHeader className="border-b border-zinc-800 px-6 pt-6 pb-4">
           <DialogTitle className="text-lg font-semibold text-white">
             Deploy New Instance
@@ -183,14 +293,14 @@ export function DeployDialog({
           </div>
         </DialogHeader>
 
-        <div className="px-6 py-6">
+        <div className="px-5 py-4">
           {/* Step 1: Name & Model */}
           {step === 1 && (
-            <div className="space-y-6 animate-fade-in-up">
+            <div className="space-y-4 animate-fade-in-up">
               <div>
                 <Label
                   htmlFor="instance-name"
-                  className="mb-2 block text-sm font-medium text-zinc-300"
+                  className="mb-1.5 block text-xs font-medium text-zinc-300"
                 >
                   Instance Name
                 </Label>
@@ -199,46 +309,168 @@ export function DeployDialog({
                   placeholder="My Assistant"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="rounded-xl border-zinc-700 bg-zinc-800/50 text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20"
+                  className="h-8 rounded-lg border-zinc-700 bg-zinc-800/50 text-sm text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20"
                 />
               </div>
 
               <div>
-                <Label className="mb-3 block text-sm font-medium text-zinc-300">
-                  Select AI Model
+                <Label className="mb-2 block text-xs font-medium text-zinc-300">
+                  Select Provider
                 </Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {models.map((model) => (
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+                  {PROVDERS.map((provider) => (
                     <button
-                      key={model.id}
-                      onClick={() => setSelectedModel(model.id)}
-                      className={`flex flex-col gap-1 rounded-xl border px-4 py-3 text-left transition-all duration-300 ${
-                        selectedModel === model.id
+                      key={provider.id}
+                      onClick={() => {
+                        setSelectedProvider(provider.id);
+                        setSelectedModel(null);
+                        setCustomModelId("");
+                        setBillingMode("byok"); // Reset billing mode on provider change
+                      }}
+                      className={`relative flex flex-col items-center justify-center gap-1.5 rounded-lg border p-2 text-center transition-all duration-300 ${
+                        selectedProvider === provider.id
                           ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
                           : "border-zinc-700/50 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{model.icon}</span>
-                        <span className="text-sm font-medium">
-                          {model.name}
-                        </span>
+                      <div className="flex h-5 items-center justify-center scale-75">
+                        {provider.icon}
                       </div>
-                      <span className="text-[11px] text-zinc-500">
-                        {model.provider}
+                      <span className="text-[10px] font-medium leading-none">
+                        {provider.name}
                       </span>
+                      {provider.badge && (
+                        <Badge
+                          variant="secondary"
+                          className="absolute -top-1.5 -right-1.5 bg-violet-500 text-[8px] leading-none hover:bg-violet-600 text-white rounded px-1 py-0.5 border-none"
+                        >
+                          {provider.badge}
+                        </Badge>
+                      )}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {selectedModel === "custom" && (
+              {isPremiumSupported && (
+                <div className="animate-fade-in-up mt-2 rounded-lg border border-zinc-800 bg-zinc-800/30 p-1 flex">
+                  <button
+                    onClick={() => handleBillingModeChange("byok")}
+                    className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                      billingMode === "byok"
+                        ? "bg-zinc-700 text-white shadow-sm"
+                        : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+                    }`}
+                  >
+                    Bring Your Own Key
+                  </button>
+                  <button
+                    onClick={() => handleBillingModeChange("premium")}
+                    className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
+                      billingMode === "premium"
+                        ? "bg-violet-500 text-white shadow-sm"
+                        : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+                    }`}
+                  >
+                    Premium ($10/mo)
+                    <span className="flex h-3 w-3 items-center justify-center rounded-full bg-white/20 text-[8px]">
+                      ★
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {selectedProvider && !isCustomProvider && (
+                <div className="animate-fade-in-up">
+                  <Label className="mb-2 block text-xs font-medium text-zinc-300">
+                    Select Model
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                    {MODELS_BY_PROVIDER[selectedProvider]?.map((m) => {
+                      // When Premium is selected, lock to specific models and format others as disabled
+                      const isPremiumLocked =
+                        billingMode === "premium" &&
+                        ((selectedProvider === "anthropic" &&
+                          m.id !== "claude-sonnet-4-6") ||
+                          (selectedProvider === "openai" &&
+                            m.id !== "gpt-5.2"));
+
+                      return (
+                        <button
+                          key={m.id}
+                          onClick={() => {
+                            if (isPremiumLocked) return;
+                            setSelectedModel(m.id);
+                          }}
+                          disabled={isPremiumLocked}
+                          className={`relative flex flex-col gap-0.5 rounded-lg border px-2.5 py-1.5 text-left transition-all duration-300 ${
+                            isPremiumLocked
+                              ? "opacity-40 cursor-not-allowed border-zinc-800 bg-zinc-900"
+                              : selectedModel === m.id
+                                ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
+                                : "border-zinc-700/50 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                          }`}
+                        >
+                          <span className="text-xs font-medium truncate w-full pr-4">
+                            {m.name}
+                          </span>
+                          <span className="text-[9px] text-zinc-500 font-mono truncate w-full flex-1">
+                            {m.id}
+                          </span>
+                          {isPremiumLocked && (
+                            <span className="absolute right-1.5 top-1.5 text-[8px] font-medium text-zinc-500">
+                              BYOK
+                            </span>
+                          )}
+                          {m.badge && !isPremiumLocked && (
+                            <span className="absolute right-1.5 top-1.5 text-[8px] font-medium text-amber-400">
+                              ★
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {billingMode === "premium" && (
+                    <p className="mt-1.5 text-[10px] text-violet-400/80">
+                      Premium mode includes state-of-the-art flagship models
+                      optimized for OpenClaw.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {selectedProvider && isCustomProvider && (
                 <div className="animate-fade-in-up">
                   <Label
-                    htmlFor="model-api-key"
-                    className="mb-2 block text-sm font-medium text-zinc-300"
+                    htmlFor="custom-model-id"
+                    className="mb-1.5 block text-xs font-medium text-zinc-300"
                   >
-                    Model API Key
+                    Custom Model String
+                  </Label>
+                  <div className="flex rounded-lg overflow-hidden border border-zinc-700 bg-zinc-800/50 shadow-sm focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500/20">
+                    <div className="bg-zinc-800 px-2.5 py-1.5 text-xs font-mono text-zinc-400 flex items-center border-r border-zinc-700">
+                      {selectedProvider}/
+                    </div>
+                    <input
+                      id="custom-model-id"
+                      type="text"
+                      placeholder="e.g anthropic/claude-sonnet-4-5"
+                      value={customModelId}
+                      onChange={(e) => setCustomModelId(e.target.value)}
+                      className="flex-1 bg-transparent px-2.5 py-1.5 text-xs text-white font-mono placeholder:text-zinc-600 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {selectedProvider && billingMode === "byok" && (
+                <div className="animate-fade-in-up mt-2">
+                  <Label
+                    htmlFor="model-api-key"
+                    className="mb-1.5 block text-xs font-medium text-zinc-300"
+                  >
+                    API Key for {selectedProviderData?.name}
                   </Label>
                   <Input
                     id="model-api-key"
@@ -246,7 +478,7 @@ export function DeployDialog({
                     placeholder="sk-..."
                     value={modelApiKey}
                     onChange={(e) => setModelApiKey(e.target.value)}
-                    className="rounded-xl border-zinc-700 bg-zinc-800/50 font-mono text-sm text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20"
+                    className="h-8 rounded-lg border-zinc-700 bg-zinc-800/50 font-mono text-xs text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20"
                   />
                 </div>
               )}
@@ -255,12 +487,12 @@ export function DeployDialog({
 
           {/* Step 2: Channel & Token */}
           {step === 2 && (
-            <div className="space-y-6 animate-fade-in-up">
+            <div className="space-y-4 animate-fade-in-up">
               <div>
-                <Label className="mb-3 block text-sm font-medium text-zinc-300">
+                <Label className="mb-2 block text-xs font-medium text-zinc-300">
                   Select Channel
                 </Label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {channels.map((channel) => (
                     <button
                       key={channel.id}
@@ -268,7 +500,7 @@ export function DeployDialog({
                         channel.available && setSelectedChannel(channel.id)
                       }
                       disabled={!channel.available}
-                      className={`relative flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-300 ${
+                      className={`relative flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-left transition-all duration-300 ${
                         !channel.available
                           ? "cursor-not-allowed border-zinc-800 bg-zinc-850/30 opacity-50"
                           : selectedChannel === channel.id
@@ -276,17 +508,17 @@ export function DeployDialog({
                             : "border-zinc-700/50 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
                       }`}
                     >
-                      <span className="text-xl">{channel.icon}</span>
-                      <div>
-                        <span className="text-sm font-medium">
+                      <span className="text-sm">{channel.icon}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-medium leading-none">
                           {channel.name}
                         </span>
                         {!channel.available && (
                           <Badge
                             variant="secondary"
-                            className="ml-2 rounded-md bg-zinc-700/50 px-1.5 py-0 text-[10px] text-zinc-400"
+                            className="rounded bg-zinc-700/50 px-1 py-0 text-[8px] tracking-wide text-zinc-400"
                           >
-                            Soon
+                            SOON
                           </Badge>
                         )}
                       </div>
@@ -296,10 +528,10 @@ export function DeployDialog({
               </div>
 
               {selectedChannel === "telegram" && (
-                <div className="space-y-3 animate-fade-in-up">
+                <div className="space-y-2 animate-fade-in-up mt-2">
                   <Label
                     htmlFor="bot-token"
-                    className="mb-2 block text-sm font-medium text-zinc-300"
+                    className="mb-1 block text-xs font-medium text-zinc-300"
                   >
                     Telegram Bot Token
                   </Label>
@@ -309,9 +541,9 @@ export function DeployDialog({
                     placeholder="123456:ABC-DEF..."
                     value={botToken}
                     onChange={(e) => setBotToken(e.target.value)}
-                    className="rounded-xl border-zinc-700 bg-zinc-800/50 font-mono text-sm text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20"
+                    className="h-8 rounded-lg border-zinc-700 bg-zinc-800/50 font-mono text-xs text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20"
                   />
-                  <p className="text-xs leading-relaxed text-zinc-500">
+                  <p className="text-[10px] leading-relaxed text-zinc-500">
                     Create a bot via{" "}
                     <a
                       href="https://t.me/BotFather"
@@ -330,51 +562,53 @@ export function DeployDialog({
 
           {/* Step 3: Review & Deploy */}
           {step === 3 && (
-            <div className="space-y-6 animate-fade-in-up">
-              <div className="rounded-xl border border-zinc-800 bg-zinc-800/30 p-5">
-                <h4 className="mb-4 text-sm font-semibold text-white">
-                  Deployment Summary
+            <div className="space-y-4 animate-fade-in-up">
+              <div className="rounded-lg border border-zinc-800 bg-zinc-800/30 p-4">
+                <h4 className="mb-3 text-xs font-semibold text-white uppercase tracking-wider">
+                  Summary
                 </h4>
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-400">Instance Name</span>
-                    <span className="text-sm font-medium text-white">
+                    <span className="text-xs text-zinc-400">Name</span>
+                    <span className="text-xs font-medium text-white">
                       {name}
                     </span>
                   </div>
-                  <div className="h-px bg-zinc-800" />
+                  <div className="h-px bg-zinc-800/60" />
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-400">AI Model</span>
-                    <span className="flex items-center gap-1.5 text-sm font-medium text-white">
-                      <span className="text-xs">{selectedModelData?.icon}</span>
-                      {selectedModelData?.name}
+                    <span className="text-xs text-zinc-400">Model</span>
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-white">
+                      <div className="scale-75 origin-right">
+                        {selectedProviderData?.icon}
+                      </div>
+                      {getModelName()}
                     </span>
                   </div>
-                  <div className="h-px bg-zinc-800" />
+                  <div className="h-px bg-zinc-800/60" />
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-400">Channel</span>
-                    <span className="flex items-center gap-1.5 text-sm font-medium text-white">
-                      <span className="text-xs">
+                    <span className="text-xs text-zinc-400">Channel</span>
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-white">
+                      <span className="text-[10px]">
                         {selectedChannelData?.icon}
                       </span>
                       {selectedChannelData?.name}
                     </span>
                   </div>
-                  <div className="h-px bg-zinc-800" />
+                  <div className="h-px bg-zinc-800/60" />
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-400">Bot Token</span>
-                    <span className="font-mono text-xs text-zinc-400">
+                    <span className="text-xs text-zinc-400">Token</span>
+                    <span className="font-mono text-[10px] text-zinc-400">
                       {botToken.slice(0, 8)}•••••
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3">
-                <p className="text-xs leading-relaxed text-zinc-400">
+              <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 px-3 py-2.5">
+                <p className="text-[10px] leading-relaxed text-zinc-400">
                   <span className="font-medium text-violet-400">Note:</span>{" "}
-                  Your instance will be deployed to a secure cloud server. You
-                  can stop or delete it anytime from the dashboard.
+                  Your instance will be deployed securely. You can manage it
+                  from the dashboard anytime.
                 </p>
               </div>
             </div>

@@ -3,22 +3,53 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
+import { ClaudeAI } from "@/components/icons/claudeai";
+import { OpenAI } from "@/components/icons/openai";
+import { MistralAI } from "@/components/icons/mistralai";
+import { OpenRouter } from "@/components/icons/openrouter";
+import { Telegram } from "@/components/icons/telegram";
+import { Discord } from "@/components/icons/discord";
+import { WhatsApp } from "@/components/icons/whatsapp";
+import Image from "next/image";
 
-const models = [
+const PROVIDERS = [
   {
-    id: "claude",
-    name: "Claude Opus 4.5",
-    icon: "🟣",
+    id: "anthropic",
+    name: "Anthropic",
+    icon: <ClaudeAI className="h-5 w-5" />,
+  },
+  { id: "openai", name: "OpenAI", icon: <OpenAI className="h-5 w-5" /> },
+  {
+    id: "minimax",
+    name: "MiniMax",
+    icon: (
+      <Image
+        src="/icons/MiniMax.jpg"
+        alt="MiniMax"
+        width={20}
+        height={20}
+        className="object-contain"
+      />
+    ),
   },
   {
-    id: "gpt",
-    name: "GPT-5.2",
-    icon: "🟢",
+    id: "zai",
+    name: "Z.AI",
+    icon: (
+      <Image
+        src="/icons/Zai.png"
+        alt="Z.AI"
+        width={20}
+        height={20}
+        className="object-contain"
+      />
+    ),
   },
+  { id: "mistral", name: "Mistral", icon: <MistralAI className="h-5 w-5" /> },
   {
-    id: "gemini",
-    name: "Gemini 3 Flash",
-    icon: "🔵",
+    id: "openrouter",
+    name: "OpenRouter",
+    icon: <OpenRouter className="h-5 w-5 fill-current" />,
   },
 ];
 
@@ -26,22 +57,22 @@ const channels = [
   {
     id: "telegram",
     name: "Telegram",
-    icon: "✈️",
+    icon: <Telegram className="h-5 w-5" />,
   },
   {
     id: "discord",
     name: "Discord",
-    icon: "🎮",
+    icon: <Discord className="h-5 w-5" />,
   },
   {
     id: "whatsapp",
     name: "WhatsApp",
-    icon: "💬",
+    icon: <WhatsApp className="h-5 w-5" />,
   },
 ];
 
 export function Configurator() {
-  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [serversLeft] = useState(11);
 
@@ -55,24 +86,26 @@ export function Configurator() {
   return (
     <section className="animate-fade-in-up-delay-2 mx-auto max-w-3xl px-6 pb-16">
       <div className="card-glow overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8">
-        {/* Model Selection */}
+        {/* Provider Selection */}
         <div className="mb-8">
           <h2 className="mb-4 text-center text-lg font-semibold text-white">
-            Which model do you want as default?
+            Which AI provider do you prefer?
           </h2>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {models.map((model) => (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {PROVIDERS.map((provider) => (
               <button
-                key={model.id}
-                onClick={() => setSelectedModel(model.id)}
-                className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-300 ${
-                  selectedModel === model.id
+                key={provider.id}
+                onClick={() => setSelectedProvider(provider.id)}
+                className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center transition-all duration-300 ${
+                  selectedProvider === provider.id
                     ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
                     : "border-zinc-700/50 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
                 }`}
               >
-                <span className="text-xl">{model.icon}</span>
-                <span className="text-sm font-medium">{model.name}</span>
+                <div className="flex items-center justify-center">
+                  {provider.icon}
+                </div>
+                <span className="text-xs font-medium">{provider.name}</span>
               </button>
             ))}
           </div>

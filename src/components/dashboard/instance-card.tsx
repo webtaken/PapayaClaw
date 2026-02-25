@@ -1,16 +1,106 @@
 "use client";
 
+import { useState } from "react";
 import type { Instance } from "./dashboard-content";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Square, Play, Trash2 } from "lucide-react";
+import { Square, Play, Trash2, Shield } from "lucide-react";
+import { PairingDialog } from "./pairing-dialog";
+import { ClaudeAI } from "@/components/icons/claudeai";
+import { OpenAI } from "@/components/icons/openai";
+import { MistralAI } from "@/components/icons/mistralai";
+import { OpenRouter } from "@/components/icons/openrouter";
+import { OpenCode } from "@/components/icons/opencode";
+import Image from "next/image";
 
-const modelLabels: Record<string, { name: string; icon: string }> = {
-  "claude-opus-4.5": { name: "Claude Opus 4.5", icon: "🟣" },
-  "gpt-5.2": { name: "GPT-5.2", icon: "🟢" },
-  "gemini-3-flash": { name: "Gemini 3 Flash Preview", icon: "🔵" },
-  custom: { name: "Custom Model", icon: "⚪" },
-};
+function formatModelInfo(modelId: string): {
+  name: string;
+  icon: React.ReactNode;
+} {
+  if (modelId.startsWith("openrouter/")) {
+    return {
+      name: modelId.replace("openrouter/", ""),
+      icon: <OpenRouter className="h-4 w-4 fill-current" />,
+    };
+  }
+  if (modelId.startsWith("opencode/")) {
+    return {
+      name: modelId.replace("opencode/", ""),
+      icon: <OpenCode className="h-4 w-4" />,
+    };
+  }
+
+  const map: Record<string, { name: string; icon: React.ReactNode }> = {
+    "claude-opus-4-6": {
+      name: "Claude Opus 4.6",
+      icon: <ClaudeAI className="h-4 w-4" />,
+    },
+    "claude-sonnet-4-6": {
+      name: "Claude Sonnet 4.6",
+      icon: <ClaudeAI className="h-4 w-4" />,
+    },
+    "claude-haiku-4-5": {
+      name: "Claude Haiku 4.5",
+      icon: <ClaudeAI className="h-4 w-4" />,
+    },
+    "gpt-5.2": { name: "GPT-5.2", icon: <OpenAI className="h-4 w-4" /> },
+    "gpt-5.1-codex": {
+      name: "GPT-5.1 Codex",
+      icon: <OpenAI className="h-4 w-4" />,
+    },
+    "gpt-5.1-codex-mini": {
+      name: "GPT-5.1 Codex-Mini",
+      icon: <OpenAI className="h-4 w-4" />,
+    },
+    "gpt-5-mini": { name: "GPT-5 Mini", icon: <OpenAI className="h-4 w-4" /> },
+    "gpt-4.1-mini": {
+      name: "GPT-4.1 Mini",
+      icon: <OpenAI className="h-4 w-4" />,
+    },
+    "mistral-large-latest": {
+      name: "Mistral Large",
+      icon: <MistralAI className="h-4 w-4" />,
+    },
+    "glm-4.7": {
+      name: "GLM 4.7",
+      icon: (
+        <Image
+          src="/icons/Zai.png"
+          alt="Z.AI"
+          width={16}
+          height={16}
+          className="object-contain"
+        />
+      ),
+    },
+    "glm-5": {
+      name: "GLM 5",
+      icon: (
+        <Image
+          src="/icons/Zai.png"
+          alt="Z.AI"
+          width={16}
+          height={16}
+          className="object-contain"
+        />
+      ),
+    },
+    "MiniMax-M2.1": {
+      name: "MiniMax M2.1",
+      icon: (
+        <Image
+          src="/icons/MiniMax.jpg"
+          alt="MiniMax"
+          width={16}
+          height={16}
+          className="object-contain"
+        />
+      ),
+    },
+  };
+
+  return map[modelId] || { name: modelId, icon: "⚪" };
+}
 
 const channelLabels: Record<string, { name: string; icon: string }> = {
   telegram: { name: "Telegram", icon: "✈️" },
@@ -54,10 +144,7 @@ export function InstanceCard({
   onStatusChange: (id: string, status: string) => void;
   onDelete: (id: string) => void;
 }) {
-  const model = modelLabels[instance.model] || {
-    name: instance.model,
-    icon: "⚪",
-  };
+  const model = formatModelInfo(instance.model);
   const channel = channelLabels[instance.channel] || {
     name: instance.channel,
     icon: "💬",
@@ -66,6 +153,8 @@ export function InstanceCard({
 
   const isRunning = instance.status === "running";
   const isDeploying = instance.status === "deploying";
+  const isTelegram = instance.channel === "telegram";
+  const [pairingOpen, setPairingOpen] = useState(false);
 
   return (
     <div className="card-glow rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 transition-all duration-300">
@@ -139,6 +228,17 @@ export function InstanceCard({
             )}
           </Button>
         )}
+        {isRunning && isTelegram && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPairingOpen(true)}
+            className="cursor-pointer gap-1.5 rounded-lg border-violet-500/30 bg-violet-500/10 text-xs text-violet-300 transition-all hover:border-violet-500/50 hover:bg-violet-500/20 hover:text-violet-200"
+          >
+            <Shield className="h-3 w-3" />
+            Pairing
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"
@@ -149,6 +249,15 @@ export function InstanceCard({
           Delete
         </Button>
       </div>
+
+      {/* Pairing Dialog */}
+      {isTelegram && (
+        <PairingDialog
+          open={pairingOpen}
+          onOpenChange={setPairingOpen}
+          instanceId={instance.id}
+        />
+      )}
     </div>
   );
 }

@@ -5,6 +5,12 @@
  * Docs: https://docs.hetzner.cloud/
  */
 
+import dns from "node:dns";
+
+// Force IPv4 first — Node's fetch tries IPv6 by default, which times out
+// on networks without IPv6 connectivity (ETIMEDOUT / AggregateError).
+dns.setDefaultResultOrder("ipv4first");
+
 const HETZNER_API_BASE = "https://api.hetzner.cloud/v1";
 
 function getApiToken(): string {
@@ -22,22 +28,63 @@ async function hetznerFetch(
   options: RequestInit = {},
 ): Promise<Response> {
   const token = getApiToken();
+  const maxRetries = 3;
 
-  const res = await fetch(`${HETZNER_API_BASE}${path}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-  });
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Hetzner API error ${res.status} on ${path}: ${body}`);
+    try {
+      const res = await fetch(`${HETZNER_API_BASE}${path}`, {
+        ...options,
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          ...options.headers,
+        },
+      });
+
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        const body = await res.text();
+        console.error(
+          `[hetznerFetch] API Error ${res.status} on ${path}:`,
+          body,
+        );
+        throw new Error(`Hetzner API error ${res.status} on ${path}: ${body}`);
+      }
+
+      return res;
+    } catch (error: any) {
+      clearTimeout(timeout);
+
+      const isNetworkError =
+        error?.code === "ETIMEDOUT" ||
+        error?.cause?.code === "ETIMEDOUT" ||
+        error?.name === "AbortError" ||
+        error?.message === "fetch failed";
+
+      if (isNetworkError && attempt < maxRetries) {
+        const delay = attempt * 2000; // 2s, 4s backoff
+        console.warn(
+          `[hetznerFetch] Attempt ${attempt}/${maxRetries} failed on ${path}, retrying in ${delay}ms...`,
+        );
+        await new Promise((r) => setTimeout(r, delay));
+        continue;
+      }
+
+      console.error(
+        `[hetznerFetch] Network/Fetch Error on ${path} (attempt ${attempt}/${maxRetries}):`,
+        error,
+      );
+      throw error;
+    }
   }
 
-  return res;
+  // TypeScript needs this — unreachable in practice
+  throw new Error("Unreachable");
 }
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -74,34 +121,84 @@ interface ActionResponse {
   action: { id: number; status: string };
 }
 
+interface SSHKeyResponse {
+  ssh_key: { id: number; name: string; public_key: string };
+}
+
+// ─── SSH Keys ───────────────────────────────────────────────────────────────
+
+/**
+ * Uploads a public SSH key to Hetzner Cloud.
+ * Returns the key name (used as reference in server creation).
+ */
+export async function uploadSSHKey(
+  name: string,
+  publicKey: string,
+): Promise<{ id: number; name: string }> {
+  const res = await hetznerFetch("/ssh_keys", {
+    method: "POST",
+    body: JSON.stringify({
+      name,
+      public_key: publicKey,
+      labels: { managed_by: "papayaclaw" },
+    }),
+  });
+
+  const data: SSHKeyResponse = await res.json();
+  return { id: data.ssh_key.id, name: data.ssh_key.name };
+}
+
+/**
+ * Deletes an SSH key from Hetzner Cloud.
+ */
+export async function deleteSSHKey(keyId: number): Promise<void> {
+  await hetznerFetch(`/ssh_keys/${keyId}`, { method: "DELETE" });
+}
+
 // ─── Server CRUD ────────────────────────────────────────────────────────────
 
 /**
  * Creates a new Hetzner Cloud server with cloud-init user_data.
  *
- * Uses the CX22 server type (2 vCPU, 4 GB RAM, 40 GB NVMe) in Nuremberg.
- * The user_data is a cloud-init script that installs Docker + OpenClaw.
+ * Uses CX23 (2 vCPU, 4 GB RAM, 40 GB NVMe) in Nuremberg.
+ * The user_data is a cloud-init script that provisions OpenClaw.
  */
 export async function createServer(
   name: string,
   userData: string,
+  sshKeyNames?: string[],
 ): Promise<HetznerServer> {
+  const body: Record<string, unknown> = {
+    name,
+    server_type: "cx23",
+    image: "ubuntu-24.04",
+    location: "nbg1",
+    start_after_create: true,
+    user_data: userData,
+    labels: {
+      managed_by: "papayaclaw",
+    },
+    public_net: {
+      enable_ipv4: true,
+      enable_ipv6: false,
+    },
+  };
+
+  if (sshKeyNames?.length) {
+    body.ssh_keys = sshKeyNames;
+  }
+
   const res = await hetznerFetch("/servers", {
     method: "POST",
-    body: JSON.stringify({
-      name,
-      server_type: "cx22",
-      image: "ubuntu-24.04",
-      location: "nbg1", // Nuremberg, Germany
-      start_after_create: true,
-      user_data: userData,
-      labels: {
-        managed_by: "papayaclaw",
-      },
-    }),
+    body: JSON.stringify(body),
   });
 
   const data: CreateServerResponse = await res.json();
+
+  console.log(
+    `[createServer] Server ${data.server.id} created — status: ${data.server.status}, action: ${data.action.status}`,
+  );
+
   return data.server;
 }
 
