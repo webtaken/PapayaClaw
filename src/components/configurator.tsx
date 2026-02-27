@@ -77,10 +77,14 @@ export function Configurator() {
   const [serversLeft] = useState(11);
 
   const handleSignIn = async () => {
-    await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "/dashboard",
-    });
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard",
+      });
+    } catch (error) {
+      console.error("Error signing in:", error);
+    }
   };
 
   return (

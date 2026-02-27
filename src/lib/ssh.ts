@@ -61,6 +61,32 @@ export function executeCommand(
   });
 }
 
+/**
+ * Checks if the OpenClaw setup on a remote VPS has finished
+ * by looking for sentinel files written by cloud-init.
+ *
+ * Returns "ready", "error", or "pending".
+ */
+export async function checkInstanceReady(
+  host: string,
+  privateKey: string,
+): Promise<"ready" | "error" | "pending"> {
+  try {
+    const { stdout } = await executeCommand(
+      host,
+      privateKey,
+      "test -f /var/tmp/openclaw-ready && echo READY || (test -f /var/tmp/openclaw-error && echo ERROR || echo PENDING)",
+    );
+    const status = stdout.trim();
+    if (status === "READY") return "ready";
+    if (status === "ERROR") return "error";
+    return "pending";
+  } catch {
+    // SSH not up yet or connection refused
+    return "pending";
+  }
+}
+
 export interface PairingRequest {
   code: string;
   senderId: string;

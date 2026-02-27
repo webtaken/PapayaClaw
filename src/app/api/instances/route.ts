@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { createServer, uploadSSHKey } from "@/lib/hetzner";
 import { generateCloudInit } from "@/lib/cloud-init";
-import crypto from "node:crypto";
+import { pollInstanceUntilReady } from "@/lib/instance-poller";
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -68,9 +68,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Generate a secret for the cloud-init callback
-  const callbackSecret = crypto.randomUUID();
-
   // Generate SSH keypair for remote pairing management
   const { publicKey: sshPublicKey, privateKey: sshPrivateKey } =
     generateSSHKeyPair();
@@ -125,57 +122,53 @@ export async function POST(request: Request) {
       botToken,
       status: "deploying",
       provider: "hetzner",
-      callbackSecret,
-      sshPrivateKey: sshPrivateKey,
       userId: session.user.id,
     })
     .returning();
 
-  // 2. Build the callback URL for cloud-init
-  const host = request.headers.get("host") || "localhost:3000";
-  const protocol = host.includes("localhost") ? "http" : "https";
-  const callbackUrl = `${protocol}://${host}/api/instances/callback`;
-
-  // 3. Generate cloud-init script
+  // 2. Build the cloud-init script (no callback — PapayaClaw polls via SSH)
   const userData = generateCloudInit({
     instanceId: newInstance.id,
     instanceName: newInstance.name,
     model,
-    modelApiKey: activeApiKey, // Inject the real API key here
+    modelApiKey: activeApiKey,
     channel,
     botToken,
-    callbackUrl,
-    callbackSecret,
     sshPublicKey: sshPublicKey,
   });
 
   try {
-    // 4. Upload SSH key to Hetzner (native injection, works without cloud-init)
+    // 3. Upload SSH key to Hetzner (native injection, works without cloud-init)
     const sshKeyName = `papayaclaw-${newInstance.id.slice(0, 8)}`;
     const hetznerKey = await uploadSSHKey(sshKeyName, sshPublicKey);
 
-    // 5. Provision the Hetzner VPS
+    // 4. Provision the Hetzner VPS
     const serverName = `papayaclaw-${newInstance.id.slice(0, 8)}`;
     const server = await createServer(serverName, userData, [hetznerKey.name]);
 
-    // 6. Store VPS metadata + Hetzner SSH key ID
+    // 5. Store VPS metadata + SSH key
     const [updated] = await db
       .update(instance)
       .set({
         providerServerId: server.id,
         providerServerIp: server.public_net.ipv4.ip,
         providerSshKeyId: hetznerKey.id,
+        sshPrivateKey: sshPrivateKey,
       })
       .where(eq(instance.id, newInstance.id))
       .returning();
 
+    // 6. Fire-and-forget: poll via SSH until cloud-init finishes
+    pollInstanceUntilReady(
+      newInstance.id,
+      server.public_net.ipv4.ip,
+      sshPrivateKey,
+    );
+
     return NextResponse.json(updated, { status: 201 });
   } catch (error) {
-    // If provisioning fails, mark the instance as errored
-    await db
-      .update(instance)
-      .set({ status: "error" })
-      .where(eq(instance.id, newInstance.id));
+    // If provisioning fails, remove the instance
+    await db.delete(instance).where(eq(instance.id, newInstance.id));
 
     console.error("Hetzner provisioning failed:", error);
     return NextResponse.json(

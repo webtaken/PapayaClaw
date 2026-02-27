@@ -13,7 +13,7 @@ dns.setDefaultResultOrder("ipv4first");
 
 const HETZNER_API_BASE = "https://api.hetzner.cloud/v1";
 
-function getApiToken(): string {
+export function getApiToken(): string {
   const token = process.env.HETZNER_API_TOKEN;
   if (!token) {
     throw new Error(
@@ -28,11 +28,16 @@ async function hetznerFetch(
   options: RequestInit = {},
 ): Promise<Response> {
   const token = getApiToken();
-  const maxRetries = 3;
+  const method = (options.method || "GET").toUpperCase();
+  // Retry all methods — network timeouts (ETIMEDOUT/ENETUNREACH) mean the
+  // request never reached Hetzner, so there's no risk of creating duplicates.
+  // Even if a POST somehow did go through, Hetzner returns 409 for duplicates.
+  const maxRetries = 4;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    // 30s timeout — generous for Peru → Europe on mobile (Entel 4G)
+    const timeout = setTimeout(() => controller.abort(), 40_000);
 
     try {
       const res = await fetch(`${HETZNER_API_BASE}${path}`, {
@@ -50,10 +55,12 @@ async function hetznerFetch(
       if (!res.ok) {
         const body = await res.text();
         console.error(
-          `[hetznerFetch] API Error ${res.status} on ${path}:`,
+          `[hetznerFetch] API Error ${res.status} on ${method} ${path}:`,
           body,
         );
-        throw new Error(`Hetzner API error ${res.status} on ${path}: ${body}`);
+        throw new Error(
+          `Hetzner API error ${res.status} on ${method} ${path}: ${body}`,
+        );
       }
 
       return res;
@@ -67,18 +74,32 @@ async function hetznerFetch(
         error?.message === "fetch failed";
 
       if (isNetworkError && attempt < maxRetries) {
-        const delay = attempt * 2000; // 2s, 4s backoff
+        const delay = Math.min(attempt * 2000, 8000); // 2s, 4s, 8s (capped)
         console.warn(
-          `[hetznerFetch] Attempt ${attempt}/${maxRetries} failed on ${path}, retrying in ${delay}ms...`,
+          `[hetznerFetch] Attempt ${attempt}/${maxRetries} failed on ${method} ${path}, retrying in ${delay}ms...`,
         );
         await new Promise((r) => setTimeout(r, delay));
         continue;
       }
 
       console.error(
-        `[hetznerFetch] Network/Fetch Error on ${path} (attempt ${attempt}/${maxRetries}):`,
-        error,
+        `[hetznerFetch] Network/Fetch Error on ${method} ${path} (attempt ${attempt}/${maxRetries}):`,
       );
+      console.error(`  message: ${error?.message}`);
+      console.error(`  code: ${error?.code}`);
+      console.error(`  name: ${error?.name}`);
+      if (error?.cause) {
+        console.error(
+          `  cause: ${error.cause.message} (code: ${error.cause.code})`,
+        );
+        if (error.cause.errors) {
+          error.cause.errors.forEach((e: any, i: number) => {
+            console.error(
+              `    sub-error[${i}]: ${e.message} (code: ${e.code}, syscall: ${e.syscall}, address: ${e.address})`,
+            );
+          });
+        }
+      }
       throw error;
     }
   }
@@ -88,6 +109,13 @@ async function hetznerFetch(
 }
 
 // ─── Types ──────────────────────────────────────────────────────────────────
+
+export interface HetznerAction {
+  id: number;
+  status: string;
+  command: string;
+  progress: number;
+}
 
 export interface HetznerServer {
   id: number;
@@ -117,8 +145,8 @@ interface GetServerResponse {
   server: HetznerServer;
 }
 
-interface ActionResponse {
-  action: { id: number; status: string };
+export interface ActionResponse {
+  action: HetznerAction;
 }
 
 interface SSHKeyResponse {
@@ -167,11 +195,12 @@ export async function createServer(
   name: string,
   userData: string,
   sshKeyNames?: string[],
+  imageId?: string,
 ): Promise<HetznerServer> {
   const body: Record<string, unknown> = {
     name,
     server_type: "cx23",
-    image: "ubuntu-24.04",
+    image: imageId || "ubuntu-24.04",
     location: "nbg1",
     start_after_create: true,
     user_data: userData,
@@ -187,7 +216,7 @@ export async function createServer(
   if (sshKeyNames?.length) {
     body.ssh_keys = sshKeyNames;
   }
-
+  console.log("body", JSON.stringify(body, null, 2));
   const res = await hetznerFetch("/servers", {
     method: "POST",
     body: JSON.stringify(body),
@@ -243,8 +272,36 @@ export async function powerOff(serverId: number): Promise<void> {
  * Gracefully shuts down a Hetzner server via ACPI signal.
  * Preferred over powerOff when the OS is responsive.
  */
-export async function shutdown(serverId: number): Promise<void> {
-  await hetznerFetch(`/servers/${serverId}/actions/shutdown`, {
+export async function shutdown(serverId: number): Promise<ActionResponse> {
+  const res = await hetznerFetch(`/servers/${serverId}/actions/shutdown`, {
     method: "POST",
   });
+  return res.json();
+}
+
+/**
+ * Creates a snapshot image of a Hetzner server.
+ */
+export async function createImage(
+  serverId: number,
+  description: string,
+): Promise<{ image: { id: number; name: string }; action: HetznerAction }> {
+  const res = await hetznerFetch(`/servers/${serverId}/actions/create_image`, {
+    method: "POST",
+    body: JSON.stringify({
+      type: "snapshot",
+      description,
+      labels: { managed_by: "papayaclaw", type: "base-image" },
+    }),
+  });
+  return res.json();
+}
+
+/**
+ * Gets the status of an action.
+ */
+export async function getAction(actionId: number): Promise<HetznerAction> {
+  const res = await hetznerFetch(`/actions/${actionId}`);
+  const data: ActionResponse = await res.json();
+  return data.action;
 }

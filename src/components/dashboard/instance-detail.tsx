@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Server, Cpu, Loader2 } from "lucide-react";
@@ -11,6 +12,11 @@ import { MistralAI } from "@/components/icons/mistralai";
 import { OpenRouter } from "@/components/icons/openrouter";
 import { OpenCode } from "@/components/icons/opencode";
 import Image from "next/image";
+
+const SshTerminal = dynamic(
+  () => import("./ssh-terminal").then((mod) => mod.SshTerminal),
+  { ssr: false },
+);
 
 interface InstanceData {
   id: string;
@@ -189,6 +195,7 @@ export function InstanceDetail({
   const [instance, setInstance] = useState(initialInstance);
   const [statusData, setStatusData] = useState<StatusData | null>(null);
   const [isPolling, setIsPolling] = useState(true);
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
 
   const isProvisioning =
     instance.status === "deploying" ||
@@ -230,7 +237,7 @@ export function InstanceDetail({
 
     if (!isPolling) return;
 
-    const interval = setInterval(pollStatus, 5000);
+    const interval = setInterval(pollStatus, 10000);
     return () => clearInterval(interval);
   }, [pollStatus, isPolling]);
 
@@ -422,6 +429,51 @@ export function InstanceDetail({
               </div>
             </div>
           </div>
+
+          {/* SSH Terminal (Available when running) */}
+          {instance.status !== "deploying" && instance.providerServerIp && (
+            <div className="card-glow col-span-full rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
+              {!isTerminalOpen ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="mb-4 rounded-full bg-zinc-800/50 p-4 ring-1 ring-zinc-800">
+                    <Server className="h-6 w-6 text-zinc-400" />
+                  </div>
+                  <h3 className="mb-2 text-base font-semibold text-white">
+                    SSH Console
+                  </h3>
+                  <p className="mb-6 max-w-sm text-sm text-zinc-400">
+                    Access your server's command line directly from your
+                    browser.
+                  </p>
+                  <Button
+                    onClick={() => setIsTerminalOpen(true)}
+                    className="bg-violet-600 text-white hover:bg-violet-700 font-medium px-6 shadow-sm shadow-violet-500/20"
+                  >
+                    Connect to Console
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-white">
+                      Terminal Session
+                    </h3>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsTerminalOpen(false)}
+                      className="cursor-pointer gap-1.5 rounded-lg border-zinc-700 bg-zinc-800/50 text-xs text-zinc-300 transition-all hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                    >
+                      Disconnect
+                    </Button>
+                  </div>
+                  <div className="h-[500px] w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
+                    <SshTerminal instanceId={instance.id} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Quick Actions */}
           <div className="card-glow col-span-full rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">

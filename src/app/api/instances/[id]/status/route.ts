@@ -5,10 +5,14 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { getServer } from "@/lib/hetzner";
+import { checkInstanceReady } from "@/lib/ssh";
 
 /**
  * Lightweight status endpoint for polling.
  * Returns the DB instance status + live Hetzner server status.
+ *
+ * When Hetzner reports "running" but the DB status is still "deploying",
+ * performs a fallback SSH sentinel-file check and updates the DB if ready.
  */
 export async function GET(
   _request: Request,
@@ -45,8 +49,41 @@ export async function GET(
     }
   }
 
+  // Fallback: if Hetzner says "running" but DB is still "deploying",
+  // SSH-check the sentinel file in case the background poller hasn't caught up.
+  let instanceStatus = inst.status;
+
+  if (
+    hetznerStatus === "running" &&
+    inst.status === "deploying" &&
+    inst.providerServerIp &&
+    inst.sshPrivateKey
+  ) {
+    try {
+      const readiness = await checkInstanceReady(
+        inst.providerServerIp,
+        inst.sshPrivateKey,
+      );
+      if (readiness === "ready") {
+        await db
+          .update(instance)
+          .set({ status: "running" })
+          .where(eq(instance.id, inst.id));
+        instanceStatus = "running";
+      } else if (readiness === "error") {
+        await db
+          .update(instance)
+          .set({ status: "error" })
+          .where(eq(instance.id, inst.id));
+        instanceStatus = "error";
+      }
+    } catch {
+      // SSH not ready yet — keep polling
+    }
+  }
+
   return NextResponse.json({
-    instanceStatus: inst.status,
+    instanceStatus,
     hetznerStatus,
     serverIp: inst.providerServerIp,
   });

@@ -2,13 +2,18 @@
  * Cloud-init user data generator for OpenClaw VPS provisioning.
  *
  * Generates a cloud-init YAML script that:
- * 1. Installs OpenClaw via the official installer (includes Node 22)
- * 2. Writes the OpenClaw configuration (~/.openclaw/openclaw.json)
- * 3. Starts the Gateway as a systemd service
- * 4. Calls back to PapayaClaw to report "running" status
+ * 1. Installs jq and OpenClaw from scratch on a fresh Ubuntu 24.04 VPS
+ * 2. Runs `openclaw onboard` to bootstrap the gateway + systemd daemon
+ * 3. Patches the OpenClaw config via `jq` (Telegram channel, model, UI, session)
+ * 4. Restarts the gateway and waits for it to come up
+ * 5. Writes a sentinel file so PapayaClaw can detect readiness via SSH
  *
  * Uses the official install path from https://docs.openclaw.ai/install
- * instead of Docker, cutting deploy time from ~10 min to ~2 min.
+ * instead of Docker.
+ *
+ * Status detection: PapayaClaw polls via SSH for sentinel files:
+ *   /var/tmp/openclaw-ready  → setup succeeded
+ *   /var/tmp/openclaw-error  → setup failed
  */
 
 export interface OpenClawConfig {
@@ -18,279 +23,154 @@ export interface OpenClawConfig {
   modelApiKey: string | null;
   channel: string;
   botToken: string;
-  callbackUrl: string;
-  callbackSecret: string;
   sshPublicKey: string;
 }
 
 /**
- * Generates the OpenClaw JSON configuration.
- */
-function generateOpenClawJson(config: OpenClawConfig): string {
-  const key = config.modelApiKey || "YOUR_API_KEY";
-
-  const modelMap: Record<
-    string,
-    { provider: string; model: string; envKey: string; extraModelsConfig?: any }
-  > = {
-    // Anthropic
-    "claude-opus-4-6": {
-      provider: "anthropic",
-      model: "anthropic/claude-opus-4-6",
-      envKey: "ANTHROPIC_API_KEY",
-    },
-    "claude-sonnet-4-6": {
-      provider: "anthropic",
-      model: "anthropic/claude-sonnet-4-6",
-      envKey: "ANTHROPIC_API_KEY",
-    },
-    "claude-haiku-4-5": {
-      provider: "anthropic",
-      model: "anthropic/claude-haiku-4-5",
-      envKey: "ANTHROPIC_API_KEY",
-    },
-    // OpenAI
-    "gpt-5.2": {
-      provider: "openai",
-      model: "openai/gpt-5.2",
-      envKey: "OPENAI_API_KEY",
-    },
-    "gpt-5.1-codex": {
-      provider: "openai",
-      model: "openai/gpt-5.1-codex",
-      envKey: "OPENAI_API_KEY",
-    },
-    "gpt-5.1-codex-mini": {
-      provider: "openai",
-      model: "openai/gpt-5.1-codex-mini",
-      envKey: "OPENAI_API_KEY",
-    },
-    "gpt-5-mini": {
-      provider: "openai",
-      model: "openai/gpt-5-mini",
-      envKey: "OPENAI_API_KEY",
-    },
-    "gpt-4.1-mini": {
-      provider: "openai",
-      model: "openai/gpt-4.1-mini",
-      envKey: "OPENAI_API_KEY",
-    },
-    // Z.AI
-    "glm-4.7": { provider: "zai", model: "zai/glm-4.7", envKey: "ZAI_API_KEY" },
-    "glm-5": { provider: "zai", model: "zai/glm-5", envKey: "ZAI_API_KEY" },
-    // Mistral
-    "mistral-large-latest": {
-      provider: "mistral",
-      model: "mistral/mistral-large-latest",
-      envKey: "MISTRAL_API_KEY",
-    },
-    // MiniMax
-    "MiniMax-M2.1": {
-      provider: "minimax",
-      model: "minimax/MiniMax-M2.1",
-      envKey: "MINIMAX_API_KEY",
-      extraModelsConfig: {
-        mode: "merge",
-        providers: {
-          minimax: {
-            baseUrl: "https://api.minimax.io/anthropic",
-            apiKey: "${MINIMAX_API_KEY}",
-            api: "anthropic-messages",
-            models: [
-              {
-                id: "MiniMax-M2.1",
-                name: "MiniMax M2.1",
-                reasoning: false,
-                input: ["text"],
-                cost: { input: 15, output: 60, cacheRead: 2, cacheWrite: 10 },
-                contextWindow: 200000,
-                maxTokens: 8192,
-              },
-            ],
-          },
-        },
-      },
-    },
-  };
-
-  let modelInfo = modelMap[config.model];
-
-  // Dynamic override for custom models (OpenRouter, OpenCode Zen)
-  if (config.model.startsWith("openrouter/")) {
-    modelInfo = {
-      provider: "openrouter",
-      model: config.model,
-      envKey: "OPENROUTER_API_KEY",
-    };
-  } else if (config.model.startsWith("opencode/")) {
-    modelInfo = {
-      provider: "opencode",
-      model: config.model,
-      envKey: "OPENCODE_API_KEY",
-    };
-  } else if (!modelInfo) {
-    // Fallback
-    modelInfo = {
-      provider: "openai",
-      model: `openai/${config.model.replace("openai/", "")}`,
-      envKey: "OPENAI_API_KEY",
-    };
-  }
-
-  const jsonConfig: any = {
-    env: {
-      [modelInfo.envKey]: key,
-    },
-    agents: {
-      defaults: {
-        model: {
-          primary: modelInfo.model,
-        },
-      },
-    },
-    gateway: {
-      mode: "local",
-      port: 18789,
-      auth: {
-        mode: "token",
-        token: config.botToken, // Using bot token as gateway token for simplicity
-        allowTailscale: true,
-      },
-      tailscale: {
-        mode: "serve",
-      },
-    },
-    ui: {
-      seamColor: "#FF4500",
-      assistant: {
-        name: config.instanceName,
-      },
-    },
-    session: {
-      dmScope: "per-channel-peer",
-      threadBindings: {
-        enabled: true,
-      },
-      reset: {
-        mode: "daily",
-      },
-    },
-    cron: {
-      enabled: true,
-    },
-    browser: {
-      enabled: true,
-      evaluateEnabled: true,
-    },
-    channels: {},
-  };
-
-  if (modelInfo.extraModelsConfig) {
-    jsonConfig.models = modelInfo.extraModelsConfig;
-  }
-
-  if (config.channel === "telegram") {
-    jsonConfig.channels.telegram = {
-      enabled: true,
-      botToken: config.botToken,
-      dmPolicy: "pairing",
-      groups: { "*": { requireMention: true } },
-    };
-  } else if (config.channel === "discord") {
-    jsonConfig.channels.discord = {
-      enabled: true,
-      token: config.botToken,
-      dmPolicy: "pairing",
-      groups: { "*": { requireMention: true } },
-    };
-  } else {
-    // Default fallback
-    jsonConfig.channels[config.channel] = {
-      enabled: true,
-      botToken: config.botToken,
-    };
-  }
-
-  return JSON.stringify(jsonConfig, null, 2);
-}
-
-/**
- * Generates the full cloud-init user_data YAML script.
+ * Generates the cloud-init user_data YAML script that installs OpenClaw
+ * from scratch on a fresh Ubuntu 24.04 VPS.
  *
- * This script runs on first boot of the Hetzner VPS and:
- * - Installs OpenClaw via the official installer (brings Node 22 + CLI)
- * - Writes the openclaw.json config
- * - Creates a systemd service for the Gateway
- * - Sends a callback to PapayaClaw to mark the instance as "running"
- *
- * All commands run in a single shell block so that `export PATH`
- * persists across steps. Uses `set -euxo pipefail` for strict error
- * handling and logs everything to /var/log/openclaw-setup.log.
+ * Performs a full install (jq, OpenClaw CLI via install.sh), then runs
+ * `openclaw onboard` to configure the system and starts the gateway.
  */
 export function generateCloudInit(config: OpenClawConfig): string {
-  console.log("Passed config", JSON.stringify(config, null, 2));
-  const openclawJson = generateOpenClawJson(config);
+  console.log("config", config);
+  const key = config.modelApiKey || "YOUR_API_KEY";
+  let authChoice = "openai-api-key";
+  let apiKeyFlag = "--openai-api-key";
+  let primaryModel = config.model;
+  let customModelsJson = "";
 
-  const indentedJson = openclawJson
-    .split("\n")
-    .map((line) => `    ${line}`)
-    .join("\n");
+  if (config.model.startsWith("claude")) {
+    authChoice = "apiKey";
+    apiKeyFlag = "--anthropic-api-key";
+    primaryModel = `anthropic/${config.model}`;
+  } else if (
+    config.model.startsWith("gpt-") ||
+    config.model.startsWith("o1-") ||
+    config.model.startsWith("o3-")
+  ) {
+    authChoice = "openai-api-key";
+    apiKeyFlag = "--openai-api-key";
+    primaryModel = `openai/${config.model.replace("openai/", "")}`;
+  } else if (config.model.startsWith("glm-")) {
+    authChoice = "zai-api-key";
+    apiKeyFlag = "--zai-api-key";
+    primaryModel = `zai/${config.model}`;
+  } else if (config.model.startsWith("mistral")) {
+    authChoice = "mistral-api-key";
+    apiKeyFlag = "--mistral-api-key";
+    primaryModel = `mistral/${config.model}`;
+  } else if (
+    config.model.startsWith("MiniMax") ||
+    config.model.startsWith("minimax")
+  ) {
+    authChoice = "minimax-api";
+    apiKeyFlag = "--minimax-api-key";
+    primaryModel = `minimax/${config.model}`;
+    // MiniMax requires a custom models block per OpenClaw docs:
+    // https://docs.openclaw.ai/providers/minimax
+    customModelsJson = JSON.stringify({
+      mode: "merge",
+      providers: {
+        minimax: {
+          baseUrl: "https://api.minimax.io/anthropic",
+          apiKey: "${MINIMAX_API_KEY}",
+          api: "anthropic-messages",
+          models: [
+            {
+              id: "MiniMax-M2.1",
+              name: "MiniMax M2.1",
+              reasoning: false,
+              input: ["text"],
+              cost: { input: 15, output: 60, cacheRead: 2, cacheWrite: 10 },
+              contextWindow: 200000,
+              maxTokens: 8192,
+            },
+          ],
+        },
+      },
+    });
+  } else if (config.model.startsWith("openrouter/")) {
+    authChoice = "openrouter-api-key";
+    apiKeyFlag = "--openrouter-api-key";
+  } else if (config.model.startsWith("opencode/")) {
+    authChoice = "opencode-zen";
+    apiKeyFlag = "--opencode-zen-api-key";
+  } else {
+    // Fallback
+    authChoice = "openai-api-key";
+    apiKeyFlag = "--openai-api-key";
+    if (!primaryModel.includes("/")) {
+      primaryModel = `openai/${config.model.replace("openai/", "")}`;
+    }
+  }
+
+  const customModelsB64 = customModelsJson
+    ? Buffer.from(customModelsJson).toString("base64")
+    : "";
+  const botTokenB64 = Buffer.from(config.botToken).toString("base64");
+  const instanceNameB64 = Buffer.from(config.instanceName).toString("base64");
 
   return `#cloud-config
-package_update: false
+package_update: true
 package_upgrade: false
 
 runcmd:
   - |
-    #!/bin/bash
+    bash -c '
     set -euxo pipefail
     exec > /var/log/openclaw-setup.log 2>&1
+    export HOME=/root
 
-    # On any error, notify PapayaClaw so the dashboard shows "error"
-    error_callback() {
-      curl -sf -X POST "${config.callbackUrl}" \\
-        -H "Content-Type: application/json" \\
-        -H "X-Callback-Secret: ${config.callbackSecret}" \\
-        -d '{"instanceId": "${config.instanceId}", "status": "error"}' || true
-    }
-    trap error_callback ERR
+    # On any error, write sentinel error file
+    trap "echo \\\\$? > /var/tmp/openclaw-error" ERR
 
-    # ── Install OpenClaw (includes Node 22) ──────────────────────────
+    # 0) Install dependencies from scratch
+    apt-get install -y jq
     curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
-    # Make sure we add Node's global bin to PATH, just in case
-    export PATH="/root/.local/bin:$(npm prefix -g 2>/dev/null || echo '/usr/local')/bin:/usr/bin:$PATH"
 
-    # ── Write openclaw.json ──────────────────────────────────────────
+    # Export DBUS and systemd vars to guarantee daemon installation hooks flawlessly
+    export XDG_RUNTIME_DIR=/run/user/0
+    export DBUS_SESSION_BUS_ADDRESS=unix:path=${"$"}{XDG_RUNTIME_DIR}/bus
+    
+    # Pre-emptively enable linger for root so systemd user instances stay active
+    loginctl enable-linger root || true
+
+    # Create workspace so openclaw knows where to put it
     mkdir -p /root/.openclaw/workspace
-    cat > /root/.openclaw/openclaw.json << 'JSONEOF'
-${indentedJson}
-    JSONEOF
 
-    # ── Systemd service ──────────────────────────────────────────────
-    cat > /etc/systemd/system/openclaw-gateway.service << 'SERVICEEOF'
-    [Unit]
-    Description=OpenClaw Gateway
-    After=network-online.target
-    Wants=network-online.target
+    export PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH
 
-    [Service]
-    Type=simple
-    User=root
-    Environment=PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin
-    Environment=HOME=/root
-    ExecStart=/usr/bin/env openclaw gateway --port 18789
-    Restart=always
-    RestartSec=5
+    # 1) Run the official OpenClaw CLI to bootstrap the gateway and systemd daemon
+    openclaw onboard --non-interactive --mode local --auth-choice "${authChoice}" ${apiKeyFlag} "${key}" --gateway-port 18789 --gateway-bind loopback --gateway-auth token --gateway-token "${config.botToken}" --tailscale serve --install-daemon --daemon-runtime node --skip-skills --accept-risk
 
-    [Install]
-    WantedBy=multi-user.target
-    SERVICEEOF
+    # 2) Patch the generated config with jq (Telegram channel, model, UI, session)
+    export BOT_TOKEN_B64="${botTokenB64}"
+    export INSTANCE_NAME_B64="${instanceNameB64}"
+    export CUSTOM_MODELS_B64="${customModelsB64}"
+    export MODEL_ID="${primaryModel}"
 
-    systemctl daemon-reload
-    systemctl enable openclaw-gateway
-    systemctl start openclaw-gateway
+    BOT_TOKEN=$(echo "$BOT_TOKEN_B64" | base64 -d)
+    INSTANCE_NAME=$(echo "$INSTANCE_NAME_B64" | base64 -d)
 
-    # ── Wait for gateway to become healthy (max 60s) ─────────────────
+    # 2a) Patch Telegram channel
+    jq --arg token "$BOT_TOKEN" '.channels.telegram = { enabled: true, botToken: $token, dmPolicy: "pairing", groups: { "*": { requireMention: true } } }' /root/.openclaw/openclaw.json > /tmp/oc.json && mv /tmp/oc.json /root/.openclaw/openclaw.json
+
+    # 2b) Patch model, UI, session, cron, browser
+    jq --arg model "$MODEL_ID" --arg name "$INSTANCE_NAME" '.agents.defaults.model.primary = $model | .ui.assistant.name = $name | .ui.seamColor = "#FF4500" | .session.dmScope = "per-channel-peer" | .session.threadBindings.enabled = true | .session.reset.mode = "daily" | .cron.enabled = true | .browser = { enabled: true, evaluateEnabled: true }' /root/.openclaw/openclaw.json > /tmp/oc.json && mv /tmp/oc.json /root/.openclaw/openclaw.json
+
+    # 2c) Patch MiniMax custom models (only if CUSTOM_MODELS_B64 is set)
+    if [ -n "$CUSTOM_MODELS_B64" ]; then
+      echo "$CUSTOM_MODELS_B64" | base64 -d > /tmp/custom_models.json
+      jq -s ".[0] * { models: .[1] }" /root/.openclaw/openclaw.json /tmp/custom_models.json > /tmp/oc.json && mv /tmp/oc.json /root/.openclaw/openclaw.json
+      rm /tmp/custom_models.json
+    fi
+
+    # 3) Restart the gateway daemon by killing process, systemd Restart=always will kick in
+    pkill -f "openclaw gateway" || true
+
+    # 4) Wait for gateway up
     for i in $(seq 1 12); do
       if curl -sf http://127.0.0.1:18789/ > /dev/null 2>&1; then
         break
@@ -298,10 +178,10 @@ ${indentedJson}
       sleep 5
     done
 
-    # ── Success callback ─────────────────────────────────────────────
-    curl -sf -X POST "${config.callbackUrl}" \\
-      -H "Content-Type: application/json" \\
-      -H "X-Callback-Secret: ${config.callbackSecret}" \\
-      -d '{"instanceId": "${config.instanceId}", "status": "running"}'
+    # 5) Write sentinel file — PapayaClaw detects this via SSH polling
+    trap - ERR
+    touch /var/tmp/openclaw-ready
+    echo "=== OpenClaw setup complete ==="
+    '
 `;
 }
