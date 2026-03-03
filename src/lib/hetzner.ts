@@ -216,7 +216,7 @@ export async function createServer(
   if (sshKeyNames?.length) {
     body.ssh_keys = sshKeyNames;
   }
-  console.log("body", JSON.stringify(body, null, 2));
+
   const res = await hetznerFetch("/servers", {
     method: "POST",
     body: JSON.stringify(body),

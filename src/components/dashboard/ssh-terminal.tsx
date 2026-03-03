@@ -58,8 +58,8 @@ export function SshTerminal({ instanceId }: { instanceId: string }) {
     // Connect socket — use polling only because Next.js API routes
     // don't support WebSocket upgrades natively
     const socket = io({
-      path: "/api/socketio",
-      transports: ["polling"],
+      path: "/api/ssh",
+      transports: ["websocket", "polling"],
       timeout: 20000,
     });
     socketRef.current = socket;
