@@ -6,7 +6,7 @@
   },
   "deploy": {
     "startCommand": "NODE_ENV=production tsx server.ts",
-    "preDeployCommand": "npx drizzle-kit migrate",
+    "preDeployCommand": "npx drizzle-kit push",
     "healthcheckPath": "/",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
