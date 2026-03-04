@@ -188,7 +188,7 @@ export async function deleteSSHKey(keyId: number): Promise<void> {
 /**
  * Creates a new Hetzner Cloud server with cloud-init user_data.
  *
- * Uses CX23 (2 vCPU, 4 GB RAM, 40 GB NVMe) in Nuremberg.
+ * Server type is determined by plan: Basic → cx22, Pro → cx32.
  * The user_data is a cloud-init script that provisions OpenClaw.
  */
 export async function createServer(
@@ -196,12 +196,13 @@ export async function createServer(
   userData: string,
   sshKeyNames?: string[],
   imageId?: string,
+  serverType: string = "cx23",
 ): Promise<HetznerServer> {
   const body: Record<string, unknown> = {
     name,
-    server_type: "cx23",
+    server_type: serverType,
     image: imageId || "ubuntu-24.04",
-    location: "nbg1",
+    location: "hel1",
     start_after_create: true,
     user_data: userData,
     labels: {

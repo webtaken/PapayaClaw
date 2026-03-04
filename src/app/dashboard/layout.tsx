@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import Image from "next/image";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -36,10 +37,17 @@ export default async function DashboardLayout({
           <div className="flex items-center gap-8">
             <Link
               href="/"
-              className="flex items-center gap-2 transition-opacity hover:opacity-80"
+              className="flex items-center gap-3 transition-transform hover:scale-105"
             >
-              <span className="text-xl font-bold tracking-tight text-white">
-                🥭 PapayaClaw
+              <Image
+                src="/papayaclaw.png"
+                width={56}
+                height={56}
+                alt="PapayaClaw Logo"
+                className="object-contain"
+              />
+              <span className="text-2xl font-bold tracking-tight text-white uppercase">
+                PapayaClaw
               </span>
             </Link>
             <nav className="hidden items-center gap-6 sm:flex">

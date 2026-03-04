@@ -5,6 +5,7 @@ import { eq, desc } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { createServer, uploadSSHKey } from "@/lib/hetzner";
+import { getUserSubscription } from "@/lib/polar";
 import {
   createTunnel,
   configureTunnel,
@@ -57,6 +58,12 @@ export async function GET() {
   return NextResponse.json(instances);
 }
 
+// Maps plan type → Hetzner server type
+const PLAN_SERVER_TYPE: Record<string, string> = {
+  basic: "cx23",
+  pro: "cx33",
+};
+
 export async function POST(request: Request) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -65,6 +72,20 @@ export async function POST(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  // Require an active subscription to deploy
+  const subscription = await getUserSubscription(session.user.id);
+  if (!subscription) {
+    return NextResponse.json(
+      {
+        error:
+          "An active subscription is required to deploy an instance. Please subscribe to a plan first.",
+      },
+      { status: 403 },
+    );
+  }
+
+  const serverType = PLAN_SERVER_TYPE[subscription.planType] || "cx22";
 
   const body = await request.json();
   const { name, model, modelApiKey, channel, botToken } = body;
@@ -177,7 +198,13 @@ export async function POST(request: Request) {
 
     // 7. Provision the Hetzner VPS
     const serverName = `papayaclaw-${newInstance.id.slice(0, 8)}`;
-    const server = await createServer(serverName, userData, [hetznerKey.name]);
+    const server = await createServer(
+      serverName,
+      userData,
+      [hetznerKey.name],
+      undefined,
+      serverType,
+    );
 
     // 8. Store VPS + Cloudflare metadata
     const [updated] = await db

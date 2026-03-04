@@ -110,23 +110,19 @@ export async function listPairingRequests(
 
   try {
     const raw = JSON.parse(stdout.trim());
-    console.log(raw);
-    // The pairing file is typically an array of objects or keyed by code
-    if (Array.isArray(raw)) {
-      return raw.map((entry: any) => ({
-        code: entry.code || "",
-        senderId: String(entry.senderId || entry.from?.id || ""),
-        senderName: entry.senderName || entry.from?.first_name || null,
-        timestamp:
-          entry.timestamp || entry.createdAt || new Date().toISOString(),
-      }));
-    }
-    // If it's an object keyed by code
-    return Object.entries(raw).map(([code, entry]: [string, any]) => ({
-      code,
-      senderId: String(entry.senderId || entry.from?.id || ""),
-      senderName: entry.senderName || entry.from?.first_name || null,
-      timestamp: entry.timestamp || entry.createdAt || new Date().toISOString(),
+
+    // The pairing file uses { version, requests: [...] } schema
+    const requests: any[] = Array.isArray(raw)
+      ? raw
+      : Array.isArray(raw.requests)
+        ? raw.requests
+        : [];
+
+    return requests.map((entry: any) => ({
+      code: entry.code || "",
+      senderId: String(entry.id || ""),
+      senderName: entry.meta?.firstName || entry.meta?.username || null,
+      timestamp: entry.createdAt || new Date().toISOString(),
     }));
   } catch {
     return [];

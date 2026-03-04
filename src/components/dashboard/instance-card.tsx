@@ -140,6 +140,18 @@ const statusConfig: Record<
   },
 };
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 export function InstanceCard({
   instance,
   onStatusChange,
@@ -162,107 +174,147 @@ export function InstanceCard({
   const [pairingOpen, setPairingOpen] = useState(false);
 
   return (
-    <div className="card-glow rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 transition-all duration-300">
+    <div className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl h-full transition-all duration-300 hover:border-zinc-700">
       {/* Top row: name + status */}
-      <div className="mb-4 flex items-start justify-between">
-        <h3 className="text-lg font-semibold text-white">{instance.name}</h3>
+      <div className="flex items-center justify-between border-b border-zinc-800/80 bg-zinc-900/20 px-4 py-3">
+        <div className="flex flex-col min-w-0 pr-3">
+          <h3 className="text-sm font-medium tracking-tight text-white mb-0.5 truncate">
+            {instance.name}
+          </h3>
+          <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest truncate">
+            {new Date(instance.createdAt).toISOString().split("T")[0]}
+          </p>
+        </div>
         <Badge
           variant="outline"
-          className={`gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${status.className}`}
+          className={`shrink-0 gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider ${status.className}`}
         >
-          <span className={`h-1.5 w-1.5 rounded-full ${status.dotClass}`} />
+          <span className={`h-1 w-1 rounded-full ${status.dotClass}`} />
           {status.label}
         </Badge>
       </div>
 
-      {/* Model + Channel */}
-      <div className="mb-4 grid grid-cols-2 gap-3">
-        <div className="rounded-lg bg-zinc-800/40 px-3 py-2">
-          <p className="mb-0.5 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
-            Model
-          </p>
-          <p className="flex items-center gap-1.5 text-sm text-zinc-300">
-            <span className="text-xs">{model.icon}</span>
-            {model.name}
-          </p>
+      <div className="p-4 flex flex-col flex-1 gap-4">
+        {/* Model + Channel */}
+        <div className="grid grid-cols-2 gap-px bg-zinc-800/50 border border-zinc-800/50 rounded-lg overflow-hidden shrink-0">
+          <div className="bg-zinc-950/80 p-3 flex flex-col gap-1.5">
+            <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+              Model
+            </span>
+            <span className="flex items-center gap-1.5 text-xs text-zinc-300">
+              <span className="text-[10px] text-zinc-400 shrink-0">
+                {model.icon}
+              </span>
+              <span className="truncate">{model.name}</span>
+            </span>
+          </div>
+          <div className="bg-zinc-950/80 p-3 flex flex-col gap-1.5">
+            <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+              Channel
+            </span>
+            <span className="flex items-center gap-1.5 text-xs text-zinc-300">
+              <span className="text-[10px] text-zinc-400 shrink-0">
+                {channel.icon}
+              </span>
+              <span className="truncate">{channel.name}</span>
+            </span>
+          </div>
         </div>
-        <div className="rounded-lg bg-zinc-800/40 px-3 py-2">
-          <p className="mb-0.5 text-[11px] font-medium uppercase tracking-wider text-zinc-500">
-            Channel
-          </p>
-          <p className="flex items-center gap-1.5 text-sm text-zinc-300">
-            <span className="text-xs">{channel.icon}</span>
-            {channel.name}
-          </p>
-        </div>
-      </div>
 
-      {/* Created date */}
-      <p className="mb-4 text-xs text-zinc-500">
-        Created{" "}
-        {new Date(instance.createdAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-        })}
-      </p>
+        {/* Actions */}
+        <div className="mt-auto grid grid-cols-2 gap-2 pt-2">
+          {!isDeploying && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                onStatusChange(instance.id, isRunning ? "stopped" : "running")
+              }
+              className="cursor-pointer gap-1.5 rounded-lg border-zinc-800 bg-zinc-900/50 text-[10px] font-mono uppercase tracking-wider text-zinc-400 transition-all hover:border-zinc-700 hover:bg-zinc-800 hover:text-white h-8 shadow-none"
+            >
+              {isRunning ? (
+                <>
+                  <Square className="h-3 w-3" />
+                  Stop
+                </>
+              ) : (
+                <>
+                  <Play className="h-3 w-3" />
+                  Start
+                </>
+              )}
+            </Button>
+          )}
 
-      {/* Actions */}
-      <div className="flex items-center gap-2">
-        {!isDeploying && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() =>
-              onStatusChange(instance.id, isRunning ? "stopped" : "running")
+          {isRunning && isTelegram && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPairingOpen(true)}
+              className="cursor-pointer gap-1.5 rounded-lg border-amber-500/20 bg-amber-500/5 text-[10px] font-mono uppercase tracking-wider text-amber-500/90 transition-all hover:border-amber-500/40 hover:bg-amber-500/10 hover:text-amber-400 h-8 shadow-none"
+            >
+              <Shield className="h-3 w-3" />
+              Pairing
+            </Button>
+          )}
+
+          <Link
+            href={`/dashboard/${instance.id}`}
+            className={
+              !isDeploying && (!isRunning || !isTelegram)
+                ? "col-span-1"
+                : isDeploying
+                  ? "col-span-2"
+                  : "col-span-2"
             }
-            className="cursor-pointer gap-1.5 rounded-lg border-zinc-700 bg-zinc-800/50 text-xs text-zinc-300 transition-all hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
           >
-            {isRunning ? (
-              <>
-                <Square className="h-3 w-3" />
-                Stop
-              </>
-            ) : (
-              <>
-                <Play className="h-3 w-3" />
-                Start
-              </>
-            )}
-          </Button>
-        )}
-        {isRunning && isTelegram && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPairingOpen(true)}
-            className="cursor-pointer gap-1.5 rounded-lg border-violet-500/30 bg-violet-500/10 text-xs text-violet-300 transition-all hover:border-violet-500/50 hover:bg-violet-500/20 hover:text-violet-200"
-          >
-            <Shield className="h-3 w-3" />
-            Pairing
-          </Button>
-        )}
-        <Link href={`/dashboard/${instance.id}`}>
-          <Button
-            variant="outline"
-            size="sm"
-            className="cursor-pointer gap-1.5 rounded-lg border-zinc-700 bg-zinc-800/50 text-xs text-zinc-300 transition-all hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
-          >
-            <Eye className="h-3 w-3" />
-            View
-          </Button>
-        </Link>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onDelete(instance.id)}
-          className="cursor-pointer gap-1.5 rounded-lg border-zinc-700 bg-zinc-800/50 text-xs text-red-400 transition-all hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
-        >
-          <Trash2 className="h-3 w-3" />
-          Delete
-        </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full cursor-pointer gap-1.5 rounded-lg border-zinc-800 bg-zinc-900/50 text-[10px] font-mono uppercase tracking-wider text-zinc-400 transition-all hover:border-zinc-700 hover:bg-zinc-800 hover:text-white h-8 shadow-none"
+            >
+              <Eye className="h-3 w-3" />
+              View
+            </Button>
+          </Link>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="col-span-2 cursor-pointer gap-1.5 rounded-lg border-red-500/20 bg-red-500/5 text-[10px] font-mono uppercase tracking-wider text-red-400 transition-all hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-300 h-8 shadow-none mt-1"
+              >
+                <Trash2 className="h-3 w-3" />
+                Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="bg-zinc-950 border-zinc-800 font-sans">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-white">
+                  Delete Instance
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-zinc-400 text-sm">
+                  Are you sure you want to delete{" "}
+                  <span className="text-white font-mono">{instance.name}</span>?
+                  This action cannot be undone. All data and configuration will
+                  be permanently lost.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="mt-4">
+                <AlertDialogCancel className="bg-zinc-900/50 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-white font-mono text-[10px] uppercase tracking-wider px-6 h-9 transition-colors">
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => onDelete(instance.id)}
+                  className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/40 font-mono text-[10px] uppercase tracking-wider px-6 h-9 transition-colors shadow-none"
+                >
+                  Confirm Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
       {/* Pairing Dialog */}

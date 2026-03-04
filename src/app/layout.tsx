@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Syne, DM_Sans } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const syne = Syne({
+  variable: "--font-syne",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "PapayaClaw — Deploy OpenClaw under 1 Minute",
+  title: "PapayaClaw — Deploy Secure OpenClaw Instances in a Few Minutes",
   description:
-    "Deploy OpenClaw under 1 minute. Avoid all technical complexity and one-click deploy your own 24/7 active OpenClaw instance.",
+    "Deploy secure OpenClaw instances in a few minutes. Avoid all technical complexity and one-click deploy your own 24/7 active OpenClaw instance.",
 };
 
 export default function RootLayout({
@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${syne.variable} ${dmSans.variable} font-sans antialiased`}
       >
         {children}
       </body>

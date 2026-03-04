@@ -85,3 +85,23 @@ export const instance = pgTable("instance", {
     .defaultNow()
     .$onUpdate(() => new Date()),
 });
+
+export const subscription = pgTable("subscription", {
+  id: text("id").primaryKey(), // Polar subscription ID
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id),
+  polarCustomerId: text("polar_customer_id").notNull(),
+  productId: text("product_id").notNull(),
+  priceId: text("price_id"),
+  planType: text("plan_type").notNull(), // 'basic' | 'pro'
+  status: text("status").notNull().default("incomplete"), // 'active' | 'canceled' | 'past_due' | 'revoked' | 'incomplete'
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});

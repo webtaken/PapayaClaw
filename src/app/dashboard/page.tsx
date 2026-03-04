@@ -5,6 +5,7 @@ import { eq, desc } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
+import { getUserSubscription } from "@/lib/polar";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({
@@ -15,11 +16,20 @@ export default async function DashboardPage() {
     redirect("/");
   }
 
-  const instances = await db
-    .select()
-    .from(instance)
-    .where(eq(instance.userId, session.user.id))
-    .orderBy(desc(instance.createdAt));
+  const [instances, currentSubscription] = await Promise.all([
+    db
+      .select()
+      .from(instance)
+      .where(eq(instance.userId, session.user.id))
+      .orderBy(desc(instance.createdAt)),
+    getUserSubscription(session.user.id),
+  ]);
 
-  return <DashboardContent initialInstances={instances} />;
+  return (
+    <DashboardContent
+      initialInstances={instances}
+      subscription={currentSubscription}
+      user={{ id: session.user.id, email: session.user.email }}
+    />
+  );
 }

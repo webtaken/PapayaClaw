@@ -1,5 +1,7 @@
 "use client";
 
+import { toast } from "sonner";
+
 import { useEffect, useState, useCallback, ReactNode } from "react";
 import useSWR from "swr";
 import dynamic from "next/dynamic";
@@ -13,6 +15,7 @@ import {
   RefreshCw,
   Check,
   MessageCircle,
+  ShieldAlert,
 } from "lucide-react";
 import Link from "next/link";
 import { ClaudeAI } from "@/components/icons/claudeai";
@@ -287,6 +290,10 @@ export function InstanceDetail({
         if (res.ok) {
           // Remove the approved request from the list
           setPairingRequests((prev) => prev.filter((r) => r.code !== code));
+          toast.success("Pairing approved!", {
+            description:
+              "You can now start chatting with your agent through Telegram.",
+          });
         } else {
           const err = await res.json().catch(() => ({}));
           setPairingError(err.error || "Failed to approve");
@@ -477,6 +484,13 @@ export function InstanceDetail({
                     interact with your agent, view internal logs, manage skills,
                     and monitor inference metrics.
                   </p>
+                  <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+                    <ShieldAlert className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+                    <p className="text-xs text-amber-400/90 leading-relaxed font-mono">
+                      Do not share this web interface with anyone — this is your
+                      secret control panel.
+                    </p>
+                  </div>
                   <div className="shrink-0 mt-auto">
                     <a
                       href={`https://${instance.cfTunnelHostname}/?token=${encodeURIComponent(instance.botToken)}`}
@@ -531,6 +545,14 @@ export function InstanceDetail({
                 </div>
 
                 <div className="p-6 flex-1 flex flex-col">
+                  <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+                    <ShieldAlert className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+                    <p className="text-xs text-amber-400/90 leading-relaxed font-mono">
+                      If you see pairing codes you don&apos;t recognize, ignore
+                      them — do not approve anything. This is the door to your
+                      agent.
+                    </p>
+                  </div>
                   {pairingError ? (
                     <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-xs font-mono text-red-400">
                       {pairingError}

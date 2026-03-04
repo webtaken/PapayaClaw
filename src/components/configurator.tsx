@@ -74,7 +74,6 @@ const channels = [
 export function Configurator() {
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
-  const [serversLeft] = useState(11);
 
   const handleSignIn = async () => {
     try {
@@ -88,8 +87,8 @@ export function Configurator() {
   };
 
   return (
-    <section className="animate-fade-in-up-delay-2 mx-auto max-w-3xl px-6 pb-16">
-      <div className="card-glow overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8">
+    <section className="animate-slide-up-fade-delay-2 mx-auto max-w-3xl px-6 pb-16 pt-16 relative z-10">
+      <div className="neo-card border-2 border-border bg-[#18191f] p-8 neo-shadow">
         {/* Provider Selection */}
         <div className="mb-8">
           <h2 className="mb-4 text-center text-lg font-semibold text-white">
@@ -100,13 +99,13 @@ export function Configurator() {
               <button
                 key={provider.id}
                 onClick={() => setSelectedProvider(provider.id)}
-                className={`flex flex-col items-center justify-center gap-2 rounded-xl border p-3 text-center transition-all duration-300 ${
+                className={`neo-card flex flex-col items-center justify-center gap-2 border-2 p-4 text-center ${
                   selectedProvider === provider.id
-                    ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
-                    : "border-zinc-700/50 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                    ? "option-selected bg-secondary text-black"
+                    : "border-border bg-[#0f1014] text-zinc-300 hover:border-primary hover:text-white neo-card-hover"
                 }`}
               >
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-center scale-125 mb-1 transition-transform group-hover:scale-150">
                   {provider.icon}
                 </div>
                 <span className="text-xs font-medium">{provider.name}</span>
@@ -125,14 +124,16 @@ export function Configurator() {
               <button
                 key={channel.id}
                 onClick={() => setSelectedChannel(channel.id)}
-                className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-300 ${
+                className={`neo-card flex items-center gap-4 border-2 px-5 py-4 text-left ${
                   selectedChannel === channel.id
-                    ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
-                    : "border-zinc-700/50 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                    ? "option-selected bg-secondary text-black"
+                    : "border-border bg-[#0f1014] text-zinc-300 hover:border-primary hover:text-white neo-card-hover"
                 }`}
               >
-                <span className="text-xl">{channel.icon}</span>
-                <span className="text-sm font-medium">{channel.name}</span>
+                <span className="text-2xl scale-110">{channel.icon}</span>
+                <span className="text-base font-bold uppercase tracking-wide">
+                  {channel.name}
+                </span>
               </button>
             ))}
           </div>
@@ -142,9 +143,9 @@ export function Configurator() {
         <div className="flex flex-col items-center gap-4">
           <Button
             onClick={handleSignIn}
-            className="w-full max-w-sm cursor-pointer rounded-xl bg-white px-6 py-3 text-base font-semibold text-black shadow-lg transition-all duration-300 hover:bg-zinc-100 hover:shadow-xl sm:w-auto"
+            className="w-full max-w-md cursor-pointer border-2 border-black bg-white px-8 py-6 text-lg font-bold uppercase tracking-widest text-black transition-all hover:-translate-y-1 hover:bg-zinc-100 hover:neo-shadow sm:w-auto neo-shadow-sm"
           >
-            <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+            <svg className="mr-3 h-6 w-6" viewBox="0 0 24 24">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
                 fill="#4285F4"
@@ -164,15 +165,11 @@ export function Configurator() {
             </svg>
             Sign in with Google
           </Button>
-          <p className="max-w-sm text-center text-xs leading-relaxed text-zinc-500">
+          <p className="max-w-sm text-center text-sm leading-relaxed text-zinc-400 mt-2 font-medium">
             Sign in to deploy your AI assistant and connect your channels.
             <br />
-            <span className="text-zinc-400">
-              Limited cloud servers — only{" "}
-              <span className="font-semibold text-amber-400">
-                {serversLeft}
-              </span>{" "}
-              left
+            <span className="mt-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-primary ring-1 ring-primary/30">
+              Limited cloud servers
             </span>
           </p>
         </div>

@@ -11,36 +11,40 @@ const traditionalSteps = [
 
 export function Comparison() {
   return (
-    <section className="mx-auto max-w-5xl px-6 py-20">
-      <h2 className="mb-12 text-center text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+    <section className="mx-auto max-w-6xl px-6 py-24 border-t-2 border-border bg-gradient-mesh">
+      <h2 className="mb-16 text-center text-4xl font-extrabold uppercase tracking-tight text-white sm:text-5xl">
         Traditional Method vs{" "}
-        <span className="bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">
+        <span className="text-secondary drop-shadow-[2px_2px_0_rgba(255,87,34,1)]">
           PapayaClaw
         </span>
       </h2>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Traditional Column */}
-        <div className="card-glow rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-          <h3 className="mb-6 text-lg font-semibold text-red-400">
+        <div className="neo-card flex flex-col rounded-none border-2 border-border bg-[#0f1014] p-8 neo-shadow transition-transform hover:-translate-y-1">
+          <h3 className="mb-8 text-2xl font-bold uppercase text-zinc-500">
             Traditional
           </h3>
           <div className="space-y-3">
             {traditionalSteps.map((step, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between rounded-lg border border-zinc-800/50 bg-zinc-800/30 px-4 py-2.5 transition-colors hover:bg-zinc-800/60"
+                className="flex items-center justify-between border-b-2 border-border py-4"
               >
-                <span className="text-sm text-zinc-300">{step.label}</span>
-                <span className="ml-4 whitespace-nowrap text-sm font-medium text-red-400/80">
+                <span className="text-base font-medium text-zinc-400">
+                  {step.label}
+                </span>
+                <span className="ml-4 whitespace-nowrap text-base font-bold text-zinc-500">
                   {step.time}
                 </span>
               </div>
             ))}
           </div>
-          <div className="mt-6 flex items-center justify-between border-t border-zinc-800 pt-4">
-            <span className="text-sm font-medium text-zinc-400">Total</span>
-            <span className="text-lg font-bold text-red-400">60 min</span>
+          <div className="mt-8 flex items-center justify-between bg-zinc-900 px-4 py-3 border-2 border-zinc-800">
+            <span className="text-lg font-bold uppercase text-zinc-500">
+              Total
+            </span>
+            <span className="text-xl font-black text-zinc-500">60 min</span>
           </div>
           <p className="mt-3 text-xs leading-relaxed text-zinc-500">
             If you&apos;re non-technical, multiply these times by 10 — you have
@@ -49,20 +53,21 @@ export function Comparison() {
         </div>
 
         {/* PapayaClaw Column */}
-        <div className="card-glow flex flex-col items-center justify-center rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-500/5 to-blue-500/5 p-6">
-          <h3 className="mb-6 text-lg font-semibold text-violet-400">
+        <div className="neo-card flex flex-col justify-center rounded-none border-2 border-primary bg-[#ff5722]/5 p-8 neo-shadow-lime transition-transform hover:-translate-y-1">
+          <h3 className="mb-8 text-2xl font-bold uppercase text-white drop-shadow-[2px_2px_0_rgba(255,87,34,1)]">
             PapayaClaw
           </h3>
-          <div className="animate-float mb-6 flex items-center gap-3">
-            <span className="text-6xl font-bold tracking-tight text-white sm:text-7xl">
-              &lt;1
+          <div className="animate-float mb-8 flex items-center gap-4">
+            <span className="text-5xl font-black tracking-tighter text-secondary [-webkit-text-stroke:2px_#000] drop-shadow-[4px_4px_0_rgba(255,87,34,1)]">
+              FEW
             </span>
-            <span className="text-2xl font-semibold text-zinc-400 sm:text-3xl">
-              min
+            <span className="text-3xl font-bold uppercase text-primary">
+              mins
             </span>
           </div>
-          <p className="mb-8 max-w-sm text-center text-sm leading-relaxed text-zinc-400">
-            Pick a model, connect Telegram, deploy — done under 1 minute.
+          <p className="mb-10 text-lg font-medium leading-relaxed text-zinc-300 border-l-4 border-secondary pl-4">
+            Pick a model, connect Telegram, deploy — spinning up your secure
+            instance in a few minutes.
           </p>
           <div className="w-full space-y-3">
             {[
@@ -72,10 +77,14 @@ export function Comparison() {
             ].map((benefit, i) => (
               <div
                 key={i}
-                className="flex items-center gap-3 rounded-lg bg-zinc-800/30 px-4 py-2.5"
+                className="flex items-center gap-4 border-b-2 border-primary/30 py-4 last:border-0"
               >
-                <span className="text-green-400">✓</span>
-                <span className="text-sm text-zinc-300">{benefit}</span>
+                <div className="flex h-8 w-8 items-center justify-center rounded-none border-2 border-secondary bg-secondary text-black font-bold">
+                  ✓
+                </div>
+                <span className="text-base font-bold text-white">
+                  {benefit}
+                </span>
               </div>
             ))}
           </div>
