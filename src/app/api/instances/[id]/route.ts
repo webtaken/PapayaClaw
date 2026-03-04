@@ -5,6 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { deleteServer, powerOn, powerOff, deleteSSHKey } from "@/lib/hetzner";
+import { deleteTunnel, deleteDnsRecord } from "@/lib/cloudflare";
 
 export async function GET(
   _request: Request,
@@ -133,6 +134,24 @@ export async function DELETE(
       await deleteSSHKey(current.providerSshKeyId);
     } catch (error) {
       console.error("Hetzner SSH key delete failed:", error);
+    }
+  }
+
+  // Delete the Cloudflare DNS record (if it exists)
+  if (current.cfDnsRecordId) {
+    try {
+      await deleteDnsRecord(current.cfDnsRecordId);
+    } catch (error) {
+      console.error("Cloudflare DNS record delete failed:", error);
+    }
+  }
+
+  // Delete the Cloudflare Tunnel (if it exists)
+  if (current.cfTunnelId) {
+    try {
+      await deleteTunnel(current.cfTunnelId);
+    } catch (error) {
+      console.error("Cloudflare tunnel delete failed:", error);
     }
   }
 

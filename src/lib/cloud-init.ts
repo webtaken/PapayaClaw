@@ -30,6 +30,8 @@ export interface OpenClawConfig {
   channel: string;
   botToken: string;
   sshPublicKey: string;
+  tunnelToken: string;
+  tunnelHostname: string;
 }
 
 /**
@@ -153,7 +155,7 @@ mkdir -p /root/.openclaw/workspace
 export PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH
 
 # 1) Run the official OpenClaw CLI to bootstrap the gateway and systemd daemon
-openclaw onboard --non-interactive --mode local --auth-choice "${authChoice}" ${apiKeyFlag} "${key}" --gateway-port 18789 --gateway-bind loopback --gateway-auth token --gateway-token "${config.botToken}" --tailscale serve --install-daemon --daemon-runtime node --skip-skills --accept-risk
+openclaw onboard --non-interactive --mode local --auth-choice "${authChoice}" ${apiKeyFlag} "${key}" --gateway-port 18789 --gateway-bind loopback --gateway-auth token --gateway-token "${config.botToken}" --install-daemon --daemon-runtime node --skip-skills --accept-risk
 
 # 2) Patch the generated config with jq (Telegram channel, model, UI, session)
 export BOT_TOKEN_B64="${botTokenB64}"
@@ -167,8 +169,8 @@ INSTANCE_NAME=$(echo "$INSTANCE_NAME_B64" | base64 -d)
 # 2a) Patch Telegram channel
 jq --arg token "$BOT_TOKEN" '.channels.telegram = { enabled: true, botToken: $token, dmPolicy: "pairing", groups: { "*": { requireMention: true } } }' /root/.openclaw/openclaw.json > /run/oc.json && mv /run/oc.json /root/.openclaw/openclaw.json
 
-# 2b) Patch model, UI, session, cron, browser
-jq --arg model "$MODEL_ID" --arg name "$INSTANCE_NAME" '.agents.defaults.model.primary = $model | .ui.assistant.name = $name | .ui.seamColor = "#FF4500" | .session.dmScope = "per-channel-peer" | .session.threadBindings.enabled = true | .session.reset.mode = "daily" | .cron.enabled = true | .browser = { enabled: true, evaluateEnabled: true }' /root/.openclaw/openclaw.json > /run/oc.json && mv /run/oc.json /root/.openclaw/openclaw.json
+# 2b) Patch model, UI, session, cron, browser, and Control UI for remote access
+jq --arg model "$MODEL_ID" --arg name "$INSTANCE_NAME" --arg origin "https://${config.tunnelHostname}" '.agents.defaults.model.primary = $model | .ui.assistant.name = $name | .ui.seamColor = "#FF4500" | .session.dmScope = "per-channel-peer" | .session.threadBindings.enabled = true | .session.reset.mode = "daily" | .cron.enabled = true | .browser = { enabled: true, evaluateEnabled: true } | .gateway.controlUi.enabled = true | .gateway.controlUi.dangerouslyDisableDeviceAuth = true | .gateway.controlUi.allowedOrigins = [$origin]' /root/.openclaw/openclaw.json > /run/oc.json && mv /run/oc.json /root/.openclaw/openclaw.json
 
 # 2c) Patch MiniMax custom models (only if CUSTOM_MODELS_B64 is set)
 if [ -n "$CUSTOM_MODELS_B64" ]; then
@@ -188,7 +190,15 @@ for i in $(seq 1 12); do
   sleep 5
 done
 
-# 5) Write sentinel file — PapayaClaw detects this via SSH polling
+# 5) Install cloudflared and set up Cloudflare Tunnel
+curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared noble main' | tee /etc/apt/sources.list.d/cloudflared.list
+apt-get update && apt-get install -y cloudflared
+
+# Install cloudflared as a systemd service with the tunnel token
+cloudflared service install ${config.tunnelToken}
+
+# 6) Write sentinel file — PapayaClaw detects this via SSH polling
 trap - ERR
 touch /var/tmp/openclaw-ready
 echo "=== OpenClaw setup complete ==="`;

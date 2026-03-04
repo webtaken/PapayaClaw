@@ -73,6 +73,9 @@ export const instance = pgTable("instance", {
   providerSshKeyId: integer("provider_ssh_key_id"),
   callbackSecret: text("callback_secret"),
   sshPrivateKey: text("ssh_private_key"),
+  cfTunnelId: text("cf_tunnel_id"),
+  cfDnsRecordId: text("cf_dns_record_id"),
+  cfTunnelHostname: text("cf_tunnel_hostname"),
   userId: text("user_id")
     .notNull()
     .references(() => user.id),

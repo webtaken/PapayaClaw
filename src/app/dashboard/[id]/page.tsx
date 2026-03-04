@@ -30,5 +30,12 @@ export default async function InstancePage({
     notFound();
   }
 
-  return <InstanceDetail initialInstance={inst} />;
+  return (
+    <InstanceDetail
+      initialInstance={{
+        ...inst,
+        createdAt: inst.createdAt,
+      }}
+    />
+  );
 }

@@ -110,6 +110,7 @@ export async function listPairingRequests(
 
   try {
     const raw = JSON.parse(stdout.trim());
+    console.log(raw);
     // The pairing file is typically an array of objects or keyed by code
     if (Array.isArray(raw)) {
       return raw.map((entry: any) => ({

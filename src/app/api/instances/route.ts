@@ -5,6 +5,14 @@ import { eq, desc } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { createServer, uploadSSHKey } from "@/lib/hetzner";
+import {
+  createTunnel,
+  configureTunnel,
+  deleteTunnel,
+  createDnsRecord,
+  deleteDnsRecord,
+  instanceSubdomain,
+} from "@/lib/cloudflare";
 import { generateCloudInit } from "@/lib/cloud-init";
 import { pollInstanceUntilReady } from "@/lib/instance-poller";
 import { execSync } from "node:child_process";
@@ -126,27 +134,52 @@ export async function POST(request: Request) {
     })
     .returning();
 
-  // 2. Build the cloud-init script (no callback — PapayaClaw polls via SSH)
-  const userData = generateCloudInit({
-    instanceId: newInstance.id,
-    instanceName: newInstance.name,
-    model,
-    modelApiKey: activeApiKey,
-    channel,
-    botToken,
-    sshPublicKey: sshPublicKey,
-  });
+  // Track Cloudflare resources for rollback
+  let cfTunnelId: string | null = null;
+  let cfDnsRecordId: string | null = null;
+  let cfTunnelHostname: string | null = null;
 
   try {
-    // 3. Upload SSH key to Hetzner (native injection, works without cloud-init)
+    // 2. Create Cloudflare Tunnel
+    const tunnelName = `papayaclaw-${newInstance.id.slice(0, 8)}`;
+    const subdomain = instanceSubdomain(newInstance.id);
+    const { tunnelId, tunnelToken } = await createTunnel(tunnelName);
+    cfTunnelId = tunnelId;
+
+    // 3. Configure tunnel ingress (hostname → localhost:18789)
+    const hostname = `${subdomain}.papayaclaw.com`;
+    await configureTunnel(tunnelId, hostname);
+
+    // 4. Create DNS CNAME record
+    const { recordId, hostname: fullHostname } = await createDnsRecord(
+      subdomain,
+      tunnelId,
+    );
+    cfDnsRecordId = recordId;
+    cfTunnelHostname = fullHostname;
+
+    // 5. Build the cloud-init script (includes cloudflared setup)
+    const userData = generateCloudInit({
+      instanceId: newInstance.id,
+      instanceName: newInstance.name,
+      model,
+      modelApiKey: activeApiKey,
+      channel,
+      botToken,
+      sshPublicKey: sshPublicKey,
+      tunnelToken,
+      tunnelHostname: fullHostname,
+    });
+
+    // 6. Upload SSH key to Hetzner (native injection, works without cloud-init)
     const sshKeyName = `papayaclaw-${newInstance.id.slice(0, 8)}`;
     const hetznerKey = await uploadSSHKey(sshKeyName, sshPublicKey);
 
-    // 4. Provision the Hetzner VPS
+    // 7. Provision the Hetzner VPS
     const serverName = `papayaclaw-${newInstance.id.slice(0, 8)}`;
     const server = await createServer(serverName, userData, [hetznerKey.name]);
 
-    // 5. Store VPS metadata + SSH key
+    // 8. Store VPS + Cloudflare metadata
     const [updated] = await db
       .update(instance)
       .set({
@@ -154,11 +187,14 @@ export async function POST(request: Request) {
         providerServerIp: server.public_net.ipv4.ip,
         providerSshKeyId: hetznerKey.id,
         sshPrivateKey: sshPrivateKey,
+        cfTunnelId,
+        cfDnsRecordId,
+        cfTunnelHostname,
       })
       .where(eq(instance.id, newInstance.id))
       .returning();
 
-    // 6. Fire-and-forget: poll via SSH until cloud-init finishes
+    // 9. Fire-and-forget: poll via SSH until cloud-init finishes
     pollInstanceUntilReady(
       newInstance.id,
       server.public_net.ipv4.ip,
@@ -167,10 +203,26 @@ export async function POST(request: Request) {
 
     return NextResponse.json(updated, { status: 201 });
   } catch (error) {
-    // If provisioning fails, remove the instance
+    // Rollback Cloudflare resources if provisioning fails
+    if (cfDnsRecordId) {
+      try {
+        await deleteDnsRecord(cfDnsRecordId);
+      } catch (e) {
+        console.error("Cloudflare DNS record cleanup failed:", e);
+      }
+    }
+    if (cfTunnelId) {
+      try {
+        await deleteTunnel(cfTunnelId);
+      } catch (e) {
+        console.error("Cloudflare tunnel cleanup failed:", e);
+      }
+    }
+
+    // Remove the instance from DB
     await db.delete(instance).where(eq(instance.id, newInstance.id));
 
-    console.error("Hetzner provisioning failed:", error);
+    console.error("Instance provisioning failed:", error);
     return NextResponse.json(
       {
         error: "Failed to provision server",

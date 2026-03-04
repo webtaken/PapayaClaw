@@ -86,5 +86,6 @@ export async function GET(
     instanceStatus,
     hetznerStatus,
     serverIp: inst.providerServerIp,
+    gatewayToken: inst.botToken,
   });
 }

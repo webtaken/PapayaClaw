@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import type { Instance } from "./dashboard-content";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Square, Play, Trash2, Shield } from "lucide-react";
+import { Square, Play, Trash2, Shield, Eye } from "lucide-react";
 import { PairingDialog } from "./pairing-dialog";
 import { ClaudeAI } from "@/components/icons/claudeai";
 import { OpenAI } from "@/components/icons/openai";
@@ -12,6 +12,11 @@ import { MistralAI } from "@/components/icons/mistralai";
 import { OpenRouter } from "@/components/icons/openrouter";
 import { OpenCode } from "@/components/icons/opencode";
 import Image from "next/image";
+import Link from "next/link";
+import { Telegram } from "../icons/telegram";
+import { Discord } from "../icons/discord";
+import { WhatsApp } from "../icons/whatsapp";
+import { Slack } from "../icons/slack";
 
 function formatModelInfo(modelId: string): {
   name: string;
@@ -102,11 +107,11 @@ function formatModelInfo(modelId: string): {
   return map[modelId] || { name: modelId, icon: "⚪" };
 }
 
-const channelLabels: Record<string, { name: string; icon: string }> = {
-  telegram: { name: "Telegram", icon: "✈️" },
-  discord: { name: "Discord", icon: "🎮" },
-  whatsapp: { name: "WhatsApp", icon: "💬" },
-  slack: { name: "Slack", icon: "💼" },
+const channelLabels: Record<string, { name: string; icon: ReactNode }> = {
+  telegram: { name: "Telegram", icon: <Telegram className="w-4 h-4" /> },
+  discord: { name: "Discord", icon: <Discord className="w-4 h-4" /> },
+  whatsapp: { name: "WhatsApp", icon: <WhatsApp className="w-4 h-4" /> },
+  slack: { name: "Slack", icon: <Slack className="w-4 h-4" /> },
 };
 
 const statusConfig: Record<
@@ -239,6 +244,16 @@ export function InstanceCard({
             Pairing
           </Button>
         )}
+        <Link href={`/dashboard/${instance.id}`}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="cursor-pointer gap-1.5 rounded-lg border-zinc-700 bg-zinc-800/50 text-xs text-zinc-300 transition-all hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+          >
+            <Eye className="h-3 w-3" />
+            View
+          </Button>
+        </Link>
         <Button
           variant="outline"
           size="sm"

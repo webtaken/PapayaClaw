@@ -22,6 +22,13 @@
       "when": 1771863536484,
       "tag": "0002_dapper_mister_fear",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1772560605422,
+      "tag": "0003_hard_pride",
+      "breakpoints": true
     }
   ]
 }

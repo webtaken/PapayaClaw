@@ -1,17 +1,30 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, ReactNode } from "react";
+import useSWR from "swr";
 import dynamic from "next/dynamic";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Server, Cpu, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Server,
+  Loader2,
+  ExternalLink,
+  RefreshCw,
+  Check,
+  MessageCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { ClaudeAI } from "@/components/icons/claudeai";
 import { OpenAI } from "@/components/icons/openai";
 import { MistralAI } from "@/components/icons/mistralai";
 import { OpenRouter } from "@/components/icons/openrouter";
 import { OpenCode } from "@/components/icons/opencode";
+import { Telegram } from "@/components/icons/telegram";
 import Image from "next/image";
+import { Discord } from "../icons/discord";
+import { WhatsApp } from "../icons/whatsapp";
+import { Slack } from "../icons/slack";
 
 const SshTerminal = dynamic(
   () => import("./ssh-terminal").then((mod) => mod.SshTerminal),
@@ -23,15 +36,25 @@ interface InstanceData {
   name: string;
   model: string;
   channel: string;
+  botToken: string;
   status: string;
   providerServerIp: string | null;
-  createdAt: string | Date; // Modified to accept Date directly
+  cfTunnelHostname: string | null;
+  createdAt: string | Date;
+}
+
+interface PairingRequest {
+  code: string;
+  senderId: string;
+  senderName: string | null;
+  timestamp: string;
 }
 
 interface StatusData {
   instanceStatus: string;
   hetznerStatus: string | null;
   serverIp: string | null;
+  gatewayToken: string | null;
 }
 
 function formatModelInfo(modelId: string): {
@@ -123,11 +146,11 @@ function formatModelInfo(modelId: string): {
   return map[modelId] || { name: modelId, icon: "⚪" };
 }
 
-const channelLabels: Record<string, { name: string; icon: string }> = {
-  telegram: { name: "Telegram", icon: "✈️" },
-  discord: { name: "Discord", icon: "🎮" },
-  whatsapp: { name: "WhatsApp", icon: "💬" },
-  slack: { name: "Slack", icon: "💼" },
+const channelLabels: Record<string, { name: string; icon: ReactNode }> = {
+  telegram: { name: "Telegram", icon: <Telegram className="w-4 h-4" /> },
+  discord: { name: "Discord", icon: <Discord className="w-4 h-4" /> },
+  whatsapp: { name: "WhatsApp", icon: <WhatsApp className="w-4 h-4" /> },
+  slack: { name: "Slack", icon: <Slack className="w-4 h-4" /> },
 };
 
 const statusConfig: Record<
@@ -136,13 +159,13 @@ const statusConfig: Record<
 > = {
   running: {
     label: "Running",
-    className: "border-green-500/30 bg-green-500/10 text-green-400",
-    dotClass: "bg-green-400",
+    className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+    dotClass: "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]",
   },
   stopped: {
     label: "Stopped",
-    className: "border-red-500/30 bg-red-500/10 text-red-400",
-    dotClass: "bg-red-400",
+    className: "border-zinc-500/30 bg-zinc-500/10 text-zinc-400",
+    dotClass: "bg-zinc-400",
   },
   deploying: {
     label: "Deploying",
@@ -151,26 +174,27 @@ const statusConfig: Record<
   },
   initializing: {
     label: "Initializing",
-    className: "border-amber-500/30 bg-amber-500/10 text-amber-400",
-    dotClass: "bg-amber-400 animate-pulse",
+    className: "border-violet-500/30 bg-violet-500/10 text-violet-400",
+    dotClass:
+      "bg-violet-400 animate-pulse shadow-[0_0_8px_rgba(167,139,250,0.5)]",
   },
   starting: {
     label: "Starting",
     className: "border-blue-500/30 bg-blue-500/10 text-blue-400",
-    dotClass: "bg-blue-400 animate-pulse",
+    dotClass: "bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.5)]",
   },
   error: {
     label: "Error",
-    className: "border-red-500/30 bg-red-500/10 text-red-400",
-    dotClass: "bg-red-400",
+    className: "border-red-500/30 bg-red-500/10 text-red-500",
+    dotClass: "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]",
   },
 };
 
 const provisioningSteps = [
-  { key: "creating", label: "Creating server", minTime: 0 },
-  { key: "initializing", label: "Initializing VPS", minTime: 3 },
-  { key: "starting", label: "Booting up", minTime: 8 },
-  { key: "running", label: "Server online", minTime: 15 },
+  { key: "creating", label: "Creating server allocation", minTime: 0 },
+  { key: "initializing", label: "Running boot sequence", minTime: 3 },
+  { key: "starting", label: "Starting system services", minTime: 8 },
+  { key: "running", label: "System online", minTime: 15 },
 ];
 
 function getActiveStep(hetznerStatus: string | null): number {
@@ -193,53 +217,95 @@ export function InstanceDetail({
   initialInstance: InstanceData;
 }) {
   const [instance, setInstance] = useState(initialInstance);
-  const [statusData, setStatusData] = useState<StatusData | null>(null);
-  const [isPolling, setIsPolling] = useState(true);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
 
+  // Telegram pairing state
+  const [pairingRequests, setPairingRequests] = useState<PairingRequest[]>([]);
+  const [isPairingLoading, setIsPairingLoading] = useState(false);
+  const [approvingCode, setApprovingCode] = useState<string | null>(null);
+  const [pairingError, setPairingError] = useState<string | null>(null);
+
+  const isTelegram = instance.channel === "telegram";
+
+  const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
+  const { data: statusData } = useSWR<StatusData>(
+    `/api/instances/${instance.id}/status`,
+    fetcher,
+    {
+      refreshInterval: (data) => {
+        // Stop polling once running and no longer deploying
+        if (
+          data?.hetznerStatus === "running" &&
+          data?.instanceStatus !== "deploying"
+        ) {
+          return 0; // stop polling
+        }
+        return 10000; // poll every 10s
+      },
+    },
+  );
+
+  const currentStatus = statusData?.instanceStatus || instance.status;
+  const currentIp = statusData?.serverIp || instance.providerServerIp;
+
   const isProvisioning =
-    instance.status === "deploying" ||
+    currentStatus === "deploying" ||
     (statusData?.hetznerStatus && statusData.hetznerStatus !== "running");
 
-  const effectiveStatus = statusData?.hetznerStatus || instance.status;
+  const effectiveStatus = statusData?.hetznerStatus || currentStatus;
 
-  const pollStatus = useCallback(async () => {
+  const fetchPairingRequests = useCallback(async () => {
+    if (!isTelegram) return;
+    setIsPairingLoading(true);
+    setPairingError(null);
     try {
-      const res = await fetch(`/api/instances/${instance.id}/status`);
+      const res = await fetch(`/api/instances/${instance.id}/pairing`);
       if (res.ok) {
-        const data: StatusData = await res.json();
-        setStatusData(data);
-
-        // Update instance status if it changed
-        if (data.instanceStatus !== instance.status) {
-          setInstance((prev) => ({ ...prev, status: data.instanceStatus }));
-        }
-        if (data.serverIp && !instance.providerServerIp) {
-          setInstance((prev) => ({ ...prev, providerServerIp: data.serverIp }));
-        }
-
-        // Stop polling once server is running and instance is no longer deploying
-        if (
-          data.hetznerStatus === "running" &&
-          data.instanceStatus !== "deploying"
-        ) {
-          setIsPolling(false);
-        }
+        const data = await res.json();
+        setPairingRequests(data.requests || []);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setPairingError(err.error || "Failed to fetch pairing requests");
       }
-    } catch (error) {
-      console.error("Status poll failed:", error);
+    } catch {
+      setPairingError("Failed to connect");
+    } finally {
+      setIsPairingLoading(false);
     }
-  }, [instance.id, instance.status, instance.providerServerIp]);
+  }, [instance.id, isTelegram]);
 
+  const approvePairing = useCallback(
+    async (code: string) => {
+      setApprovingCode(code);
+      try {
+        const res = await fetch(`/api/instances/${instance.id}/pairing`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        });
+        if (res.ok) {
+          // Remove the approved request from the list
+          setPairingRequests((prev) => prev.filter((r) => r.code !== code));
+        } else {
+          const err = await res.json().catch(() => ({}));
+          setPairingError(err.error || "Failed to approve");
+        }
+      } catch {
+        setPairingError("Failed to connect");
+      } finally {
+        setApprovingCode(null);
+      }
+    },
+    [instance.id],
+  );
+
+  // Fetch pairing requests when instance becomes ready
   useEffect(() => {
-    // Initial poll
-    pollStatus();
-
-    if (!isPolling) return;
-
-    const interval = setInterval(pollStatus, 10000);
-    return () => clearInterval(interval);
-  }, [pollStatus, isPolling]);
+    if (isTelegram && !isProvisioning && currentIp) {
+      fetchPairingRequests();
+    }
+  }, [isTelegram, isProvisioning, currentIp, fetchPairingRequests]);
 
   const model = formatModelInfo(instance.model);
   const channel = channelLabels[instance.channel] || {
@@ -250,249 +316,345 @@ export function InstanceDetail({
   const activeStep = getActiveStep(statusData?.hetznerStatus ?? null);
 
   return (
-    <div className="animate-fade-in-up">
-      {/* Back link */}
-      <Link
-        href="/dashboard"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-zinc-400 transition-colors hover:text-white"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Dashboard
-      </Link>
-
-      {/* Instance header */}
-      <div className="mb-8 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">
-            {instance.name}
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Created{" "}
-            {new Date(instance.createdAt).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-            })}
-          </p>
-        </div>
-        <Badge
-          variant="outline"
-          className={`gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${status.className}`}
+    <div className="animate-fade-in-up flex flex-col gap-6 font-sans">
+      {/* Top Command Bar */}
+      <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
+        <Link
+          href="/dashboard"
+          className="group flex items-center gap-2 text-sm text-zinc-500 transition-colors hover:text-zinc-300"
         >
-          <span className={`h-1.5 w-1.5 rounded-full ${status.dotClass}`} />
-          {status.label}
-        </Badge>
+          <div className="flex h-6 w-6 items-center justify-center rounded-md border border-zinc-800 bg-zinc-900/50 group-hover:border-zinc-700">
+            <ArrowLeft className="h-3.5 w-3.5" />
+          </div>
+          <span className="font-medium">Dashboard</span>
+        </Link>
+        <div className="flex items-center gap-3">
+          <Badge
+            variant="outline"
+            className={`gap-1.5 rounded-md px-2.5 py-1 text-xs font-mono uppercase tracking-wider ${status.className}`}
+          >
+            <span className={`h-1.5 w-1.5 rounded-full ${status.dotClass}`} />
+            {status.label}
+          </Badge>
+        </div>
       </div>
 
-      {/* Provisioning state */}
-      {isProvisioning ? (
-        <div className="card-glow rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8">
-          <div className="flex flex-col items-center text-center">
-            {/* Spinner */}
-            <div className="relative mb-6">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-violet-500/10">
-                <Loader2 className="h-10 w-10 animate-spin text-violet-400" />
+      {/* Telemetry Databand */}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
+        <div className="flex flex-col gap-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-xl font-medium tracking-tight text-white mb-1">
+                {instance.name}
+              </h1>
+              <div className="flex items-center gap-2 text-xs font-mono text-zinc-500">
+                <span>ID: {instance.id}</span>
+                <span className="text-zinc-800">|</span>
+                <span>
+                  CREATED{" "}
+                  {new Date(instance.createdAt).toISOString().split("T")[0]}
+                </span>
               </div>
-              <div className="absolute -inset-2 animate-pulse rounded-3xl bg-violet-500/5" />
             </div>
+            {/* Quick action buttons can go here if needed */}
+          </div>
 
-            <h2 className="mb-2 text-lg font-semibold text-white">
-              Provisioning your server…
-            </h2>
-            <p className="mb-8 max-w-md text-sm text-zinc-400">
-              Your OpenClaw instance is being set up. This usually takes 1–2
-              minutes. You can stay on this page — it will update automatically.
-            </p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-zinc-800/50 border border-zinc-800/50 rounded-lg overflow-hidden">
+            <div className="bg-zinc-950 p-4 flex flex-col gap-1.5">
+              <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+                IP Address
+              </span>
+              <span className="font-mono text-sm text-zinc-200">
+                {currentIp || "AWAITING ALLOCATION"}
+              </span>
+            </div>
+            <div className="bg-zinc-950 p-4 flex flex-col gap-1.5">
+              <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+                Model
+              </span>
+              <span className="flex items-center gap-2 text-sm text-zinc-200">
+                <span className="text-xs text-zinc-400">{model.icon}</span>
+                {model.name}
+              </span>
+            </div>
+            <div className="bg-zinc-950 p-4 flex flex-col gap-1.5">
+              <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+                Channel
+              </span>
+              <span className="flex items-center gap-2 text-sm text-zinc-200">
+                <span className="text-xs text-zinc-400">{channel.icon}</span>
+                {channel.name}
+              </span>
+            </div>
+            <div className="bg-zinc-950 p-4 flex flex-col gap-1.5">
+              <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+                Gateway
+              </span>
+              <span
+                className="font-mono text-sm text-zinc-200 truncate"
+                title={instance.cfTunnelHostname || "PENDING TUNNEL"}
+              >
+                {instance.cfTunnelHostname || "PENDING TUNNEL"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-            {/* Progress steps */}
-            <div className="w-full max-w-sm space-y-3">
-              {provisioningSteps.map((step, i) => {
-                const isActive = i === activeStep;
-                const isComplete = i < activeStep;
-                const isPending = i > activeStep;
+      {isProvisioning ? (
+        /* The Mono-log (Provisioning Sequence) */
+        <div className="rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden flex flex-col">
+          <div className="flex items-center gap-2 border-b border-zinc-800 bg-zinc-900/50 px-4 py-2.5">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-400" />
+            <span className="text-xs font-mono font-medium tracking-wide text-zinc-300">
+              SYSTEM BOOT SEQUENCE
+            </span>
+          </div>
+          <div className="p-6 font-mono text-sm space-y-3">
+            {provisioningSteps.map((step, i) => {
+              const isActive = i === activeStep;
+              const isComplete = i < activeStep;
+              const isPending = i > activeStep;
 
-                return (
-                  <div
-                    key={step.key}
-                    className={`flex items-center gap-3 rounded-xl px-4 py-2.5 transition-all duration-500 ${
-                      isActive
-                        ? "bg-violet-500/10 border border-violet-500/20"
-                        : isComplete
-                          ? "bg-green-500/5"
-                          : "opacity-40"
-                    }`}
-                  >
-                    <div
-                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all duration-500 ${
-                        isComplete
-                          ? "bg-green-500 text-white"
-                          : isActive
-                            ? "bg-violet-500 text-white shadow-lg shadow-violet-500/25"
-                            : "bg-zinc-800 text-zinc-500"
-                      }`}
-                    >
-                      {isComplete ? "✓" : i + 1}
-                    </div>
-                    <span
-                      className={`text-sm font-medium ${
-                        isActive
-                          ? "text-violet-300"
-                          : isComplete
-                            ? "text-green-400"
-                            : "text-zinc-500"
-                      }`}
-                    >
-                      {step.label}
-                    </span>
-                    {isActive && (
-                      <Loader2 className="ml-auto h-3.5 w-3.5 animate-spin text-violet-400" />
-                    )}
-                  </div>
-                );
-              })}
+              let linePrefix = "[PENDING]";
+              let lineClass = "text-zinc-600";
+              let animationClass = "";
+
+              if (isComplete) {
+                linePrefix = "[   OK  ]";
+                lineClass = "text-zinc-400";
+              } else if (isActive) {
+                linePrefix = "[WORKING]";
+                lineClass = "text-violet-400";
+                animationClass = "animate-pulse";
+              }
+
+              return (
+                <div
+                  key={step.key}
+                  className={`flex items-start gap-4 ${lineClass}`}
+                >
+                  <span className={`shrink-0 ${animationClass}`}>
+                    {linePrefix}
+                  </span>
+                  <span className={`${isActive ? "text-violet-300" : ""}`}>
+                    {step.label}...
+                  </span>
+                </div>
+              );
+            })}
+
+            <div className="mt-8 flex items-center gap-2 text-xs text-zinc-600">
+              <span className="inline-block h-2 w-1.5 animate-pulse bg-violet-500/50" />
+              <span>Awaiting telemetry broadcast...</span>
             </div>
           </div>
         </div>
       ) : (
-        /* Running / Ready state — show instance details */
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {/* Server Info Card */}
-          <div className="card-glow rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <Server className="h-4 w-4 text-violet-400" />
-              <h3 className="text-sm font-semibold text-white">Server Info</h3>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Status</span>
-                <Badge
-                  variant="outline"
-                  className={`gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${status.className}`}
-                >
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${status.dotClass}`}
-                  />
-                  {status.label}
-                </Badge>
-              </div>
-              <div className="h-px bg-zinc-800" />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">IP Address</span>
-                <span className="font-mono text-sm text-zinc-300">
-                  {instance.providerServerIp || "—"}
-                </span>
-              </div>
-              <div className="h-px bg-zinc-800" />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Provider</span>
-                <span className="text-sm text-zinc-300">Hetzner Cloud</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Configuration Card */}
-          <div className="card-glow rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-            <div className="mb-4 flex items-center gap-2">
-              <Cpu className="h-4 w-4 text-violet-400" />
-              <h3 className="text-sm font-semibold text-white">
-                Configuration
-              </h3>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">AI Model</span>
-                <span className="flex items-center gap-1.5 text-sm text-zinc-300">
-                  <span className="text-xs">{model.icon}</span>
-                  {model.name}
-                </span>
-              </div>
-              <div className="h-px bg-zinc-800" />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Channel</span>
-                <span className="flex items-center gap-1.5 text-sm text-zinc-300">
-                  <span className="text-xs">{channel.icon}</span>
-                  {channel.name}
-                </span>
-              </div>
-              <div className="h-px bg-zinc-800" />
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Created</span>
-                <span className="text-sm text-zinc-300">
-                  {new Date(instance.createdAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* SSH Terminal (Available when running) */}
-          {instance.status !== "deploying" && instance.providerServerIp && (
-            <div className="card-glow col-span-full rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-              {!isTerminalOpen ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="mb-4 rounded-full bg-zinc-800/50 p-4 ring-1 ring-zinc-800">
-                    <Server className="h-6 w-6 text-zinc-400" />
-                  </div>
-                  <h3 className="mb-2 text-base font-semibold text-white">
-                    SSH Console
-                  </h3>
-                  <p className="mb-6 max-w-sm text-sm text-zinc-400">
-                    Access your server's command line directly from your
-                    browser.
-                  </p>
-                  <Button
-                    onClick={() => setIsTerminalOpen(true)}
-                    className="bg-violet-600 text-white hover:bg-violet-700 font-medium px-6 shadow-sm shadow-violet-500/20"
-                  >
-                    Connect to Console
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-white">
-                      Terminal Session
+        /* Modules Section */
+        <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Dashboard Control Panel Module */}
+            {instance.cfTunnelHostname ? (
+              <div className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl h-full">
+                <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <ExternalLink className="h-4 w-4 text-zinc-400" />
+                    <h3 className="text-xs font-mono font-semibold tracking-wide text-zinc-300 uppercase">
+                      Gateway Console
                     </h3>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsTerminalOpen(false)}
-                      className="cursor-pointer gap-1.5 rounded-lg border-zinc-700 bg-zinc-800/50 text-xs text-zinc-300 transition-all hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
+                    <span className="text-[10px] font-mono text-emerald-400 font-medium uppercase tracking-widest">
+                      TLS Active
+                    </span>
+                  </div>
+                </div>
+                <div className="p-6 flex flex-col justify-between gap-6 flex-1">
+                  <p className="text-sm text-zinc-400 leading-relaxed max-w-3xl border-l-[3px] border-emerald-500/30 pl-4 py-1">
+                    Access the OpenClaw securely-tunneled web interface to
+                    interact with your agent, view internal logs, manage skills,
+                    and monitor inference metrics.
+                  </p>
+                  <div className="shrink-0 mt-auto">
+                    <a
+                      href={`https://${instance.cfTunnelHostname}/?token=${encodeURIComponent(instance.botToken)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group"
                     >
-                      Disconnect
+                      <Button className="w-full sm:w-auto px-6 bg-zinc-100 text-zinc-950 hover:bg-white font-medium shadow-none h-11 border border-transparent transition-all group-hover:border-zinc-300 gap-2 font-mono text-xs uppercase tracking-wider">
+                        <ExternalLink className="h-4 w-4" />
+                        Launch Interface
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Telegram Pairing Module */}
+            {isTelegram && currentIp ? (
+              <div className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl h-full">
+                <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="h-4 w-4 text-zinc-400" />
+                    <h3 className="text-xs font-mono font-semibold tracking-wide text-zinc-300 uppercase">
+                      Telegram Pairing
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {pairingRequests.length > 0 ? (
+                      <Badge
+                        variant="outline"
+                        className="rounded-md px-2 py-0.5 text-[10px] font-mono border-amber-500/30 bg-amber-500/10 text-amber-400"
+                      >
+                        {pairingRequests.length} PENDING
+                      </Badge>
+                    ) : null}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={fetchPairingRequests}
+                      disabled={isPairingLoading}
+                      className="h-6 px-2 text-[10px] font-mono hover:bg-zinc-800 hover:text-white text-zinc-400 border border-zinc-700/50 rounded gap-1"
+                    >
+                      <RefreshCw
+                        className={`h-3 w-3 ${
+                          isPairingLoading ? "animate-spin" : ""
+                        }`}
+                      />
+                      REFRESH
                     </Button>
                   </div>
-                  <div className="h-[500px] w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
+                </div>
+
+                <div className="p-6 flex-1 flex flex-col">
+                  {pairingError ? (
+                    <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-xs font-mono text-red-400">
+                      {pairingError}
+                    </div>
+                  ) : null}
+
+                  {isPairingLoading && pairingRequests.length === 0 ? (
+                    <div className="flex items-center justify-center py-8 gap-2 text-zinc-500">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-xs font-mono">
+                        Loading pairing requests...
+                      </span>
+                    </div>
+                  ) : pairingRequests.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center flex-1">
+                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-900/50 border border-zinc-800/80">
+                        <MessageCircle className="h-6 w-6 text-zinc-600" />
+                      </div>
+                      <p className="text-sm text-zinc-500 font-mono">
+                        No pending pairing requests
+                      </p>
+                      <p className="mt-1 text-xs text-zinc-600 font-mono max-w-xs">
+                        Send a message to your Telegram bot to initiate a
+                        pairing request
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {pairingRequests.map((req) => (
+                        <div
+                          key={req.code}
+                          className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/30 px-4 py-3 transition-colors hover:border-zinc-700"
+                        >
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-mono font-medium text-zinc-200 truncate">
+                                {req.senderName || `User ${req.senderId}`}
+                              </span>
+                              <span className="text-[10px] font-mono text-zinc-600">
+                                ID: {req.senderId}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[11px] font-mono text-amber-400">
+                                {req.code}
+                              </code>
+                              <span className="text-[10px] font-mono text-zinc-600">
+                                {new Date(req.timestamp).toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => approvePairing(req.code)}
+                            disabled={approvingCode === req.code}
+                            className="ml-4 shrink-0 h-8 px-3 bg-emerald-600/80 text-white hover:bg-emerald-500 border border-emerald-500/30 font-mono text-[10px] uppercase tracking-wider gap-1.5 shadow-none"
+                          >
+                            {approvingCode === req.code ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Check className="h-3 w-3" />
+                            )}
+                            Approve
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          {/* SSH Terminal Module */}
+          {currentIp ? (
+            <div className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Server className="h-4 w-4 text-zinc-400" />
+                  <h3 className="text-xs font-mono font-semibold tracking-wide text-zinc-300 uppercase">
+                    Root Terminal
+                  </h3>
+                </div>
+                {isTerminalOpen ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsTerminalOpen(false)}
+                    className="h-6 px-2 text-[10px] font-mono hover:bg-zinc-800 hover:text-white text-zinc-400 border border-zinc-700/50 rounded"
+                  >
+                    DISCONNECT
+                  </Button>
+                ) : (
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+                    Idle
+                  </span>
+                )}
+              </div>
+
+              <div className="p-0 flex flex-col h-[550px] sm:h-[650px]">
+                {!isTerminalOpen ? (
+                  <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-zinc-950/50">
+                    <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-zinc-900/50 border border-zinc-800/80">
+                      <OpenCode className="h-8 w-8 text-zinc-500" />
+                    </div>
+                    <p className="mb-6 max-w-[260px] text-sm text-zinc-400 leading-relaxed font-mono">
+                      Secure WebRTC shell protocol. Direct root access to
+                      standard input/output.
+                    </p>
+                    <Button
+                      onClick={() => setIsTerminalOpen(true)}
+                      className="bg-zinc-800 text-zinc-200 hover:bg-zinc-700 border border-zinc-700 hover:text-white font-medium shadow-none gap-2 font-mono text-xs uppercase tracking-wider"
+                    >
+                      <span className="text-emerald-400">root@</span> Connect
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex-1 overflow-hidden bg-black w-full h-full p-2">
                     <SshTerminal instanceId={instance.id} />
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          )}
-
-          {/* Quick Actions */}
-          <div className="card-glow col-span-full rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6">
-            <h3 className="mb-4 text-sm font-semibold text-white">
-              Quick Actions
-            </h3>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/dashboard">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="cursor-pointer gap-1.5 rounded-lg border-zinc-700 bg-zinc-800/50 text-xs text-zinc-300 transition-all hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
-                >
-                  <ArrowLeft className="h-3 w-3" />
-                  Back to Dashboard
-                </Button>
-              </Link>
-            </div>
-          </div>
+          ) : null}
         </div>
       )}
     </div>
