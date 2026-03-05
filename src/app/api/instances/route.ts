@@ -16,29 +16,18 @@ import {
 } from "@/lib/cloudflare";
 import { generateCloudInit } from "@/lib/cloud-init";
 import { pollInstanceUntilReady } from "@/lib/instance-poller";
-import { execSync } from "node:child_process";
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
+import { utils as sshUtils } from "ssh2";
 
 /**
- * Generates an SSH keypair using ssh-keygen for proper OpenSSH format.
+ * Generates an ed25519 SSH keypair in OpenSSH format using ssh2.
+ * No system dependency on ssh-keygen required.
  */
 function generateSSHKeyPair(): { publicKey: string; privateKey: string } {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "papayaclaw-ssh-"));
-  const keyPath = path.join(tmpDir, "id_ed25519");
+  const keys = sshUtils.generateKeyPairSync("ed25519", {
+    comment: "papayaclaw",
+  });
 
-  try {
-    execSync(`ssh-keygen -t ed25519 -f "${keyPath}" -N "" -C "papayaclaw" -q`);
-    const privateKey = fs.readFileSync(keyPath, "utf-8");
-    const publicKey = fs.readFileSync(`${keyPath}.pub`, "utf-8").trim();
-    return { publicKey, privateKey };
-  } finally {
-    // Clean up temp files
-    try {
-      fs.rmSync(tmpDir, { recursive: true });
-    } catch {}
-  }
+  return { publicKey: keys.public, privateKey: keys.private };
 }
 export async function GET() {
   const session = await auth.api.getSession({
