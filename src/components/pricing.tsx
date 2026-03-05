@@ -1,5 +1,8 @@
+"use client";
+
 import { Check, Zap, Crown } from "lucide-react";
 import Link from "next/link";
+import { authClient } from "@/lib/auth-client";
 
 const plans = [
   {
@@ -55,6 +58,19 @@ const plans = [
 ];
 
 export function Pricing() {
+  const { data: session, isPending } = authClient.useSession();
+
+  const handleSignIn = async () => {
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/pricing",
+      });
+    } catch (error) {
+      console.error("Error signing in:", error);
+    }
+  };
+
   const basicProductId = process.env.NEXT_PUBLIC_POLAR_BASIC_PRODUCT_ID;
   const proProductId = process.env.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID;
   const productIds: Record<string, string | undefined> = {
@@ -191,12 +207,32 @@ export function Pricing() {
 
                 {/* CTA */}
                 <div className="p-8 pt-0">
-                  <Link
-                    href={checkoutUrl}
-                    className={`flex w-full items-center justify-center rounded-none px-6 py-4 text-sm ${plan.ctaStyle}`}
-                  >
-                    {plan.cta}
-                  </Link>
+                  {isPending ? (
+                    <button
+                      disabled
+                      className={`flex w-full items-center justify-center rounded-none px-6 py-4 text-sm opacity-50 cursor-not-allowed ${plan.ctaStyle}`}
+                    >
+                      Loading...
+                    </button>
+                  ) : !session ? (
+                    <button
+                      onClick={handleSignIn}
+                      className={`flex w-full items-center justify-center rounded-none px-6 py-4 text-sm cursor-pointer ${plan.ctaStyle}`}
+                    >
+                      {plan.cta}
+                    </button>
+                  ) : (
+                    <Link
+                      href={
+                        productId
+                          ? `${checkoutUrl}&customerExternalId=${session.user.id}&customerEmail=${encodeURIComponent(session.user.email)}`
+                          : checkoutUrl
+                      }
+                      className={`flex w-full items-center justify-center rounded-none px-6 py-4 text-sm ${plan.ctaStyle}`}
+                    >
+                      {plan.cta}
+                    </Link>
+                  )}
                 </div>
               </div>
             );
