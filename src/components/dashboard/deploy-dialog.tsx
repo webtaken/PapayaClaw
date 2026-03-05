@@ -372,7 +372,7 @@ export function DeployDialog({
                         : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
                     }`}
                   >
-                    Premium ($10/mo)
+                    Premium ($10 credits/mo) included in your plan
                     <span className="flex h-3 w-3 items-center justify-center rounded-full bg-white/20 text-[8px]">
                       ★
                     </span>
