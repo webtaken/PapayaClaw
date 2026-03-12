@@ -17,6 +17,12 @@ export function Footer() {
         </p>
         <div className="flex items-center gap-8">
           <Link
+            href="/blog"
+            className="text-sm font-bold uppercase tracking-wide text-zinc-500 transition-colors hover:text-white"
+          >
+            Blog
+          </Link>
+          <Link
             href="https://x.com/node_srojas1"
             target="_blank"
             rel="noopener noreferrer"
