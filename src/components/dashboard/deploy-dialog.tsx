@@ -145,7 +145,6 @@ export function DeployDialog({
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [customModelId, setCustomModelId] = useState("");
-  const [billingMode, setBillingMode] = useState<"byok" | "premium">("byok");
   const [modelApiKey, setModelApiKey] = useState("");
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [botToken, setBotToken] = useState("");
@@ -157,7 +156,6 @@ export function DeployDialog({
     setSelectedProvider(null);
     setSelectedModel(null);
     setCustomModelId("");
-    setBillingMode("byok");
     setModelApiKey("");
     setSelectedChannel(null);
     setBotToken("");
@@ -176,13 +174,7 @@ export function DeployDialog({
     ? `${selectedProvider}/${customModelId}`
     : selectedModel;
 
-  const isPremiumSupported =
-    selectedProvider === "anthropic" || selectedProvider === "openai";
-
-  const activeApiKey =
-    isPremiumSupported && billingMode === "premium"
-      ? "PREMIUM_SUBSCRIPTION"
-      : modelApiKey.trim();
+  const activeApiKey = modelApiKey.trim();
 
   const canProceedStep1 =
     name.trim() && selectedProvider && finalModelId && activeApiKey;
@@ -234,17 +226,6 @@ export function DeployDialog({
       (m) => m.id === selectedModel,
     );
     return modelObj ? modelObj.name : selectedModel;
-  };
-
-  // Enforce specific models when Premium is selected
-  const handleBillingModeChange = (mode: "byok" | "premium") => {
-    setBillingMode(mode);
-    if (mode === "premium") {
-      if (selectedProvider === "anthropic")
-        setSelectedModel("claude-sonnet-4-6");
-      if (selectedProvider === "openai") setSelectedModel("gpt-5.2");
-      setModelApiKey(""); // Clear any entered key
-    }
   };
 
   return (
@@ -325,7 +306,6 @@ export function DeployDialog({
                         setSelectedProvider(provider.id);
                         setSelectedModel(null);
                         setCustomModelId("");
-                        setBillingMode("byok"); // Reset billing mode on provider change
                       }}
                       className={`relative flex flex-col items-center justify-center gap-1.5 rounded-lg border p-2 text-center transition-all duration-300 ${
                         selectedProvider === provider.id
@@ -352,33 +332,7 @@ export function DeployDialog({
                 </div>
               </div>
 
-              {isPremiumSupported && (
-                <div className="animate-fade-in-up mt-2 rounded-lg border border-zinc-800 bg-zinc-800/30 p-1 flex">
-                  <button
-                    onClick={() => handleBillingModeChange("byok")}
-                    className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
-                      billingMode === "byok"
-                        ? "bg-zinc-700 text-white shadow-sm"
-                        : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
-                    }`}
-                  >
-                    Bring Your Own Key
-                  </button>
-                  <button
-                    onClick={() => handleBillingModeChange("premium")}
-                    className={`flex-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
-                      billingMode === "premium"
-                        ? "bg-violet-500 text-white shadow-sm"
-                        : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
-                    }`}
-                  >
-                    Premium ($10 credits/mo) included in your plan
-                    <span className="flex h-3 w-3 items-center justify-center rounded-full bg-white/20 text-[8px]">
-                      ★
-                    </span>
-                  </button>
-                </div>
-              )}
+
 
               {selectedProvider && !isCustomProvider && (
                 <div className="animate-fade-in-up">
@@ -387,28 +341,16 @@ export function DeployDialog({
                   </Label>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                     {MODELS_BY_PROVIDER[selectedProvider]?.map((m) => {
-                      // When Premium is selected, lock to specific models and format others as disabled
-                      const isPremiumLocked =
-                        billingMode === "premium" &&
-                        ((selectedProvider === "anthropic" &&
-                          m.id !== "claude-sonnet-4-6") ||
-                          (selectedProvider === "openai" &&
-                            m.id !== "gpt-5.2"));
-
                       return (
                         <button
                           key={m.id}
                           onClick={() => {
-                            if (isPremiumLocked) return;
                             setSelectedModel(m.id);
                           }}
-                          disabled={isPremiumLocked}
                           className={`relative flex flex-col gap-0.5 rounded-lg border px-2.5 py-1.5 text-left transition-all duration-300 ${
-                            isPremiumLocked
-                              ? "opacity-40 cursor-not-allowed border-zinc-800 bg-zinc-900"
-                              : selectedModel === m.id
-                                ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
-                                : "border-zinc-700/50 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                            selectedModel === m.id
+                              ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
+                              : "border-zinc-700/50 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
                           }`}
                         >
                           <span className="text-xs font-medium truncate w-full pr-4">
@@ -417,12 +359,7 @@ export function DeployDialog({
                           <span className="text-[9px] text-zinc-500 font-mono truncate w-full flex-1">
                             {m.id}
                           </span>
-                          {isPremiumLocked && (
-                            <span className="absolute right-1.5 top-1.5 text-[8px] font-medium text-zinc-500">
-                              BYOK
-                            </span>
-                          )}
-                          {m.badge && !isPremiumLocked && (
+                          {m.badge && (
                             <span className="absolute right-1.5 top-1.5 text-[8px] font-medium text-amber-400">
                               ★
                             </span>
@@ -431,12 +368,6 @@ export function DeployDialog({
                       );
                     })}
                   </div>
-                  {billingMode === "premium" && (
-                    <p className="mt-1.5 text-[10px] text-violet-400/80">
-                      Premium mode includes state-of-the-art flagship models
-                      optimized for OpenClaw.
-                    </p>
-                  )}
                 </div>
               )}
 
@@ -464,7 +395,7 @@ export function DeployDialog({
                 </div>
               )}
 
-              {selectedProvider && billingMode === "byok" && (
+              {selectedProvider && (
                 <div className="animate-fade-in-up mt-2">
                   <Label
                     htmlFor="model-api-key"

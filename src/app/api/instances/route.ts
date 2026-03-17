@@ -90,46 +90,11 @@ export async function POST(request: Request) {
   const { publicKey: sshPublicKey, privateKey: sshPrivateKey } =
     generateSSHKeyPair();
 
-  // Handle Premium Subscription Logic
-  let activeApiKey = modelApiKey || null;
-  if (modelApiKey === "PREMIUM_SUBSCRIPTION") {
-    if (model.includes("anthropic")) {
-      activeApiKey = process.env.ANTHROPIC_API_KEY || null;
-      if (!activeApiKey)
-        return NextResponse.json(
-          { error: "Premium Anthropic service is temporarily unavailable." },
-          { status: 503 },
-        );
-      if (model !== "anthropic/claude-sonnet-4-6")
-        return NextResponse.json(
-          {
-            error:
-              "Only Claude Sonnet 4.6 is included in the Anthropic Premium tier.",
-          },
-          { status: 400 },
-        );
-    } else if (model.includes("openai")) {
-      activeApiKey = process.env.OPENAI_API_KEY || null;
-      if (!activeApiKey)
-        return NextResponse.json(
-          { error: "Premium OpenAI service is temporarily unavailable." },
-          { status: 503 },
-        );
-      if (model !== "openai/gpt-5.2")
-        return NextResponse.json(
-          { error: "Only GPT-5.2 is included in the OpenAI Premium tier." },
-          { status: 400 },
-        );
-    } else {
-      return NextResponse.json(
-        { error: "Premium subscription is not supported for this provider." },
-        { status: 400 },
-      );
-    }
-  }
+  // Use provided API key directly
+  const activeApiKey = modelApiKey || null;
 
   // 1. Insert instance record with "deploying" status
-  // Note: We still save modelApiKey into the DB as exactly what was requested (e.g., PREMIUM_SUBSCRIPTION instead of the raw root key)
+  // Note: We still save modelApiKey into the DB as exactly what was requested
   const [newInstance] = await db
     .insert(instance)
     .values({

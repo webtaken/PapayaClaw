@@ -188,7 +188,7 @@ export async function deleteSSHKey(keyId: number): Promise<void> {
 /**
  * Creates a new Hetzner Cloud server with cloud-init user_data.
  *
- * Server type is determined by plan: Basic → cx22, Pro → cx32.
+ * Server type is determined by plan: Basic → cx23, Pro → cx33.
  * The user_data is a cloud-init script that provisions OpenClaw.
  */
 export async function createServer(
