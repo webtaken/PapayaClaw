@@ -7,7 +7,7 @@ import { authClient } from "@/lib/auth-client";
 const plans = [
   {
     name: "Basic",
-    price: "39.90",
+    price: "11.90",
     interval: "month",
     description: "Everything you need to deploy and run your OpenClaw bot.",
     accentColor: "primary",
@@ -30,7 +30,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "59.90",
+    price: "17.90",
     interval: "month",
     description: "Maximum power for serious deployments.",
     accentColor: "secondary",
