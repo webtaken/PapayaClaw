@@ -9,6 +9,7 @@ export type BlogPostFrontmatter = {
   date: string;
   summary: string;
   slug: string;
+  image?: string;
 };
 
 export type BlogPost = {
@@ -36,6 +37,7 @@ export async function getBlogPosts(): Promise<BlogPostFrontmatter[]> {
         title: data.title || "Untitled",
         date: data.date || "1970-01-01",
         summary: data.summary || "",
+        image: data.image || undefined,
         slug,
       } as BlogPostFrontmatter;
     })
@@ -66,6 +68,7 @@ export async function getBlogPost(slug: string): Promise<BlogPost | null> {
       title: data.title || "Untitled",
       date: data.date || "1970-01-01",
       summary: data.summary || "",
+      image: data.image || undefined,
       slug,
     } as BlogPostFrontmatter,
     content,

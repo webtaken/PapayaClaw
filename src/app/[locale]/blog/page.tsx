@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getBlogPosts } from "@/lib/mdx";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
@@ -64,6 +65,17 @@ export default async function BlogIndex({
                 href={`/blog/${post.slug}`}
                 className="group flex flex-col justify-between rounded-2xl border border-zinc-800 bg-zinc-900/40 p-6 transition-all hover:bg-zinc-800/60 hover:border-zinc-700"
               >
+                {post.image && (
+                  <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-4">
+                    <Image
+                      src={post.image}
+                      alt={post.title}
+                      fill
+                      sizes="400px"
+                      className="object-cover"
+                    />
+                  </div>
+                )}
                 <div>
                   <div className="text-xs text-primary font-bold uppercase tracking-wider mb-2">
                     {new Date(post.date).toLocaleDateString(

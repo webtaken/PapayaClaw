@@ -1,8 +1,11 @@
+import { Children } from "react";
 import { notFound } from "next/navigation";
 import { getBlogPost, getBlogPosts } from "@/lib/mdx";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { MDXRemote } from "next-mdx-remote/rsc";
+import remarkGfm from "remark-gfm";
+import Image from "next/image";
 import Link from "next/link";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
@@ -31,11 +34,17 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
       type: "article",
       publishedTime: post.frontmatter.date,
       url: `/blog/${post.frontmatter.slug}`,
+      ...(post.frontmatter.image && {
+        images: [{ url: post.frontmatter.image }],
+      }),
     },
     twitter: {
       card: "summary_large_image",
       title: post.frontmatter.title,
       description: post.frontmatter.summary,
+      ...(post.frontmatter.image && {
+        images: [post.frontmatter.image],
+      }),
     },
     alternates: {
       canonical: `/blog/${post.frontmatter.slug}`,
@@ -47,7 +56,17 @@ const components = {
   h1: (props: any) => <h1 className="text-4xl font-bold mb-6 text-white" {...props} />,
   h2: (props: any) => <h2 className="text-3xl font-semibold mt-10 mb-4 text-white" {...props} />,
   h3: (props: any) => <h3 className="text-2xl font-semibold mt-8 mb-4 text-zinc-100" {...props} />,
-  p: (props: any) => <p className="text-lg leading-relaxed mb-6 text-zinc-300" {...props} />,
+  p: ({ children, ...props }: any) => {
+    const hasBlockChild =
+      Children.toArray(children).some(
+        (child: any) => child?.type === "figure" || child?.props?.src
+      );
+    return hasBlockChild ? (
+      <div className="text-lg leading-relaxed mb-6 text-zinc-300" {...props}>{children}</div>
+    ) : (
+      <p className="text-lg leading-relaxed mb-6 text-zinc-300" {...props}>{children}</p>
+    );
+  },
   ul: (props: any) => <ul className="list-disc list-inside mb-6 text-zinc-300 space-y-2" {...props} />,
   ol: (props: any) => <ol className="list-decimal list-inside mb-6 text-zinc-300 space-y-2" {...props} />,
   li: (props: any) => <li className="pl-2" {...props} />,
@@ -56,6 +75,34 @@ const components = {
   code: (props: any) => <code className="bg-zinc-800 text-pink-400 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />,
   pre: (props: any) => <pre className="bg-[#111] p-4 rounded-xl overflow-x-auto mb-6 border border-zinc-800 shadow-2xl" {...props} />,
   strong: (props: any) => <strong className="font-bold text-white" {...props} />,
+  table: (props: any) => (
+    <div className="overflow-x-auto mb-6">
+      <table className="w-full text-sm text-left text-zinc-300 border-collapse border border-zinc-700" {...props} />
+    </div>
+  ),
+  thead: (props: any) => <thead className="bg-zinc-800 text-white uppercase text-xs tracking-wider" {...props} />,
+  tbody: (props: any) => <tbody className="divide-y divide-zinc-700" {...props} />,
+  tr: (props: any) => <tr className="border-b border-zinc-700 hover:bg-zinc-800/50 transition-colors" {...props} />,
+  th: (props: any) => <th className="px-4 py-3 font-bold border border-zinc-700" {...props} />,
+  td: (props: any) => <td className="px-4 py-3 border border-zinc-700" {...props} />,
+  img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
+    <figure className="my-8">
+      <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900/50">
+        <Image
+          src={(props.src as string) || ""}
+          alt={props.alt || ""}
+          fill
+          sizes="(max-width: 768px) 100vw, 720px"
+          className="object-contain"
+        />
+      </div>
+      {props.title && (
+        <figcaption className="mt-2 text-center text-sm text-zinc-500 italic">
+          {props.title}
+        </figcaption>
+      )}
+    </figure>
+  ),
 };
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
@@ -91,6 +138,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         name: "PapayaClaw",
         url: baseUrl,
       },
+      ...(frontmatter.image && { image: `${baseUrl}${frontmatter.image}` }),
     },
     {
       "@context": "https://schema.org",
@@ -132,6 +180,18 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         
         <article>
           <header className="mb-12 border-b border-zinc-800 pb-8">
+            {frontmatter.image && (
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-zinc-800 mb-8">
+                <Image
+                  src={frontmatter.image}
+                  alt={frontmatter.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 720px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            )}
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-6 leading-tight">
               {frontmatter.title}
             </h1>
@@ -147,7 +207,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
           </header>
           
           <div className="mdx-content prose-invert">
-            <MDXRemote source={content} components={components} />
+            <MDXRemote source={content} components={components} options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }} />
           </div>
         </article>
       </main>

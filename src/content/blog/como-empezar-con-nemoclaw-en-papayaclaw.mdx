@@ -1,0 +1,213 @@
+---
+title: "Cómo Empezar con NVIDIA NemoClaw en PapayaClaw"
+date: "2026-03-18"
+summary: "Aprende a desplegar agentes de IA seguros y privados usando el stack NemoClaw de NVIDIA en PapayaClaw. Guía completa paso a paso con requisitos de hardware y recomendación del plan Pro."
+---
+
+# Cómo Empezar con NVIDIA NemoClaw en PapayaClaw
+
+En el **GTC 2026**, NVIDIA presentó **NemoClaw** — un stack de código abierto que aporta seguridad empresarial, privacidad e inferencia local a los agentes de IA de [OpenClaw](https://openclaw.com). En esta guía te explicamos qué es NemoClaw, por qué es importante y cómo ponerlo en marcha en **PapayaClaw** paso a paso.
+
+## ¿Qué es NemoClaw?
+
+NemoClaw es el plugin oficial de NVIDIA para la plataforma de agentes OpenClaw. Instala los **modelos NVIDIA Nemotron** y el **runtime OpenShell** con un solo comando, envolviendo tus agentes de IA ("claws") en múltiples capas de seguridad y controles de privacidad.
+
+Piénsalo así: si OpenClaw es el sistema operativo para agentes de IA personales, **NemoClaw es la capa de seguridad y rendimiento** que hace que esos agentes sean confiables, privados y listos para producción.
+
+### Características Principales
+
+- **Inferencia Local**: Ejecuta modelos NVIDIA Nemotron localmente — sin costos por tokens, sin datos saliendo de tu máquina.
+- **Ejecución en Sandbox**: Cada agente corre dentro de un contenedor OpenShell aislado con restricciones de sistema de archivos, red y procesos.
+- **Seguridad Multi-Capa**: Combina Landlock, seccomp y aislamiento de espacios de nombres de red (netns) para defensa en profundidad.
+- **Router de Privacidad**: Cuando necesitas modelos en la nube, NemoClaw enruta las solicitudes a través de un gateway de inferencia controlado — sin llamadas API directas desde dentro del sandbox.
+- **Políticas Recargables en Caliente**: Actualiza reglas de seguridad y red en tiempo real sin reiniciar tu sandbox.
+- **Política como Código**: Configuraciones de seguridad declarativas y auditables que puedes versionar.
+
+### Visión General de la Arquitectura
+
+NemoClaw se compone de cuatro capas:
+
+1. **Capa de Plugin** — Un CLI en TypeScript para gestión del ciclo de vida del sandbox (`launch`, `connect`, `status`, `logs`).
+2. **Sistema de Blueprints** — Artefactos de orquestación en Python versionados que configuran la creación del sandbox, políticas de seguridad y proveedores de inferencia.
+3. **Entorno Sandbox** — Contenedores OpenShell aislados ejecutando OpenClaw con aplicación de políticas.
+4. **Gateway de Inferencia** — Enruta todas las llamadas API de modelos a través de la infraestructura cloud de NVIDIA o modelos Nemotron locales.
+
+## Requisitos de Hardware
+
+Aquí es donde se pone importante. NemoClaw tiene requisitos mínimos específicos:
+
+| Recurso | Mínimo | Recomendado |
+|---------|--------|-------------|
+| **CPU** | 4 vCPU | 4+ vCPU |
+| **RAM** | 8 GB | 16 GB |
+| **Almacenamiento** | 20 GB libres | 40 GB libres |
+
+La imagen del sandbox pesa aproximadamente **2.4 GB comprimida**. Durante el despliegue, Docker, k3s y el gateway de OpenShell corren junto al pipeline de exportación, que almacena en memoria las capas descomprimidas. Sistemas con menos de 8 GB de RAM pueden activar el **OOM killer** (terminación por falta de memoria).
+
+### Por Qué Necesitas el Plan Pro de PapayaClaw
+
+Veamos los planes de PapayaClaw:
+
+| | Plan Básico ($11.90/mes) | **Plan Pro ($17.90/mes)** |
+|---|---|---|
+| **vCPU** | 2 | **4** |
+| **RAM** | 4 GB | **8 GB** |
+| **Almacenamiento** | 40 GB SSD | **80 GB SSD** |
+
+El **plan Básico (2 vCPU / 4 GB RAM) no cumple con los requisitos mínimos** de NemoClaw. Necesitas al menos 4 vCPU y 8 GB de RAM, que es exactamente lo que ofrece el **plan Pro**.
+
+Con el plan Pro obtienes:
+- **4 vCPU** — Cumple el requisito mínimo de CPU.
+- **8 GB RAM** — Cumple el requisito mínimo de RAM para operación estable.
+- **80 GB SSD** — Más que suficiente para la imagen del sandbox y archivos de modelos.
+- **Soporte prioritario** — Obtén ayuda cuando la necesites.
+- **Plantillas exclusivas** — Incluyendo plantillas de despliegue para NemoClaw.
+
+> **Nuestra recomendación**: Si planeas usar NemoClaw, elige el [plan Pro](/pricing). El plan Básico simplemente no tiene suficientes recursos para ejecutar el sandbox de manera confiable.
+
+## Requisitos de Software
+
+Antes de instalar NemoClaw, tu instancia de PapayaClaw necesita:
+
+- **Ubuntu 22.04 LTS** o posterior (incluido en todos los planes de PapayaClaw)
+- **Node.js 20+** y **npm 10+**
+- **Docker** instalado y en ejecución
+- Runtime **OpenShell**
+
+## Guía de Instalación Paso a Paso
+
+### Paso 1: Suscríbete al Plan Pro
+
+Ve a la [página de precios de PapayaClaw](/pricing) y suscríbete al **plan Pro** ($17.90/mes). Una vez que tu instancia esté aprovisionada, conéctate por SSH o Telegram.
+
+### Paso 2: Conéctate a Tu Instancia
+
+Puedes conectarte por SSH o directamente desde el panel de PapayaClaw. En el panel, navega al **Root Terminal** y haz clic en el botón **ROOT@ CONNECT**:
+
+![Haz clic en ROOT@ CONNECT para abrir la terminal](/blog/nemoclaw-tutorial/nemoclaw_1.png "Panel de PapayaClaw — haz clic en ROOT@ CONNECT para acceder a tu instancia")
+
+Una vez conectado, verás la terminal con el estado de OpenClaw y la información del sistema:
+
+![Conectado a la terminal con el estado de OpenClaw](/blog/nemoclaw-tutorial/nemoclaw_2.png "Terminal conectada — vista general del estado de OpenClaw")
+
+### Paso 3: Verifica que Docker Esté Corriendo
+
+```bash
+docker --version
+# Debería mostrar Docker versión 24.x o posterior
+
+sudo systemctl status docker
+# Asegúrate de que muestre "active (running)"
+```
+
+### Paso 4: Instala NemoClaw
+
+Ejecuta el instalador de un solo comando:
+
+```bash
+curl -fsSL https://nvidia.com/nemoclaw.sh | bash
+```
+
+Este script hará lo siguiente:
+1. Verificará e instalará Node.js si es necesario.
+2. Lanzará un asistente de configuración interactivo.
+3. Creará tu entorno sandbox.
+4. Configurará los ajustes de inferencia.
+5. Aplicará las políticas de seguridad por defecto.
+
+### Paso 5: Completa el Asistente de Configuración
+
+El asistente te pedirá:
+
+1. **Nombrar tu sandbox** — Elige algo descriptivo como `mi-asistente`.
+2. **Seleccionar un proveedor de inferencia** — Elige entre NVIDIA Cloud API (recomendado para el plan Pro) o modelos locales.
+3. **Ingresar tu clave API** — Obtén una gratis en [build.nvidia.com](https://build.nvidia.com).
+4. **Configurar políticas de seguridad** — Los valores por defecto (Landlock + seccomp + netns) son los recomendados.
+
+Al completar, verás un resumen como este:
+
+```
+  ┌──────────────────────────────────────────────┐
+  │   Resumen de Despliegue NemoClaw             │
+  │                                              │
+  │   Sandbox:    mi-asistente                   │
+  │   Seguridad:  Landlock + seccomp + netns     │
+  │   Modelo:     nvidia/nemotron-3-super-120b   │
+  │   Proveedor:  NVIDIA Cloud API               │
+  │   Estado:     Ejecutando ✓                   │
+  └──────────────────────────────────────────────┘
+```
+
+### Paso 6: Conéctate a Tu Sandbox
+
+```bash
+nemoclaw mi-asistente connect
+```
+
+Esto te llevará al shell aislado del sandbox:
+
+```
+sandbox@mi-asistente:~$
+```
+
+### Paso 7: Empieza a Usar Tu Agente
+
+**Chat interactivo (TUI):**
+
+```bash
+openclaw tui
+```
+
+**Comando único:**
+
+```bash
+openclaw agent --agent main --local -m "Hola, ayúdame a escribir un script en Python" --session-id test
+```
+
+**Verifica el estado en cualquier momento:**
+
+```bash
+nemoclaw mi-asistente status
+```
+
+## Modelos Soportados
+
+| Modelo | Parámetros | Ideal Para |
+|--------|-----------|------------|
+| **Nemotron 3 Super** | 120B (12B activos) | Tareas completas de agentes |
+| **Nemotron 3 Nano** | 4B | Tareas ligeras, solo local |
+| **Mistral Small 4** | 119B (6-8B activos) | Propósito general alternativo |
+| **Qwen 3.5** | 27B / 9B / 4B variantes | Tareas multilingües |
+
+> **Nota**: Ejecutar modelos grandes localmente (como Nemotron 3 Super 120B) requiere significativamente más VRAM de la que proporcionan las instancias de PapayaClaw. Para el plan Pro, recomendamos usar la **NVIDIA Cloud API** para inferencia y mantener el sandbox para ejecución segura.
+
+## Seguridad en Profundidad
+
+La seguridad de NemoClaw opera en cuatro capas:
+
+1. **Capa de Red** — Bloquea todo el tráfico saliente no autorizado. Cualquier intento de conexión no aprobado se reporta al operador para su aprobación.
+2. **Capa de Sistema de Archivos** — Restringe el acceso solo a `/sandbox` y `/tmp`. El agente no puede leer ni modificar archivos del sistema.
+3. **Capa de Procesos** — Previene la escalada de privilegios y bloquea llamadas al sistema restringidas mediante perfiles seccomp.
+4. **Capa de Inferencia** — Intercepta todas las llamadas API de modelos y las enruta a través de backends controlados, previniendo la exfiltración de datos mediante inyección de prompts.
+
+## Notas Importantes
+
+- NemoClaw está actualmente en **fase alpha**. Espera cambios en la interfaz y el comportamiento.
+- Se requiere una **instalación limpia de OpenClaw** — NemoClaw aún no soporta actualizar instalaciones existentes.
+- Licenciado bajo **Apache 2.0** — totalmente de código abierto.
+- Soporte de la comunidad disponible en el [repositorio de GitHub de NemoClaw](https://github.com/NVIDIA/NemoClaw).
+
+## ¿Qué Sigue?
+
+Una vez que tengas NemoClaw corriendo en tu instancia Pro de PapayaClaw, puedes:
+
+- **Personalizar proveedores de inferencia** — Cambiar entre modelos locales y en la nube.
+- **Ajustar políticas de seguridad** — Modificar reglas de red y acceso al sistema de archivos según tu caso de uso.
+- **Monitorear la actividad del sandbox** — Usar el TUI de OpenShell para monitoreo en tiempo real.
+- **Desplegar múltiples sandboxes** — Ejecutar diferentes agentes con diferentes perfiles de seguridad.
+
+¿Listo para empezar? [Actualiza al plan Pro](/pricing) y despliega tu primer agente NemoClaw seguro hoy.
+
+---
+
+*NemoClaw fue anunciado en NVIDIA GTC 2026 el 16 de marzo de 2026. Para la documentación más reciente, visita la [documentación oficial de NemoClaw](https://docs.nvidia.com/nemoclaw/latest/get-started/quickstart.html).*
