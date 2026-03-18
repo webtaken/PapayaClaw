@@ -14,18 +14,45 @@ export default async function Home({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "PapayaClaw",
-    url: "https://papayaclaw.com",
-    description:
-      "Deploy secure OpenClaw instances in a few minutes. Avoid all technical complexity.",
-    publisher: {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://papayaclaw.com";
+
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "PapayaClaw",
+      url: baseUrl,
+      description:
+        "Deploy secure OpenClaw instances in a few minutes. Avoid all technical complexity.",
+      publisher: {
+        "@type": "Organization",
+        name: "PapayaClaw",
+      },
+    },
+    {
+      "@context": "https://schema.org",
       "@type": "Organization",
       name: "PapayaClaw",
+      url: baseUrl,
+      description:
+        "Managed deployment platform for OpenClaw — deploy your own AI assistant to a VPS in minutes.",
     },
-  };
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "PapayaClaw",
+      url: baseUrl,
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Web",
+      description:
+        "One-click deploy secure OpenClaw AI assistant instances to dedicated VPS servers. No technical knowledge required.",
+      offers: {
+        "@type": "AggregateOffer",
+        priceCurrency: "USD",
+        availability: "https://schema.org/InStock",
+      },
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-[#07080a]">

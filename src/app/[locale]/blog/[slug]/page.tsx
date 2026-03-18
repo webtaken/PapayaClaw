@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
   if (!post) return { title: "Post Not Found" };
 
   return {
-    title: `${post.frontmatter.title} | PapayaClaw`,
+    title: post.frontmatter.title,
     description: post.frontmatter.summary,
     openGraph: {
       title: post.frontmatter.title,
@@ -36,6 +36,9 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
       card: "summary_large_image",
       title: post.frontmatter.title,
       description: post.frontmatter.summary,
+    },
+    alternates: {
+      canonical: `/blog/${post.frontmatter.slug}`,
     },
   };
 }
@@ -68,18 +71,52 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { frontmatter, content } = post;
   const dateLocale = resolvedParams.locale === "es" ? "es-419" : "en-US";
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: frontmatter.title,
-    description: frontmatter.summary,
-    datePublished: frontmatter.date,
-    author: [{
-      "@type": "Organization",
-      name: "PapayaClaw",
-      url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-    }],
-  };
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://papayaclaw.com";
+
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: frontmatter.title,
+      description: frontmatter.summary,
+      datePublished: frontmatter.date,
+      url: `${baseUrl}/blog/${frontmatter.slug}`,
+      author: [{
+        "@type": "Organization",
+        name: "PapayaClaw",
+        url: baseUrl,
+      }],
+      publisher: {
+        "@type": "Organization",
+        name: "PapayaClaw",
+        url: baseUrl,
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Home",
+          item: baseUrl,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Blog",
+          item: `${baseUrl}/blog`,
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: frontmatter.title,
+          item: `${baseUrl}/blog/${frontmatter.slug}`,
+        },
+      ],
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-[#07080a] text-zinc-100 flex flex-col">

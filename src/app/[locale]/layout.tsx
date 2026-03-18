@@ -32,7 +32,10 @@ export async function generateMetadata({
     metadataBase: new URL(
       process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
     ),
-    title: t("title"),
+    title: {
+      template: "%s | PapayaClaw",
+      default: t("title"),
+    },
     description: t("description"),
     openGraph: {
       title: t("ogTitle"),
@@ -47,7 +50,19 @@ export async function generateMetadata({
       title: t("ogTitle"),
       description: t("twitterDescription"),
     },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
     alternates: {
+      canonical: locale === "es" ? "/es" : "/",
       languages: {
         en: "/",
         es: "/es",

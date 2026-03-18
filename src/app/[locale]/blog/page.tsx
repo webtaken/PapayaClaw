@@ -14,14 +14,15 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "Blog" });
 
   return {
-    title: `${t("title")} — PapayaClaw`,
+    title: t("title"),
     description: t("description"),
     openGraph: {
-      title: `${t("title")} — PapayaClaw`,
+      title: t("title"),
       description: t("description"),
       url: "/blog",
     },
     alternates: {
+      canonical: locale === "es" ? "/es/blog" : "/blog",
       languages: {
         en: "/blog",
         es: "/es/blog",
