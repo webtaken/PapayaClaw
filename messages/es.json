@@ -1,0 +1,227 @@
+{
+  "Header": {
+    "blog": "Blog",
+    "pricing": "Precios",
+    "dashboard": "Panel",
+    "logout": "Cerrar sesión",
+    "contact": "Contacto"
+  },
+  "Hero": {
+    "badge": "Ya Disponible",
+    "titleLine1": "Despliega",
+    "titleLine2": "OpenClaw",
+    "description": "Evita toda la complejidad técnica. Despliega tu propia instancia segura, activa 24/7 en",
+    "descriptionHighlight": "pocos minutos"
+  },
+  "Configurator": {
+    "providerQuestion": "¿Qué proveedor de IA prefieres?",
+    "channelQuestion": "¿Qué canal quieres usar para enviar mensajes?",
+    "signInWithGoogle": "Iniciar sesión con Google",
+    "signInDescription": "Inicia sesión para desplegar tu asistente de IA y conectar tus canales.",
+    "limitedServers": "Servidores limitados"
+  },
+  "Comparison": {
+    "title": "Método Tradicional vs",
+    "titleHighlight": "PapayaClaw",
+    "traditionalTitle": "Tradicional",
+    "total": "Total",
+    "totalTime": "60 min",
+    "nonTechNote": "Si no eres técnico, multiplica estos tiempos por 10 — tienes que aprender cada paso antes de hacerlo.",
+    "papayaclawTitle": "PapayaClaw",
+    "fewWord": "POCOS",
+    "minsWord": "mins",
+    "papayaclawDescription": "Elige un modelo, conecta Telegram, despliega — tu instancia segura lista en pocos minutos.",
+    "steps": {
+      "step1": "Comprar máquina virtual local",
+      "step1Time": "15 min",
+      "step2": "Crear claves SSH y almacenarlas de forma segura",
+      "step2Time": "10 min",
+      "step3": "Conectarse al servidor por SSH",
+      "step3Time": "5 min",
+      "step4": "Instalar Node.js y NPM",
+      "step4Time": "5 min",
+      "step5": "Instalar OpenClaw",
+      "step5Time": "7 min",
+      "step6": "Configurar OpenClaw",
+      "step6Time": "10 min",
+      "step7": "Conectar al proveedor de IA",
+      "step7Time": "4 min",
+      "step8": "Vincular con Telegram",
+      "step8Time": "4 min"
+    },
+    "benefits": {
+      "benefit1": "Servidores, SSH y entorno OpenClaw ya están configurados",
+      "benefit2": "Esperando ser asignado",
+      "benefit3": "Conexión simple, segura y rápida a tu bot"
+    }
+  },
+  "UseCases": {
+    "title": "¿Qué puede",
+    "titleHighlight": "OpenClaw",
+    "titleEnd": "hacer por ti?",
+    "subtitle": "Un asistente,",
+    "subtitleHighlight": "miles",
+    "subtitleEnd": "de casos de uso.",
+    "cases": {
+      "customerSupport": "Soporte al Cliente",
+      "personalAssistant": "Asistente Personal",
+      "languageLearning": "Aprendizaje de Idiomas",
+      "codeReview": "Revisión de Código",
+      "contentWriting": "Redacción de Contenido",
+      "dataAnalysis": "Análisis de Datos",
+      "socialMediaManager": "Gestor de Redes Sociales",
+      "emailDrafting": "Redacción de Correos",
+      "meetingSummarizer": "Resumen de Reuniones",
+      "researchAssistant": "Asistente de Investigación",
+      "recipeGenerator": "Generador de Recetas",
+      "travelPlanner": "Planificador de Viajes",
+      "studyBuddy": "Compañero de Estudio",
+      "healthFitnessCoach": "Coach de Salud y Fitness",
+      "financialAdvisor": "Asesor Financiero",
+      "legalDocumentReview": "Revisión de Documentos Legales",
+      "interviewPrep": "Preparación de Entrevistas",
+      "newsSummarizer": "Resumen de Noticias",
+      "therapyChatbot": "Chatbot de Terapia",
+      "languageTranslation": "Traducción de Idiomas"
+    }
+  },
+  "Pricing": {
+    "badge": "Precios Simples",
+    "title": "Elige Tu",
+    "titleHighlight": "Potencia",
+    "subtitle": "Sin costos ocultos. Sin costos de configuración. Cancela en cualquier momento.",
+    "popular": "Popular",
+    "loading": "Cargando...",
+    "bottomNote": "Ambos planes incluyen una",
+    "bottomNoteHighlight": "instancia VPS dedicada",
+    "bottomNoteEnd": "— tu bot funciona 24/7 en su propio servidor.",
+    "portalNote": "Administra tu suscripción en cualquier momento a través del",
+    "portalLink": "Portal del Cliente",
+    "plans": {
+      "basic": {
+        "name": "Básico",
+        "description": "Todo lo que necesitas para desplegar y ejecutar tu bot OpenClaw.",
+        "cta": "Comenzar",
+        "features": {
+          "f1": "1 bot desplegado",
+          "f2": "2 vCPU, 4 GB RAM, 40 GB SSD",
+          "f3": "Canales Telegram y SSH",
+          "f4": "Panel web seguro",
+          "f5": "Trae tu propia clave (solo API key)",
+          "f6": "Soporte básico"
+        }
+      },
+      "pro": {
+        "name": "Pro",
+        "description": "Máxima potencia para despliegues serios.",
+        "cta": "Hazte Pro",
+        "features": {
+          "f1": "1 instancia de bot",
+          "f2": "4 vCPU, 8 GB RAM, 80 GB SSD",
+          "f3": "Canales Telegram y SSH",
+          "f4": "Panel web seguro",
+          "f5": "Trae tu propia clave (solo API key)",
+          "f6": "Soporte prioritario",
+          "f7": "Plantillas y tutoriales exclusivos"
+        }
+      }
+    }
+  },
+  "Footer": {
+    "builtWith": "Hecho con ❤️ por",
+    "blog": "Blog",
+    "support": "Soporte"
+  },
+  "Blog": {
+    "title": "Blog de PapayaClaw",
+    "description": "Historias, actualizaciones y artículos a fondo del equipo detrás de PapayaClaw. Lee sobre nuestras últimas funcionalidades y conocimientos de ingeniería.",
+    "noPosts": "Aún no hay publicaciones. ¡Vuelve pronto!",
+    "readArticle": "Leer artículo"
+  },
+  "PricingPage": {
+    "title": "Precios — PapayaClaw",
+    "description": "Elige tu plan PapayaClaw. Básico o Pro — despliega instancias seguras de OpenClaw en minutos."
+  },
+  "Dashboard": {
+    "navDashboard": "Panel",
+    "signOut": "Cerrar sesión",
+    "yourInstances": "Tus Instancias",
+    "manageDescription": "Administra y monitorea tus despliegues de OpenClaw",
+    "managePlan": "Gestionar Plan",
+    "deployNew": "Nuevo Despliegue",
+    "subscribeBanner": "Suscríbete para desplegar instancias",
+    "subscribeBannerDescription": "Se requiere un plan activo para desplegar y gestionar bots de OpenClaw.",
+    "viewPlans": "Ver Planes",
+    "noInstances": "Sin instancias desplegadas",
+    "noInstancesDescription": "Despliega tu primera instancia de OpenClaw para comenzar. El aprovisionamiento toma menos de 1 minuto.",
+    "initializeDeployment": "Iniciar Despliegue",
+    "model": "Modelo",
+    "channel": "Canal"
+  },
+  "DeployDialog": {
+    "title": "Desplegar Nueva Instancia",
+    "step1": "Nombre y Modelo",
+    "step2": "Canal",
+    "step3": "Desplegar",
+    "instanceName": "Nombre de Instancia",
+    "instanceNamePlaceholder": "Mi Asistente",
+    "selectProvider": "Seleccionar Proveedor",
+    "selectModel": "Seleccionar Modelo",
+    "customModelString": "Cadena de Modelo Personalizado",
+    "customModelPlaceholder": "ej. anthropic/claude-sonnet-4-5",
+    "apiKeyFor": "Clave API para {provider}",
+    "selectChannel": "Seleccionar Canal",
+    "soon": "PRONTO",
+    "telegramBotToken": "Token de Bot de Telegram",
+    "telegramTokenHelp": "Crea un bot a través de",
+    "telegramTokenHelpEnd": "en Telegram y pega el token aquí.",
+    "summary": "Resumen",
+    "name": "Nombre",
+    "token": "Token",
+    "deployNote": "Tu instancia se desplegará de forma segura. Puedes gestionarla desde el panel en cualquier momento.",
+    "deployNoteLabel": "Nota:",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "deploying": "Desplegando...",
+    "deployInstance": "Desplegar Instancia",
+    "recommended": "Recomendado",
+    "deployError": "Error al desplegar la instancia. Por favor intenta de nuevo.",
+    "networkError": "Error de red — no se pudo conectar al servidor. Por favor intenta de nuevo."
+  },
+  "InstanceCard": {
+    "running": "En ejecución",
+    "stopped": "Detenido",
+    "deploying": "Desplegando",
+    "error": "Error",
+    "model": "Modelo",
+    "channel": "Canal",
+    "stop": "Detener",
+    "start": "Iniciar",
+    "pairing": "Vinculación",
+    "view": "Ver",
+    "delete": "Eliminar",
+    "deleteTitle": "Eliminar Instancia",
+    "deleteDescription": "¿Estás seguro de que quieres eliminar",
+    "deleteDescriptionEnd": "? Esta acción no se puede deshacer. Todos los datos y la configuración se perderán permanentemente.",
+    "cancel": "Cancelar",
+    "confirmDelete": "Confirmar Eliminación"
+  },
+  "PairingDialog": {
+    "title": "Solicitudes de Vinculación",
+    "subtitle": "Aprueba usuarios que quieren chatear con tu bot",
+    "connecting": "Conectando a la instancia...",
+    "noPending": "Sin solicitudes pendientes",
+    "noPendingDescription": "Cuando alguien envíe un DM a tu bot, un código de vinculación aparecerá aquí",
+    "approve": "Aprobar",
+    "codesExpire": "Los códigos expiran después de 1 hora",
+    "refresh": "Actualizar",
+    "user": "Usuario"
+  },
+  "Metadata": {
+    "title": "PapayaClaw — Despliega Instancias Seguras de OpenClaw en Pocos Minutos",
+    "description": "Despliega instancias seguras de OpenClaw en pocos minutos. Evita toda la complejidad técnica y despliega tu propia instancia de OpenClaw activa 24/7 con un solo clic.",
+    "ogTitle": "PapayaClaw — Despliega Instancias Seguras de OpenClaw",
+    "ogDescription": "Despliega instancias seguras de OpenClaw en pocos minutos. Evita toda la complejidad técnica.",
+    "twitterDescription": "Evita toda la complejidad técnica y despliega tu propia instancia de OpenClaw activa 24/7 con un solo clic."
+  }
+}

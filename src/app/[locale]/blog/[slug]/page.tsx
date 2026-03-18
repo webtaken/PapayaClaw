@@ -4,9 +4,10 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 interface BlogPostPageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; locale: string }>;
 }
 
 export async function generateStaticParams() {
@@ -56,13 +57,16 @@ const components = {
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const resolvedParams = await params;
+  setRequestLocale(resolvedParams.locale);
   const post = await getBlogPost(resolvedParams.slug);
+  const t = await getTranslations("Blog");
 
   if (!post) {
     notFound();
   }
 
   const { frontmatter, content } = post;
+  const dateLocale = resolvedParams.locale === "es" ? "es-419" : "en-US";
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -86,7 +90,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       <Header />
       <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-20">
         <Link href="/blog" className="inline-flex items-center text-sm font-semibold text-primary hover:text-white transition-colors mb-8">
-          <span className="mr-2">←</span> Back to Blog
+          <span className="mr-2">←</span> {t("readArticle") === "Leer artículo" ? "Volver al Blog" : "Back to Blog"}
         </Link>
         
         <article>
@@ -96,7 +100,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             </h1>
             <div className="flex items-center text-sm text-zinc-400 font-medium tracking-wide uppercase">
               <time dateTime={frontmatter.date}>
-                {new Date(frontmatter.date).toLocaleDateString("en-US", {
+                {new Date(frontmatter.date).toLocaleDateString(dateLocale, {
                   year: "numeric",
                   month: "long",
                   day: "numeric",

@@ -5,14 +5,20 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
-
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Toaster } from "@/components/ui/sonner";
 
 export default async function DashboardLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations("Dashboard");
+
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -55,7 +61,7 @@ export default async function DashboardLayout({
                 href="/dashboard"
                 className="text-sm font-medium text-white"
               >
-                Dashboard
+                {t("navDashboard")}
               </Link>
             </nav>
           </div>

@@ -11,6 +11,7 @@ import { Telegram } from "@/components/icons/telegram";
 import { Discord } from "@/components/icons/discord";
 import { WhatsApp } from "@/components/icons/whatsapp";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 const PROVIDERS = [
   {
@@ -74,6 +75,7 @@ const channels = [
 export function Configurator() {
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
+  const t = useTranslations("Configurator");
 
   const handleSignIn = async () => {
     try {
@@ -92,7 +94,7 @@ export function Configurator() {
         {/* Provider Selection */}
         <div className="mb-8">
           <h2 className="mb-4 text-center text-lg font-semibold text-white">
-            Which AI provider do you prefer?
+            {t("providerQuestion")}
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {PROVIDERS.map((provider) => (
@@ -117,7 +119,7 @@ export function Configurator() {
         {/* Channel Selection */}
         <div className="mb-8">
           <h2 className="mb-4 text-center text-lg font-semibold text-white">
-            Which channel do you want to use for sending messages?
+            {t("channelQuestion")}
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {channels.map((channel) => (
@@ -163,13 +165,13 @@ export function Configurator() {
                 fill="#EA4335"
               />
             </svg>
-            Sign in with Google
+            {t("signInWithGoogle")}
           </Button>
           <p className="max-w-sm text-center text-sm leading-relaxed text-zinc-400 mt-2 font-medium">
-            Sign in to deploy your AI assistant and connect your channels.
+            {t("signInDescription")}
             <br />
             <span className="mt-2 inline-block rounded-full bg-primary/10 px-3 py-1 text-primary ring-1 ring-primary/30">
-              Limited cloud servers
+              {t("limitedServers")}
             </span>
           </p>
         </div>

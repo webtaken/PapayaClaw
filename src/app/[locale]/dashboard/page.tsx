@@ -6,8 +6,16 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { getUserSubscription } from "@/lib/polar";
+import { setRequestLocale } from "next-intl/server";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
   const session = await auth.api.getSession({
     headers: await headers(),
   });

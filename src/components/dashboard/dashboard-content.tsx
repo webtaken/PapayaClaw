@@ -5,6 +5,8 @@ import { InstanceCard } from "./instance-card";
 import { DeployDialog } from "./deploy-dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Crown, ExternalLink } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 
 export interface Instance {
   id: string;
@@ -47,6 +49,7 @@ export function DashboardContent({
 }: DashboardProps) {
   const [instances, setInstances] = useState<Instance[]>(initialInstances);
   const [deployOpen, setDeployOpen] = useState(false);
+  const t = useTranslations("Dashboard");
 
   const planLabel =
     subscription?.planType === "pro"
@@ -90,7 +93,7 @@ export function DashboardContent({
         <div>
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-xl font-medium tracking-tight text-white">
-              Your Instances
+              {t("yourInstances")}
             </h1>
             <span
               className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-widest ${
@@ -106,7 +109,7 @@ export function DashboardContent({
             </span>
           </div>
           <p className="text-xs font-mono text-zinc-500">
-            Manage and monitor your OpenClaw deployments
+            {t("manageDescription")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -116,7 +119,7 @@ export function DashboardContent({
               href="/api/portal"
               className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 border border-zinc-800 px-3 h-9 text-xs font-mono text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 transition-all"
             >
-              Manage Plan
+              {t("managePlan")}
               <ExternalLink className="h-3 w-3" />
             </a>
           ) : (
@@ -145,7 +148,7 @@ export function DashboardContent({
             className="bg-zinc-100 text-zinc-950 hover:bg-white font-medium shadow-none h-9 px-4 border border-transparent transition-all hover:border-zinc-300 gap-2 font-mono text-xs uppercase tracking-wider"
           >
             <Plus className="h-3.5 w-3.5" />
-            Deploy New
+            {t("deployNew")}
           </Button>
         </div>
       </div>
@@ -159,19 +162,19 @@ export function DashboardContent({
             </div>
             <div>
               <p className="text-sm font-medium text-white">
-                Subscribe to deploy instances
+                {t("subscribeBanner")}
               </p>
               <p className="text-xs text-zinc-500 font-mono">
-                An active plan is required to deploy and manage OpenClaw bots.
+                {t("subscribeBannerDescription")}
               </p>
             </div>
           </div>
-          <a
+          <Link
             href="/pricing"
             className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-5 h-9 text-xs font-bold uppercase tracking-wider text-black hover:bg-amber-400 transition-colors"
           >
-            View Plans
-          </a>
+            {t("viewPlans")}
+          </Link>
         </div>
       )}
 
@@ -183,18 +186,17 @@ export function DashboardContent({
               <Plus className="h-6 w-6 text-zinc-600" />
             </div>
             <p className="text-sm text-zinc-300 font-mono mb-1">
-              No instances deployed
+              {t("noInstances")}
             </p>
             <p className="text-xs text-zinc-500 font-mono mb-6 max-w-xs leading-relaxed">
-              Deploy your first OpenClaw instance to get started. Provisioning
-              takes under 1 minute.
+              {t("noInstancesDescription")}
             </p>
             <Button
               onClick={() => setDeployOpen(true)}
               className="bg-zinc-800 text-zinc-200 hover:bg-zinc-700 border border-zinc-700 hover:text-white font-medium shadow-none gap-2 font-mono text-xs uppercase tracking-wider h-10 px-6"
             >
               <Plus className="h-3.5 w-3.5 text-zinc-400" />
-              Initialize Deployment
+              {t("initializeDeployment")}
             </Button>
           </div>
         </div>

@@ -5,12 +5,16 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import { InstanceDetail } from "@/components/dashboard/instance-detail";
+import { setRequestLocale } from "next-intl/server";
 
 export default async function InstancePage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; locale: string }>;
 }) {
+  const { id, locale } = await params;
+  setRequestLocale(locale);
+
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -18,8 +22,6 @@ export default async function InstancePage({
   if (!session) {
     redirect("/");
   }
-
-  const { id } = await params;
 
   const [inst] = await db
     .select()

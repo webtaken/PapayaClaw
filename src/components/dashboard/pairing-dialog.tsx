@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, RefreshCw, Users, Shield } from "lucide-react";
+import { useTranslations, useLocale } from "next-intl";
 
 interface PairingRequest {
   code: string;
@@ -31,6 +32,8 @@ export function PairingDialog({
   const [loading, setLoading] = useState(false);
   const [approving, setApproving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const t = useTranslations("PairingDialog");
+  const locale = useLocale();
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
@@ -67,7 +70,6 @@ export function PairingDialog({
       });
 
       if (res.ok) {
-        // Remove from list after approval
         setRequests((prev) => prev.filter((r) => r.code !== code));
       } else {
         const data = await res.json();
@@ -86,10 +88,10 @@ export function PairingDialog({
         <DialogHeader className="border-b border-zinc-800 px-6 pt-6 pb-4">
           <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-white">
             <Shield className="h-5 w-5 text-violet-400" />
-            Pairing Requests
+            {t("title")}
           </DialogTitle>
           <p className="mt-1 text-sm text-zinc-400">
-            Approve users who want to chat with your bot
+            {t("subtitle")}
           </p>
         </DialogHeader>
 
@@ -105,7 +107,7 @@ export function PairingDialog({
           {loading && (
             <div className="flex flex-col items-center justify-center py-10">
               <RefreshCw className="mb-3 h-6 w-6 animate-spin text-violet-400" />
-              <p className="text-sm text-zinc-400">Connecting to instance...</p>
+              <p className="text-sm text-zinc-400">{t("connecting")}</p>
             </div>
           )}
 
@@ -116,10 +118,10 @@ export function PairingDialog({
                 <Users className="h-6 w-6 text-zinc-500" />
               </div>
               <p className="text-sm font-medium text-zinc-300">
-                No pending requests
+                {t("noPending")}
               </p>
               <p className="mt-1 text-center text-xs text-zinc-500">
-                When someone DMs your bot, a pairing code will appear here
+                {t("noPendingDescription")}
               </p>
             </div>
           )}
@@ -145,17 +147,20 @@ export function PairingDialog({
                       {req.senderName ? (
                         <span className="text-zinc-400">{req.senderName}</span>
                       ) : (
-                        <span>User {req.senderId}</span>
+                        <span>{t("user")} {req.senderId}</span>
                       )}
                       {req.timestamp && (
                         <>
                           {" · "}
-                          {new Date(req.timestamp).toLocaleString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
+                          {new Date(req.timestamp).toLocaleString(
+                            locale === "es" ? "es-419" : "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                            }
+                          )}
                         </>
                       )}
                     </p>
@@ -171,7 +176,7 @@ export function PairingDialog({
                     ) : (
                       <Check className="h-3 w-3" />
                     )}
-                    Approve
+                    {t("approve")}
                   </Button>
                 </div>
               ))}
@@ -181,7 +186,7 @@ export function PairingDialog({
 
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-zinc-800 px-6 py-3">
-          <p className="text-[11px] text-zinc-500">Codes expire after 1 hour</p>
+          <p className="text-[11px] text-zinc-500">{t("codesExpire")}</p>
           <Button
             variant="ghost"
             size="sm"
@@ -190,7 +195,7 @@ export function PairingDialog({
             className="cursor-pointer gap-1.5 text-xs text-zinc-400 hover:text-white"
           >
             <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
-            Refresh
+            {t("refresh")}
           </Button>
         </div>
       </DialogContent>

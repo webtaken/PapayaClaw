@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -25,6 +24,8 @@ import { Discord } from "../icons/discord";
 import { WhatsApp } from "../icons/whatsapp";
 import { Slack } from "../icons/slack";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 
 const PROVDERS = [
   {
@@ -59,7 +60,7 @@ const PROVDERS = [
         className="object-contain"
       />
     ),
-    badge: "Recommended",
+    badge: "recommended",
   },
   {
     id: "openrouter",
@@ -124,12 +125,6 @@ const channels = [
   },
 ];
 
-const steps = [
-  { number: 1, label: "Name & Model" },
-  { number: 2, label: "Channel" },
-  { number: 3, label: "Deploy" },
-];
-
 export function DeployDialog({
   open,
   onOpenChange,
@@ -140,6 +135,7 @@ export function DeployDialog({
   onInstanceCreated: (instance: Instance) => void;
 }) {
   const router = useRouter();
+  const t = useTranslations("DeployDialog");
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
@@ -149,6 +145,12 @@ export function DeployDialog({
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [botToken, setBotToken] = useState("");
   const [isDeploying, setIsDeploying] = useState(false);
+
+  const steps = [
+    { number: 1, label: t("step1") },
+    { number: 2, label: t("step2") },
+    { number: 3, label: t("step3") },
+  ];
 
   const resetForm = () => {
     setStep(1);
@@ -202,15 +204,11 @@ export function DeployDialog({
         router.push(`/dashboard/${newInstance.id}`);
       } else {
         const data = await res.json().catch(() => null);
-        toast.error(
-          data?.error || "Failed to deploy instance. Please try again.",
-        );
+        toast.error(data?.error || t("deployError"));
         setIsDeploying(false);
       }
     } catch {
-      toast.error(
-        "Network error — could not reach the server. Please try again.",
-      );
+      toast.error(t("networkError"));
       setIsDeploying(false);
     }
   };
@@ -218,7 +216,6 @@ export function DeployDialog({
   const selectedProviderData = PROVDERS.find((p) => p.id === selectedProvider);
   const selectedChannelData = channels.find((c) => c.id === selectedChannel);
 
-  // We need to find the human readable name of the model if it's a standard one
   const getModelName = () => {
     if (isCustomProvider) return finalModelId;
     if (!selectedProvider || !selectedModel) return "—";
@@ -233,7 +230,7 @@ export function DeployDialog({
       <DialogContent className="max-w-xl sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] overflow-y-auto border-zinc-800 bg-zinc-900 p-0 text-white">
         <DialogHeader className="border-b border-zinc-800 px-6 pt-6 pb-4">
           <DialogTitle className="text-lg font-semibold text-white">
-            Deploy New Instance
+            {t("title")}
           </DialogTitle>
 
           {/* Step Indicator */}
@@ -283,11 +280,11 @@ export function DeployDialog({
                   htmlFor="instance-name"
                   className="mb-1.5 block text-xs font-medium text-zinc-300"
                 >
-                  Instance Name
+                  {t("instanceName")}
                 </Label>
                 <Input
                   id="instance-name"
-                  placeholder="My Assistant"
+                  placeholder={t("instanceNamePlaceholder")}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="h-8 rounded-lg border-zinc-700 bg-zinc-800/50 text-sm text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20"
@@ -296,7 +293,7 @@ export function DeployDialog({
 
               <div>
                 <Label className="mb-2 block text-xs font-medium text-zinc-300">
-                  Select Provider
+                  {t("selectProvider")}
                 </Label>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
                   {PROVDERS.map((provider) => (
@@ -324,7 +321,7 @@ export function DeployDialog({
                           variant="secondary"
                           className="absolute -top-1.5 -right-1.5 bg-violet-500 text-[8px] leading-none hover:bg-violet-600 text-white rounded px-1 py-0.5 border-none"
                         >
-                          {provider.badge}
+                          {t("recommended")}
                         </Badge>
                       )}
                     </button>
@@ -332,12 +329,10 @@ export function DeployDialog({
                 </div>
               </div>
 
-
-
               {selectedProvider && !isCustomProvider && (
                 <div className="animate-fade-in-up">
                   <Label className="mb-2 block text-xs font-medium text-zinc-300">
-                    Select Model
+                    {t("selectModel")}
                   </Label>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                     {MODELS_BY_PROVIDER[selectedProvider]?.map((m) => {
@@ -377,7 +372,7 @@ export function DeployDialog({
                     htmlFor="custom-model-id"
                     className="mb-1.5 block text-xs font-medium text-zinc-300"
                   >
-                    Custom Model String
+                    {t("customModelString")}
                   </Label>
                   <div className="flex rounded-lg overflow-hidden border border-zinc-700 bg-zinc-800/50 shadow-sm focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500/20">
                     <div className="bg-zinc-800 px-2.5 py-1.5 text-xs font-mono text-zinc-400 flex items-center border-r border-zinc-700">
@@ -386,7 +381,7 @@ export function DeployDialog({
                     <input
                       id="custom-model-id"
                       type="text"
-                      placeholder="e.g anthropic/claude-sonnet-4-5"
+                      placeholder={t("customModelPlaceholder")}
                       value={customModelId}
                       onChange={(e) => setCustomModelId(e.target.value)}
                       className="flex-1 bg-transparent px-2.5 py-1.5 text-xs text-white font-mono placeholder:text-zinc-600 focus:outline-none"
@@ -401,7 +396,7 @@ export function DeployDialog({
                     htmlFor="model-api-key"
                     className="mb-1.5 block text-xs font-medium text-zinc-300"
                   >
-                    API Key for {selectedProviderData?.name}
+                    {t("apiKeyFor", { provider: selectedProviderData?.name ?? "" })}
                   </Label>
                   <Input
                     id="model-api-key"
@@ -421,7 +416,7 @@ export function DeployDialog({
             <div className="space-y-4 animate-fade-in-up">
               <div>
                 <Label className="mb-2 block text-xs font-medium text-zinc-300">
-                  Select Channel
+                  {t("selectChannel")}
                 </Label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {channels.map((channel) => (
@@ -449,7 +444,7 @@ export function DeployDialog({
                             variant="secondary"
                             className="rounded bg-zinc-700/50 px-1 py-0 text-[8px] tracking-wide text-zinc-400"
                           >
-                            SOON
+                            {t("soon")}
                           </Badge>
                         )}
                       </div>
@@ -464,7 +459,7 @@ export function DeployDialog({
                     htmlFor="bot-token"
                     className="mb-1 block text-xs font-medium text-zinc-300"
                   >
-                    Telegram Bot Token
+                    {t("telegramBotToken")}
                   </Label>
                   <Input
                     id="bot-token"
@@ -475,7 +470,7 @@ export function DeployDialog({
                     className="h-8 rounded-lg border-zinc-700 bg-zinc-800/50 font-mono text-xs text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20"
                   />
                   <p className="text-[10px] leading-relaxed text-zinc-500">
-                    Create a bot via{" "}
+                    {t("telegramTokenHelp")}{" "}
                     <a
                       href="https://t.me/BotFather"
                       target="_blank"
@@ -484,7 +479,7 @@ export function DeployDialog({
                     >
                       @BotFather
                     </a>{" "}
-                    on Telegram and paste the token here.
+                    {t("telegramTokenHelpEnd")}
                   </p>
                 </div>
               )}
@@ -496,18 +491,18 @@ export function DeployDialog({
             <div className="space-y-4 animate-fade-in-up">
               <div className="rounded-lg border border-zinc-800 bg-zinc-800/30 p-4">
                 <h4 className="mb-3 text-xs font-semibold text-white uppercase tracking-wider">
-                  Summary
+                  {t("summary")}
                 </h4>
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-400">Name</span>
+                    <span className="text-xs text-zinc-400">{t("name")}</span>
                     <span className="text-xs font-medium text-white">
                       {name}
                     </span>
                   </div>
                   <div className="h-px bg-zinc-800/60" />
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-400">Model</span>
+                    <span className="text-xs text-zinc-400">{t("selectModel")}</span>
                     <span className="flex items-center gap-1.5 text-xs font-medium text-white">
                       <div className="scale-75 origin-right">
                         {selectedProviderData?.icon}
@@ -517,7 +512,7 @@ export function DeployDialog({
                   </div>
                   <div className="h-px bg-zinc-800/60" />
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-400">Channel</span>
+                    <span className="text-xs text-zinc-400">{t("selectChannel")}</span>
                     <span className="flex items-center gap-1.5 text-xs font-medium text-white">
                       <span className="text-[10px]">
                         {selectedChannelData?.icon}
@@ -527,7 +522,7 @@ export function DeployDialog({
                   </div>
                   <div className="h-px bg-zinc-800/60" />
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-400">Token</span>
+                    <span className="text-xs text-zinc-400">{t("token")}</span>
                     <span className="font-mono text-[10px] text-zinc-400">
                       {botToken.slice(0, 8)}•••••
                     </span>
@@ -537,9 +532,8 @@ export function DeployDialog({
 
               <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 px-3 py-2.5">
                 <p className="text-[10px] leading-relaxed text-zinc-400">
-                  <span className="font-medium text-violet-400">Note:</span>{" "}
-                  Your instance will be deployed securely. You can manage it
-                  from the dashboard anytime.
+                  <span className="font-medium text-violet-400">{t("deployNoteLabel")}</span>{" "}
+                  {t("deployNote")}
                 </p>
               </div>
             </div>
@@ -555,7 +549,7 @@ export function DeployDialog({
               className="cursor-pointer gap-1.5 text-sm text-zinc-400 hover:text-white"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back
+              {t("back")}
             </Button>
           ) : (
             <div />
@@ -567,7 +561,7 @@ export function DeployDialog({
               disabled={step === 1 ? !canProceedStep1 : !canProceedStep2}
               className="cursor-pointer gap-1.5 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-lg transition-all duration-300 hover:bg-zinc-100 hover:shadow-xl disabled:opacity-40"
             >
-              Next
+              {t("next")}
               <ArrowRight className="h-4 w-4" />
             </Button>
           ) : (
@@ -579,12 +573,12 @@ export function DeployDialog({
               {isDeploying ? (
                 <>
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  Deploying...
+                  {t("deploying")}
                 </>
               ) : (
                 <>
                   <Rocket className="h-4 w-4" />
-                  Deploy Instance
+                  {t("deployInstance")}
                 </>
               )}
             </Button>

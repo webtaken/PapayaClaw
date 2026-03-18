@@ -1,11 +1,13 @@
 "use client";
 
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 
 export function SignOutButton() {
   const router = useRouter();
+  const t = useTranslations("Dashboard");
 
   const handleSignOut = async () => {
     await authClient.signOut();
@@ -18,7 +20,7 @@ export function SignOutButton() {
       onClick={handleSignOut}
       className="cursor-pointer text-sm text-zinc-400 transition-colors hover:text-white"
     >
-      Sign Out
+      {t("signOut")}
     </Button>
   );
 }

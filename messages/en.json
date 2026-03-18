@@ -1,0 +1,227 @@
+{
+  "Header": {
+    "blog": "Blog",
+    "pricing": "Pricing",
+    "dashboard": "Dashboard",
+    "logout": "Logout",
+    "contact": "Contact"
+  },
+  "Hero": {
+    "badge": "Now Available",
+    "titleLine1": "Deploy",
+    "titleLine2": "OpenClaw",
+    "description": "Avoid all technical complexity. One-click deploy your own secure, 24/7 active instance in a",
+    "descriptionHighlight": "few minutes"
+  },
+  "Configurator": {
+    "providerQuestion": "Which AI provider do you prefer?",
+    "channelQuestion": "Which channel do you want to use for sending messages?",
+    "signInWithGoogle": "Sign in with Google",
+    "signInDescription": "Sign in to deploy your AI assistant and connect your channels.",
+    "limitedServers": "Limited cloud servers"
+  },
+  "Comparison": {
+    "title": "Traditional Method vs",
+    "titleHighlight": "PapayaClaw",
+    "traditionalTitle": "Traditional",
+    "total": "Total",
+    "totalTime": "60 min",
+    "nonTechNote": "If you're non-technical, multiply these times by 10 — you have to learn each step before doing.",
+    "papayaclawTitle": "PapayaClaw",
+    "fewWord": "FEW",
+    "minsWord": "mins",
+    "papayaclawDescription": "Pick a model, connect Telegram, deploy — spinning up your secure instance in a few minutes.",
+    "steps": {
+      "step1": "Purchasing local virtual machine",
+      "step1Time": "15 min",
+      "step2": "Creating SSH keys and storing securely",
+      "step2Time": "10 min",
+      "step3": "Connecting to the server via SSH",
+      "step3Time": "5 min",
+      "step4": "Installing Node.js and NPM",
+      "step4Time": "5 min",
+      "step5": "Installing OpenClaw",
+      "step5Time": "7 min",
+      "step6": "Setting up OpenClaw",
+      "step6Time": "10 min",
+      "step7": "Connecting to AI provider",
+      "step7Time": "4 min",
+      "step8": "Pairing with Telegram",
+      "step8Time": "4 min"
+    },
+    "benefits": {
+      "benefit1": "Servers, SSH and OpenClaw Environment are already set up",
+      "benefit2": "Waiting to get assigned",
+      "benefit3": "Simple, secure and fast connection to your bot"
+    }
+  },
+  "UseCases": {
+    "title": "What can",
+    "titleHighlight": "OpenClaw",
+    "titleEnd": "do for you?",
+    "subtitle": "One assistant,",
+    "subtitleHighlight": "thousands",
+    "subtitleEnd": "of use cases.",
+    "cases": {
+      "customerSupport": "Customer Support",
+      "personalAssistant": "Personal Assistant",
+      "languageLearning": "Language Learning",
+      "codeReview": "Code Review",
+      "contentWriting": "Content Writing",
+      "dataAnalysis": "Data Analysis",
+      "socialMediaManager": "Social Media Manager",
+      "emailDrafting": "Email Drafting",
+      "meetingSummarizer": "Meeting Summarizer",
+      "researchAssistant": "Research Assistant",
+      "recipeGenerator": "Recipe Generator",
+      "travelPlanner": "Travel Planner",
+      "studyBuddy": "Study Buddy",
+      "healthFitnessCoach": "Health & Fitness Coach",
+      "financialAdvisor": "Financial Advisor",
+      "legalDocumentReview": "Legal Document Review",
+      "interviewPrep": "Interview Prep",
+      "newsSummarizer": "News Summarizer",
+      "therapyChatbot": "Therapy Chatbot",
+      "languageTranslation": "Language Translation"
+    }
+  },
+  "Pricing": {
+    "badge": "Simple Pricing",
+    "title": "Pick Your",
+    "titleHighlight": "Power",
+    "subtitle": "No hidden fees. No setup costs. Cancel anytime.",
+    "popular": "Popular",
+    "loading": "Loading...",
+    "bottomNote": "Both plans include a",
+    "bottomNoteHighlight": "dedicated VPS instance",
+    "bottomNoteEnd": "— your bot runs 24/7 on its own server.",
+    "portalNote": "Manage your subscription anytime via the",
+    "portalLink": "Customer Portal",
+    "plans": {
+      "basic": {
+        "name": "Basic",
+        "description": "Everything you need to deploy and run your OpenClaw bot.",
+        "cta": "Get Started",
+        "features": {
+          "f1": "1 bot deployment",
+          "f2": "2 vCPU, 4 GB RAM, 40 GB SSD",
+          "f3": "Telegram & SSH channels",
+          "f4": "Secure web dashboard",
+          "f5": "Bring Your Own Key (API key only)",
+          "f6": "Basic support"
+        }
+      },
+      "pro": {
+        "name": "Pro",
+        "description": "Maximum power for serious deployments.",
+        "cta": "Go Pro",
+        "features": {
+          "f1": "1 bot instance",
+          "f2": "4 vCPU, 8 GB RAM, 80 GB SSD",
+          "f3": "Telegram & SSH channels",
+          "f4": "Secure web dashboard",
+          "f5": "Bring Your Own Key (API key only)",
+          "f6": "Priority support",
+          "f7": "Exclusive templates and tutorials"
+        }
+      }
+    }
+  },
+  "Footer": {
+    "builtWith": "Built with ❤️ by",
+    "blog": "Blog",
+    "support": "Support"
+  },
+  "Blog": {
+    "title": "PapayaClaw Blog",
+    "description": "Stories, updates, and deep dives from the team behind PapayaClaw. Read about our latest features and engineering insights.",
+    "noPosts": "No posts published yet. Check back soon!",
+    "readArticle": "Read article"
+  },
+  "PricingPage": {
+    "title": "Pricing — PapayaClaw",
+    "description": "Choose your PapayaClaw plan. Basic or Pro — deploy secure OpenClaw instances in minutes."
+  },
+  "Dashboard": {
+    "navDashboard": "Dashboard",
+    "signOut": "Sign Out",
+    "yourInstances": "Your Instances",
+    "manageDescription": "Manage and monitor your OpenClaw deployments",
+    "managePlan": "Manage Plan",
+    "deployNew": "Deploy New",
+    "subscribeBanner": "Subscribe to deploy instances",
+    "subscribeBannerDescription": "An active plan is required to deploy and manage OpenClaw bots.",
+    "viewPlans": "View Plans",
+    "noInstances": "No instances deployed",
+    "noInstancesDescription": "Deploy your first OpenClaw instance to get started. Provisioning takes under 1 minute.",
+    "initializeDeployment": "Initialize Deployment",
+    "model": "Model",
+    "channel": "Channel"
+  },
+  "DeployDialog": {
+    "title": "Deploy New Instance",
+    "step1": "Name & Model",
+    "step2": "Channel",
+    "step3": "Deploy",
+    "instanceName": "Instance Name",
+    "instanceNamePlaceholder": "My Assistant",
+    "selectProvider": "Select Provider",
+    "selectModel": "Select Model",
+    "customModelString": "Custom Model String",
+    "customModelPlaceholder": "e.g anthropic/claude-sonnet-4-5",
+    "apiKeyFor": "API Key for {provider}",
+    "selectChannel": "Select Channel",
+    "soon": "SOON",
+    "telegramBotToken": "Telegram Bot Token",
+    "telegramTokenHelp": "Create a bot via",
+    "telegramTokenHelpEnd": "on Telegram and paste the token here.",
+    "summary": "Summary",
+    "name": "Name",
+    "token": "Token",
+    "deployNote": "Your instance will be deployed securely. You can manage it from the dashboard anytime.",
+    "deployNoteLabel": "Note:",
+    "back": "Back",
+    "next": "Next",
+    "deploying": "Deploying...",
+    "deployInstance": "Deploy Instance",
+    "recommended": "Recommended",
+    "deployError": "Failed to deploy instance. Please try again.",
+    "networkError": "Network error — could not reach the server. Please try again."
+  },
+  "InstanceCard": {
+    "running": "Running",
+    "stopped": "Stopped",
+    "deploying": "Deploying",
+    "error": "Error",
+    "model": "Model",
+    "channel": "Channel",
+    "stop": "Stop",
+    "start": "Start",
+    "pairing": "Pairing",
+    "view": "View",
+    "delete": "Delete",
+    "deleteTitle": "Delete Instance",
+    "deleteDescription": "Are you sure you want to delete",
+    "deleteDescriptionEnd": "? This action cannot be undone. All data and configuration will be permanently lost.",
+    "cancel": "Cancel",
+    "confirmDelete": "Confirm Delete"
+  },
+  "PairingDialog": {
+    "title": "Pairing Requests",
+    "subtitle": "Approve users who want to chat with your bot",
+    "connecting": "Connecting to instance...",
+    "noPending": "No pending requests",
+    "noPendingDescription": "When someone DMs your bot, a pairing code will appear here",
+    "approve": "Approve",
+    "codesExpire": "Codes expire after 1 hour",
+    "refresh": "Refresh",
+    "user": "User"
+  },
+  "Metadata": {
+    "title": "PapayaClaw — Deploy Secure OpenClaw Instances in a Few Minutes",
+    "description": "Deploy secure OpenClaw instances in a few minutes. Avoid all technical complexity and one-click deploy your own 24/7 active OpenClaw instance.",
+    "ogTitle": "PapayaClaw — Deploy Secure OpenClaw Instances",
+    "ogDescription": "Deploy secure OpenClaw instances in a few minutes. Avoid all technical complexity.",
+    "twitterDescription": "Avoid all technical complexity and one-click deploy your own 24/7 active OpenClaw instance."
+  }
+}
