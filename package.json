@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "tsx server.ts",
     "build": "next build",
+    "postbuild": "tsx scripts/indexnow-submit.ts",
     "start": "NODE_ENV=production tsx server.ts",
     "lint": "eslint"
   },
