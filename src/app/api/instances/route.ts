@@ -5,7 +5,7 @@ import { eq, desc } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { createServer, uploadSSHKey } from "@/lib/hetzner";
-import { getUserSubscription } from "@/lib/polar";
+import { getAvailableSubscription, PLAN_SERVER_TYPE } from "@/lib/polar";
 import {
   createTunnel,
   configureTunnel,
@@ -47,12 +47,6 @@ export async function GET() {
   return NextResponse.json(instances);
 }
 
-// Maps plan type → Hetzner server type
-const PLAN_SERVER_TYPE: Record<string, string> = {
-  basic: "cx23",
-  pro: "cx33",
-};
-
 export async function POST(request: Request) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -62,13 +56,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Require an active subscription to deploy
-  const subscription = await getUserSubscription(session.user.id);
+  // Find an active subscription with no instance linked (1:1 rule)
+  const subscription = await getAvailableSubscription(session.user.id);
   if (!subscription) {
     return NextResponse.json(
       {
         error:
-          "An active subscription is required to deploy an instance. Please subscribe to a plan first.",
+          "No available subscription. Each subscription supports one instance. Purchase another subscription or delete an existing instance.",
       },
       { status: 403 },
     );
@@ -105,6 +99,7 @@ export async function POST(request: Request) {
       botToken,
       status: "deploying",
       provider: "hetzner",
+      subscriptionId: subscription.id,
       userId: session.user.id,
     })
     .returning();

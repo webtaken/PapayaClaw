@@ -4,7 +4,7 @@ import { useState } from "react";
 import { InstanceCard } from "./instance-card";
 import { DeployDialog } from "./deploy-dialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Crown, ExternalLink } from "lucide-react";
+import { Plus, Crown, ExternalLink, CreditCard } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 
@@ -114,6 +114,13 @@ export function DashboardContent({
         </div>
         <div className="flex items-center gap-2">
           {/* Subscription actions */}
+          <Link
+            href="/dashboard/subscriptions"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 border border-zinc-800 px-3 h-9 text-xs font-mono text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 transition-all"
+          >
+            <CreditCard className="h-3 w-3" />
+            {t("navSubscriptions")}
+          </Link>
           {subscription ? (
             <a
               href="/api/portal"

@@ -31,6 +31,11 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  // Skip i18n middleware for API routes — they should not be locale-rewritten
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
   // i18n routing for all paths (including dashboard)
   return intlMiddleware(request);
 }

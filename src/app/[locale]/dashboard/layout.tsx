@@ -63,6 +63,12 @@ export default async function DashboardLayout({
               >
                 {t("navDashboard")}
               </Link>
+              <Link
+                href="/dashboard/subscriptions"
+                className="text-sm font-medium text-zinc-400 hover:text-white transition-colors"
+              >
+                {t("navSubscriptions")}
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">
