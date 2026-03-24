@@ -71,14 +71,32 @@ export async function POST(request: Request) {
   const serverType = PLAN_SERVER_TYPE[subscription.planType] || "cx22";
 
   const body = await request.json();
-  const { name, model, modelApiKey, channel, botToken } = body;
+  const { name, model, modelApiKey, channel, botToken, channelPhone } = body;
 
-  if (!name || !model || !channel || !botToken) {
+  if (!name || !model || !channel) {
     return NextResponse.json(
       { error: "Missing required fields" },
       { status: 400 },
     );
   }
+
+  if (channel === "telegram" && !botToken) {
+    return NextResponse.json(
+      { error: "Telegram requires a bot token" },
+      { status: 400 },
+    );
+  }
+
+  if (channel === "whatsapp" && !channelPhone) {
+    return NextResponse.json(
+      { error: "WhatsApp requires a phone number" },
+      { status: 400 },
+    );
+  }
+
+  // For WhatsApp, generate a gateway auth token (no bot token needed)
+  const effectiveBotToken =
+    channel === "whatsapp" ? crypto.randomUUID() : botToken;
 
   // Generate SSH keypair for remote pairing management
   const { publicKey: sshPublicKey, privateKey: sshPrivateKey } =
@@ -96,7 +114,8 @@ export async function POST(request: Request) {
       model,
       modelApiKey: modelApiKey || null,
       channel,
-      botToken,
+      botToken: effectiveBotToken,
+      channelPhone: channelPhone || null,
       status: "deploying",
       provider: "hetzner",
       subscriptionId: subscription.id,
@@ -135,7 +154,8 @@ export async function POST(request: Request) {
       model,
       modelApiKey: activeApiKey,
       channel,
-      botToken,
+      botToken: effectiveBotToken,
+      channelPhone: channelPhone || null,
       sshPublicKey: sshPublicKey,
       tunnelToken,
       tunnelHostname: fullHostname,

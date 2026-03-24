@@ -115,7 +115,7 @@ const channels = [
     id: "whatsapp",
     name: "WhatsApp",
     icon: <WhatsApp className="h-5 w-5" />,
-    available: false,
+    available: true,
   },
   {
     id: "slack",
@@ -144,6 +144,7 @@ export function DeployDialog({
   const [modelApiKey, setModelApiKey] = useState("");
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [botToken, setBotToken] = useState("");
+  const [whatsappPhone, setWhatsappPhone] = useState("");
   const [isDeploying, setIsDeploying] = useState(false);
 
   const steps = [
@@ -161,6 +162,7 @@ export function DeployDialog({
     setModelApiKey("");
     setSelectedChannel(null);
     setBotToken("");
+    setWhatsappPhone("");
     setIsDeploying(false);
   };
 
@@ -180,7 +182,10 @@ export function DeployDialog({
 
   const canProceedStep1 =
     name.trim() && selectedProvider && finalModelId && activeApiKey;
-  const canProceedStep2 = selectedChannel && botToken.trim();
+  const canProceedStep2 =
+    selectedChannel &&
+    ((selectedChannel === "telegram" && botToken.trim()) ||
+      (selectedChannel === "whatsapp" && whatsappPhone.trim()));
 
   const handleDeploy = async () => {
     setIsDeploying(true);
@@ -193,7 +198,12 @@ export function DeployDialog({
           model: finalModelId,
           modelApiKey: activeApiKey,
           channel: selectedChannel,
-          botToken: botToken.trim(),
+          ...(selectedChannel === "telegram"
+            ? { botToken: botToken.trim() }
+            : {}),
+          ...(selectedChannel === "whatsapp"
+            ? { channelPhone: whatsappPhone.trim() }
+            : {}),
         }),
       });
 
@@ -483,6 +493,36 @@ export function DeployDialog({
                   </p>
                 </div>
               )}
+
+              {selectedChannel === "whatsapp" && (
+                <div className="space-y-2 animate-fade-in-up mt-2">
+                  <Label
+                    htmlFor="whatsapp-phone"
+                    className="mb-1 block text-xs font-medium text-zinc-300"
+                  >
+                    {t("whatsappPhoneNumber")}
+                  </Label>
+                  <Input
+                    id="whatsapp-phone"
+                    type="tel"
+                    placeholder="+15551234567"
+                    value={whatsappPhone}
+                    onChange={(e) => setWhatsappPhone(e.target.value)}
+                    className="h-8 rounded-lg border-zinc-700 bg-zinc-800/50 font-mono text-xs text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20"
+                  />
+                  <p className="text-[10px] leading-relaxed text-zinc-500">
+                    {t("whatsappPhoneHelp")}
+                  </p>
+                  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2">
+                    <p className="text-[10px] leading-relaxed text-zinc-400">
+                      <span className="font-medium text-emerald-400">
+                        {t("whatsappDedicatedLabel")}
+                      </span>{" "}
+                      {t("whatsappDedicatedNote")}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -522,9 +562,15 @@ export function DeployDialog({
                   </div>
                   <div className="h-px bg-zinc-800/60" />
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-400">{t("token")}</span>
+                    <span className="text-xs text-zinc-400">
+                      {selectedChannel === "whatsapp"
+                        ? t("phoneNumber")
+                        : t("token")}
+                    </span>
                     <span className="font-mono text-[10px] text-zinc-400">
-                      {botToken.slice(0, 8)}•••••
+                      {selectedChannel === "whatsapp"
+                        ? whatsappPhone
+                        : `${botToken.slice(0, 8)}•••••`}
                     </span>
                   </div>
                 </div>

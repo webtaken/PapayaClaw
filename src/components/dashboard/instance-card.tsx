@@ -137,10 +137,7 @@ export function InstanceCard({
   onDelete: (id: string) => void;
 }) {
   const model = formatModelInfo(instance.model);
-  const channel = channelLabels[instance.channel] || {
-    name: instance.channel,
-    icon: "💬",
-  };
+  const channels = instance.channel.split("|");
   const t = useTranslations("InstanceCard");
 
   const statusConfig: Record<
@@ -172,7 +169,7 @@ export function InstanceCard({
   const status = statusConfig[instance.status] || statusConfig.stopped;
   const isRunning = instance.status === "running";
   const isDeploying = instance.status === "deploying";
-  const isTelegram = instance.channel === "telegram";
+  const hasTelegram = channels.includes("telegram");
   const [pairingOpen, setPairingOpen] = useState(false);
 
   return (
@@ -212,13 +209,22 @@ export function InstanceCard({
           </div>
           <div className="bg-zinc-950/80 p-3 flex flex-col gap-1.5">
             <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
-              {t("channel")}
+              {channels.length === 1 ? t("channel") : t("channel")}
             </span>
-            <span className="flex items-center gap-1.5 text-xs text-zinc-300">
-              <span className="text-[10px] text-zinc-400 shrink-0">
-                {channel.icon}
-              </span>
-              <span className="truncate">{channel.name}</span>
+            <span className="flex items-center gap-1.5 text-xs text-zinc-300 flex-wrap">
+              {channels.map((ch) => {
+                const info = channelLabels[ch];
+                return info ? (
+                  <span key={ch} className="flex items-center gap-1" title={info.name}>
+                    <span className="text-[10px] text-zinc-400 shrink-0">
+                      {info.icon}
+                    </span>
+                    <span className="truncate">{info.name}</span>
+                  </span>
+                ) : (
+                  <span key={ch} className="truncate">{ch}</span>
+                );
+              })}
             </span>
           </div>
         </div>
@@ -248,7 +254,7 @@ export function InstanceCard({
             </Button>
           )}
 
-          {isRunning && isTelegram && (
+          {isRunning && hasTelegram && (
             <Button
               variant="outline"
               size="sm"
@@ -263,7 +269,7 @@ export function InstanceCard({
           <Link
             href={`/dashboard/${instance.id}`}
             className={
-              !isDeploying && (!isRunning || !isTelegram)
+              !isDeploying && (!isRunning || !hasTelegram)
                 ? "col-span-1"
                 : isDeploying
                   ? "col-span-2"
@@ -319,7 +325,7 @@ export function InstanceCard({
       </div>
 
       {/* Pairing Dialog */}
-      {isTelegram && (
+      {hasTelegram && (
         <PairingDialog
           open={pairingOpen}
           onOpenChange={setPairingOpen}

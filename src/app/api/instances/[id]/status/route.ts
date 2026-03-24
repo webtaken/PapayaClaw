@@ -5,7 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { getServer } from "@/lib/hetzner";
-import { checkInstanceReady } from "@/lib/ssh";
+import { checkInstanceReady, getInstanceChannels, getWhatsAppAllowedNumbers } from "@/lib/ssh";
 
 /**
  * Lightweight status endpoint for polling.
@@ -82,10 +82,40 @@ export async function GET(
     }
   }
 
+  // Fetch live channels and WhatsApp numbers from VPS when instance is running
+  let channels: string[] = inst.channel.split("|");
+  let whatsappNumbers: string[] = [];
+
+  if (
+    instanceStatus === "running" &&
+    inst.providerServerIp &&
+    inst.sshPrivateKey
+  ) {
+    const [liveChannels, liveNumbers] = await Promise.all([
+      getInstanceChannels(inst.providerServerIp, inst.sshPrivateKey),
+      getWhatsAppAllowedNumbers(inst.providerServerIp, inst.sshPrivateKey),
+    ]);
+
+    if (liveChannels.length > 0) {
+      channels = liveChannels;
+      const newChannelValue = liveChannels.join("|");
+      if (newChannelValue !== inst.channel) {
+        await db
+          .update(instance)
+          .set({ channel: newChannelValue })
+          .where(eq(instance.id, inst.id));
+      }
+    }
+
+    whatsappNumbers = liveNumbers;
+  }
+
   return NextResponse.json({
     instanceStatus,
     hetznerStatus,
     serverIp: inst.providerServerIp,
     gatewayToken: inst.botToken,
+    channels,
+    whatsappNumbers,
   });
 }

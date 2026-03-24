@@ -29,6 +29,7 @@ export interface OpenClawConfig {
   modelApiKey: string | null;
   channel: string;
   botToken: string;
+  channelPhone: string | null;
   sshPublicKey: string;
   tunnelToken: string;
   tunnelHostname: string;
@@ -117,6 +118,9 @@ export function generateCloudInit(config: OpenClawConfig): string {
     ? Buffer.from(customModelsJson).toString("base64")
     : "";
   const botTokenB64 = Buffer.from(config.botToken).toString("base64");
+  const channelPhoneB64 = config.channelPhone
+    ? Buffer.from(config.channelPhone).toString("base64")
+    : "";
   const instanceNameB64 = Buffer.from(config.instanceName).toString("base64");
 
   // Build the bash setup script content.
@@ -159,15 +163,22 @@ openclaw onboard --non-interactive --mode local --auth-choice "${authChoice}" ${
 
 # 2) Patch the generated config with jq (Telegram channel, model, UI, session)
 export BOT_TOKEN_B64="${botTokenB64}"
+export CHANNEL_PHONE_B64="${channelPhoneB64}"
 export INSTANCE_NAME_B64="${instanceNameB64}"
 export CUSTOM_MODELS_B64="${customModelsB64}"
 export MODEL_ID="${primaryModel}"
+export CHANNEL="${config.channel}"
 
 BOT_TOKEN=$(echo "$BOT_TOKEN_B64" | base64 -d)
 INSTANCE_NAME=$(echo "$INSTANCE_NAME_B64" | base64 -d)
 
-# 2a) Patch Telegram channel
-jq --arg token "$BOT_TOKEN" '.channels.telegram = { enabled: true, botToken: $token, dmPolicy: "pairing", groups: { "*": { requireMention: true } } }' /root/.openclaw/openclaw.json > /run/oc.json && mv /run/oc.json /root/.openclaw/openclaw.json
+# 2a) Patch channel config (Telegram or WhatsApp)
+if [ "$CHANNEL" = "telegram" ]; then
+  jq --arg token "$BOT_TOKEN" '.channels.telegram = { enabled: true, botToken: $token, dmPolicy: "pairing", groups: { "*": { requireMention: true } } }' /root/.openclaw/openclaw.json > /run/oc.json && mv /run/oc.json /root/.openclaw/openclaw.json
+elif [ "$CHANNEL" = "whatsapp" ]; then
+  CHANNEL_PHONE=$(echo "$CHANNEL_PHONE_B64" | base64 -d)
+  jq --arg phone "$CHANNEL_PHONE" '.channels.whatsapp = { dmPolicy: "allowlist", allowFrom: [$phone] }' /root/.openclaw/openclaw.json > /run/oc.json && mv /run/oc.json /root/.openclaw/openclaw.json
+fi
 
 # 2b) Patch model, UI, session, cron, browser, and Control UI for remote access
 jq --arg model "$MODEL_ID" --arg name "$INSTANCE_NAME" --arg origin "https://${config.tunnelHostname}" '.agents.defaults.model.primary = $model | .ui.assistant.name = $name | .ui.seamColor = "#FF4500" | .session.dmScope = "per-channel-peer" | .session.threadBindings.enabled = true | .session.reset.mode = "daily" | .cron.enabled = true | .browser = { enabled: true, evaluateEnabled: true } | .gateway.controlUi.enabled = true | .gateway.controlUi.dangerouslyDisableDeviceAuth = true | .gateway.controlUi.allowedOrigins = [$origin]' /root/.openclaw/openclaw.json > /run/oc.json && mv /run/oc.json /root/.openclaw/openclaw.json
@@ -198,7 +209,12 @@ apt-get update && apt-get install -y cloudflared
 # Install cloudflared as a systemd service with the tunnel token
 cloudflared service install ${config.tunnelToken}
 
-# 6) Write sentinel file — PapayaClaw detects this via SSH polling
+# 6) Install WhatsApp plugin if needed
+if [ "$CHANNEL" = "whatsapp" ]; then
+  openclaw plugins install @openclaw/whatsapp || true
+fi
+
+# 7) Write sentinel file — PapayaClaw detects this via SSH polling
 trap - ERR
 touch /var/tmp/openclaw-ready
 echo "=== OpenClaw setup complete ==="`;

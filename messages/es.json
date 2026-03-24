@@ -204,6 +204,11 @@
     "telegramBotToken": "Token de Bot de Telegram",
     "telegramTokenHelp": "Crea un bot a través de",
     "telegramTokenHelpEnd": "en Telegram y pega el token aquí.",
+    "whatsappPhoneNumber": "Número de WhatsApp",
+    "whatsappPhoneHelp": "Ingresa el número de teléfono dedicado en formato E.164 (ej., +15551234567). Tu agente solo aceptará mensajes de este número.",
+    "whatsappDedicatedLabel": "Número dedicado (recomendado):",
+    "whatsappDedicatedNote": "Usar un número separado para tu agente es la configuración más segura y confiable. OpenClaw recomienda este enfoque.",
+    "phoneNumber": "Número de Teléfono",
     "summary": "Resumen",
     "name": "Nombre",
     "token": "Token",
@@ -245,6 +250,11 @@
     "codesExpire": "Los códigos expiran después de 1 hora",
     "refresh": "Actualizar",
     "user": "Usuario"
+  },
+  "InstanceDetail": {
+    "allowedNumbers": "Números Permitidos",
+    "noNumbers": "No hay números configurados",
+    "allowedNumbersInfo": "Solo los mensajes de los números listados aquí serán reenviados a tu agente. Añade los números en formato internacional incluyendo el código de país."
   },
   "Metadata": {
     "title": "PapayaClaw — Despliega Instancias Seguras de OpenClaw en Pocos Minutos",

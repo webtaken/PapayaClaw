@@ -2,11 +2,12 @@
 
 import { toast } from "sonner";
 
-import { useEffect, useState, useCallback, ReactNode } from "react";
+import { useEffect, useState, useCallback, useMemo, ReactNode } from "react";
 import useSWR from "swr";
 import dynamic from "next/dynamic";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   ArrowLeft,
   Server,
@@ -16,7 +17,12 @@ import {
   Check,
   MessageCircle,
   ShieldAlert,
+  Plus,
+  Radio,
+  X,
+  Info,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { ClaudeAI } from "@/components/icons/claudeai";
 import { OpenAI } from "@/components/icons/openai";
@@ -58,6 +64,8 @@ interface StatusData {
   hetznerStatus: string | null;
   serverIp: string | null;
   gatewayToken: string | null;
+  channels?: string[];
+  whatsappNumbers?: string[];
 }
 
 function formatModelInfo(modelId: string): {
@@ -219,6 +227,7 @@ export function InstanceDetail({
 }: {
   initialInstance: InstanceData;
 }) {
+  const t = useTranslations("InstanceDetail");
   const [instance, setInstance] = useState(initialInstance);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
 
@@ -227,12 +236,13 @@ export function InstanceDetail({
   const [isPairingLoading, setIsPairingLoading] = useState(false);
   const [approvingCode, setApprovingCode] = useState<string | null>(null);
   const [pairingError, setPairingError] = useState<string | null>(null);
-
-  const isTelegram = instance.channel === "telegram";
+  const [activeChannelTab, setActiveChannelTab] = useState<string>(
+    instance.channel.split("|")[0] || "telegram",
+  );
 
   const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-  const { data: statusData } = useSWR<StatusData>(
+  const { data: statusData, mutate: mutateStatus } = useSWR<StatusData>(
     `/api/instances/${instance.id}/status`,
     fetcher,
     {
@@ -258,12 +268,98 @@ export function InstanceDetail({
 
   const effectiveStatus = statusData?.hetznerStatus || currentStatus;
 
+  const channels = useMemo(() => {
+    const live = statusData?.channels;
+    if (live && live.length > 0) return live;
+    return instance.channel.split("|");
+  }, [statusData?.channels, instance.channel]);
+
+  const channelSet = useMemo(() => new Set(channels), [channels]);
+  const hasTelegram = channelSet.has("telegram");
+  const hasWhatsApp = channelSet.has("whatsapp");
+
+  // WhatsApp number management state
+  const [newPhone, setNewPhone] = useState("");
+  const [isAddingPhone, setIsAddingPhone] = useState(false);
+  const [removingPhone, setRemovingPhone] = useState<string | null>(null);
+
+  const addWhatsAppNumber = useCallback(
+    async (phone: string) => {
+      setIsAddingPhone(true);
+      try {
+        const res = await fetch(
+          `/api/instances/${instance.id}/whatsapp-numbers`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone }),
+          },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          mutateStatus(
+            (prev) =>
+              prev ? { ...prev, whatsappNumbers: data.numbers } : prev,
+            false,
+          );
+          setNewPhone("");
+          toast.success("Number added", {
+            description: `${phone} has been added to the allowlist.`,
+          });
+        } else {
+          const err = await res.json().catch(() => ({}));
+          toast.error(err.error || "Failed to add number");
+        }
+      } catch {
+        toast.error("Failed to connect");
+      } finally {
+        setIsAddingPhone(false);
+      }
+    },
+    [instance.id, mutateStatus],
+  );
+
+  const removeWhatsAppNumber = useCallback(
+    async (phone: string) => {
+      setRemovingPhone(phone);
+      try {
+        const res = await fetch(
+          `/api/instances/${instance.id}/whatsapp-numbers`,
+          {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ phone }),
+          },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          mutateStatus(
+            (prev) =>
+              prev ? { ...prev, whatsappNumbers: data.numbers } : prev,
+            false,
+          );
+          toast.success("Number removed", {
+            description: `${phone} has been removed from the allowlist.`,
+          });
+        } else {
+          const err = await res.json().catch(() => ({}));
+          toast.error(err.error || "Failed to remove number");
+        }
+      } catch {
+        toast.error("Failed to connect");
+      } finally {
+        setRemovingPhone(null);
+      }
+    },
+    [instance.id, mutateStatus],
+  );
+
   const fetchPairingRequests = useCallback(async () => {
-    if (!isTelegram) return;
+    if (!hasTelegram) return;
     setIsPairingLoading(true);
     setPairingError(null);
     try {
-      const res = await fetch(`/api/instances/${instance.id}/pairing`);
+      const res = await fetch(`/api/instances/${instance.id}/pairing?channel=telegram`);
       if (res.ok) {
         const data = await res.json();
         setPairingRequests(data.requests || []);
@@ -276,7 +372,7 @@ export function InstanceDetail({
     } finally {
       setIsPairingLoading(false);
     }
-  }, [instance.id, isTelegram]);
+  }, [instance.id, hasTelegram]);
 
   const approvePairing = useCallback(
     async (code: string) => {
@@ -307,18 +403,14 @@ export function InstanceDetail({
     [instance.id],
   );
 
-  // Fetch pairing requests when instance becomes ready
+  // Fetch pairing requests when instance becomes ready (Telegram only)
   useEffect(() => {
-    if (isTelegram && !isProvisioning && currentIp) {
+    if (hasTelegram && !isProvisioning && currentIp) {
       fetchPairingRequests();
     }
-  }, [isTelegram, isProvisioning, currentIp, fetchPairingRequests]);
+  }, [hasTelegram, isProvisioning, currentIp, fetchPairingRequests]);
 
   const model = formatModelInfo(instance.model);
-  const channel = channelLabels[instance.channel] || {
-    name: instance.channel,
-    icon: "💬",
-  };
   const status = statusConfig[effectiveStatus] || statusConfig.deploying;
   const activeStep = getActiveStep(statusData?.hetznerStatus ?? null);
 
@@ -386,11 +478,20 @@ export function InstanceDetail({
             </div>
             <div className="bg-zinc-950 p-4 flex flex-col gap-1.5">
               <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
-                Channel
+                {channels.length === 1 ? "Channel" : "Channels"}
               </span>
-              <span className="flex items-center gap-2 text-sm text-zinc-200">
-                <span className="text-xs text-zinc-400">{channel.icon}</span>
-                {channel.name}
+              <span className="flex items-center gap-2 text-sm text-zinc-200 flex-wrap">
+                {channels.map((ch) => {
+                  const info = channelLabels[ch];
+                  return info ? (
+                    <span key={ch} className="flex items-center gap-1.5" title={info.name}>
+                      <span className="text-xs text-zinc-400">{info.icon}</span>
+                      <span>{info.name}</span>
+                    </span>
+                  ) : (
+                    <span key={ch}>{ch}</span>
+                  );
+                })}
               </span>
             </div>
             <div className="bg-zinc-950 p-4 flex flex-col gap-1.5">
@@ -508,18 +609,20 @@ export function InstanceDetail({
               </div>
             ) : null}
 
-            {/* Telegram Pairing Module */}
-            {isTelegram && currentIp ? (
+            {/* Channels Module */}
+            {currentIp ? (
               <div className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl h-full">
-                <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <MessageCircle className="h-4 w-4 text-zinc-400" />
-                    <h3 className="text-xs font-mono font-semibold tracking-wide text-zinc-300 uppercase">
-                      Telegram Pairing
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {pairingRequests.length > 0 ? (
+                {/* Header with channel tabs */}
+                <div className="border-b border-zinc-800 bg-zinc-900/50">
+                  <div className="flex items-center justify-between px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Radio className="h-4 w-4 text-zinc-400" />
+                      <h3 className="text-xs font-mono font-semibold tracking-wide text-zinc-300 uppercase">
+                        Channels
+                      </h3>
+                    </div>
+                    {activeChannelTab === "telegram" &&
+                    pairingRequests.length > 0 ? (
                       <Badge
                         variant="outline"
                         className="rounded-md px-2 py-0.5 text-[10px] font-mono border-amber-500/30 bg-amber-500/10 text-amber-400"
@@ -527,99 +630,346 @@ export function InstanceDetail({
                         {pairingRequests.length} PENDING
                       </Badge>
                     ) : null}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={fetchPairingRequests}
-                      disabled={isPairingLoading}
-                      className="h-6 px-2 text-[10px] font-mono hover:bg-zinc-800 hover:text-white text-zinc-400 border border-zinc-700/50 rounded gap-1"
+                  </div>
+
+                  {/* Channel tabs */}
+                  <div className="flex px-4 gap-1 -mb-px">
+                    {/* Telegram tab */}
+                    <button
+                      onClick={() => setActiveChannelTab("telegram")}
+                      className={`group relative flex items-center gap-2 px-3 py-2 text-[11px] font-mono font-medium uppercase tracking-wider transition-all ${
+                        activeChannelTab === "telegram"
+                          ? "text-white"
+                          : "text-zinc-500 hover:text-zinc-300"
+                      }`}
                     >
-                      <RefreshCw
-                        className={`h-3 w-3 ${
-                          isPairingLoading ? "animate-spin" : ""
-                        }`}
-                      />
-                      REFRESH
-                    </Button>
+                      <Telegram className="h-3.5 w-3.5" />
+                      <span>Telegram</span>
+                      {hasTelegram ? (
+                        <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+                      ) : (
+                        <Plus className="h-3 w-3 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                      )}
+                      {activeChannelTab === "telegram" && (
+                        <span className="absolute bottom-0 left-0 right-0 h-px bg-white" />
+                      )}
+                    </button>
+
+                    <div className="w-px bg-zinc-800 my-1.5" />
+
+                    {/* WhatsApp tab */}
+                    <button
+                      onClick={() => setActiveChannelTab("whatsapp")}
+                      className={`group relative flex items-center gap-2 px-3 py-2 text-[11px] font-mono font-medium uppercase tracking-wider transition-all ${
+                        activeChannelTab === "whatsapp"
+                          ? "text-white"
+                          : "text-zinc-500 hover:text-zinc-300"
+                      }`}
+                    >
+                      <WhatsApp className="h-3.5 w-3.5" />
+                      <span>WhatsApp</span>
+                      {hasWhatsApp ? (
+                        <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+                      ) : (
+                        <Plus className="h-3 w-3 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                      )}
+                      {activeChannelTab === "whatsapp" && (
+                        <span className="absolute bottom-0 left-0 right-0 h-px bg-white" />
+                      )}
+                    </button>
                   </div>
                 </div>
 
+                {/* Tab content */}
                 <div className="p-6 flex-1 flex flex-col">
-                  <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-                    <ShieldAlert className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
-                    <p className="text-xs text-amber-400/90 leading-relaxed font-mono">
-                      If you see pairing codes you don&apos;t recognize, ignore
-                      them — do not approve anything. This is the door to your
-                      agent.
-                    </p>
-                  </div>
-                  {pairingError ? (
-                    <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-xs font-mono text-red-400">
-                      {pairingError}
-                    </div>
-                  ) : null}
+                  {/* ── Telegram tab ── */}
+                  {activeChannelTab === "telegram" && (
+                    <>
+                      {hasTelegram ? (
+                        /* Primary Telegram — pairing flow */
+                        <>
+                          <div className="flex justify-end mb-4">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={fetchPairingRequests}
+                              disabled={isPairingLoading}
+                              className="h-6 px-2 text-[10px] font-mono hover:bg-zinc-800 hover:text-white text-zinc-400 border border-zinc-700/50 rounded gap-1"
+                            >
+                              <RefreshCw
+                                className={`h-3 w-3 ${
+                                  isPairingLoading ? "animate-spin" : ""
+                                }`}
+                              />
+                              REFRESH
+                            </Button>
+                          </div>
 
-                  {isPairingLoading && pairingRequests.length === 0 ? (
-                    <div className="flex items-center justify-center py-8 gap-2 text-zinc-500">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-xs font-mono">
-                        Loading pairing requests...
-                      </span>
-                    </div>
-                  ) : pairingRequests.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 text-center flex-1">
-                      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-900/50 border border-zinc-800/80">
-                        <MessageCircle className="h-6 w-6 text-zinc-600" />
-                      </div>
-                      <p className="text-sm text-zinc-500 font-mono">
-                        No pending pairing requests
-                      </p>
-                      <p className="mt-1 text-xs text-zinc-600 font-mono max-w-xs">
-                        Send a message to your Telegram bot to initiate a
-                        pairing request
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {pairingRequests.map((req) => (
-                        <div
-                          key={req.code}
-                          className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/30 px-4 py-3 transition-colors hover:border-zinc-700"
-                        >
-                          <div className="flex flex-col gap-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-mono font-medium text-zinc-200 truncate">
-                                {req.senderName || `User ${req.senderId}`}
-                              </span>
-                              <span className="text-[10px] font-mono text-zinc-600">
-                                ID: {req.senderId}
+                          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+                            <ShieldAlert className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+                            <p className="text-xs text-amber-400/90 leading-relaxed font-mono">
+                              If you see pairing codes you don&apos;t recognize,
+                              ignore them — do not approve anything. This is the
+                              door to your agent.
+                            </p>
+                          </div>
+
+                          {pairingError ? (
+                            <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-xs font-mono text-red-400">
+                              {pairingError}
+                            </div>
+                          ) : null}
+
+                          {isPairingLoading &&
+                          pairingRequests.length === 0 ? (
+                            <div className="flex items-center justify-center py-8 gap-2 text-zinc-500">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              <span className="text-xs font-mono">
+                                Loading pairing requests...
                               </span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[11px] font-mono text-amber-400">
-                                {req.code}
-                              </code>
-                              <span className="text-[10px] font-mono text-zinc-600">
-                                {new Date(req.timestamp).toLocaleString()}
-                              </span>
+                          ) : pairingRequests.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-8 text-center flex-1">
+                              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-900/50 border border-zinc-800/80">
+                                <MessageCircle className="h-6 w-6 text-zinc-600" />
+                              </div>
+                              <p className="text-sm text-zinc-500 font-mono">
+                                No pending pairing requests
+                              </p>
+                              <p className="mt-1 text-xs text-zinc-600 font-mono max-w-xs">
+                                Send a message to your Telegram bot to initiate
+                                a pairing request
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              {pairingRequests.map((req) => (
+                                <div
+                                  key={req.code}
+                                  className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/30 px-4 py-3 transition-colors hover:border-zinc-700"
+                                >
+                                  <div className="flex flex-col gap-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-mono font-medium text-zinc-200 truncate">
+                                        {req.senderName ||
+                                          `User ${req.senderId}`}
+                                      </span>
+                                      <span className="text-[10px] font-mono text-zinc-600">
+                                        ID: {req.senderId}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[11px] font-mono text-amber-400">
+                                        {req.code}
+                                      </code>
+                                      <span className="text-[10px] font-mono text-zinc-600">
+                                        {new Date(
+                                          req.timestamp,
+                                        ).toLocaleString()}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => approvePairing(req.code)}
+                                    disabled={approvingCode === req.code}
+                                    className="ml-4 shrink-0 h-8 px-3 bg-emerald-600/80 text-white hover:bg-emerald-500 border border-emerald-500/30 font-mono text-[10px] uppercase tracking-wider gap-1.5 shadow-none"
+                                  >
+                                    {approvingCode === req.code ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      <Check className="h-3 w-3" />
+                                    )}
+                                    Approve
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        /* Secondary Telegram — add channel */
+                        <div className="flex flex-col items-center justify-center py-6 text-center flex-1">
+                          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-zinc-900/80 border border-zinc-800/80">
+                            <Telegram className="h-7 w-7 text-zinc-400" />
+                          </div>
+                          <p className="text-sm font-medium text-zinc-300 mb-1">
+                            Add Telegram
+                          </p>
+                          <p className="text-xs text-zinc-500 font-mono max-w-xs mb-5 leading-relaxed">
+                            Connect a Telegram bot to this instance via the Root
+                            Terminal. Run the command below to start linking.
+                          </p>
+                          <code className="rounded-lg bg-zinc-900 border border-zinc-800 px-4 py-2.5 text-[11px] font-mono text-zinc-300 mb-5 select-all">
+                            openclaw channels add --channel telegram
+                          </code>
+                          <div className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-900/30 px-3 py-2 max-w-sm">
+                            <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-zinc-500 mt-0.5" />
+                            <p className="text-[10px] text-zinc-500 leading-relaxed font-mono text-left">
+                              After adding the channel, pairing requests will
+                              appear here for you to approve.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* ── WhatsApp tab ── */}
+                  {activeChannelTab === "whatsapp" && (
+                    <>
+                      {hasWhatsApp ? (
+                        /* Primary WhatsApp — allowlist status */
+                        <div className="flex flex-col gap-4">
+                          <div className="flex items-start gap-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
+                            <Check className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
+                            <div className="text-xs leading-relaxed font-mono">
+                              <p className="text-emerald-400">
+                                WhatsApp channel is active with{" "}
+                                <span className="font-semibold">
+                                  allowlist
+                                </span>{" "}
+                                policy.
+                              </p>
+                              <p className="mt-1 text-zinc-500">
+                                Only messages from pre-authorized numbers are
+                                accepted — no pairing codes needed.
+                              </p>
                             </div>
                           </div>
-                          <Button
-                            size="sm"
-                            onClick={() => approvePairing(req.code)}
-                            disabled={approvingCode === req.code}
-                            className="ml-4 shrink-0 h-8 px-3 bg-emerald-600/80 text-white hover:bg-emerald-500 border border-emerald-500/30 font-mono text-[10px] uppercase tracking-wider gap-1.5 shadow-none"
-                          >
-                            {approvingCode === req.code ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <Check className="h-3 w-3" />
-                            )}
-                            Approve
-                          </Button>
+
+                          {/* Allowlist details */}
+                          <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 overflow-hidden">
+                            <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800/60 bg-zinc-900/50">
+                              <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-zinc-500">
+                                {t("allowedNumbers")}
+                              </span>
+                              <span className="text-[10px] font-mono text-zinc-600">
+                                {(statusData?.whatsappNumbers ?? []).length}
+                              </span>
+                            </div>
+                            <div className="px-3 py-2.5 space-y-2">
+                              {(statusData?.whatsappNumbers ?? []).length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {statusData!.whatsappNumbers!.map((num) => (
+                                    <div
+                                      key={num}
+                                      className="inline-flex items-center gap-1.5 rounded-md bg-zinc-800/60 border border-zinc-700/40 pl-2.5 pr-1 py-1 group"
+                                    >
+                                      <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.4)]" />
+                                      <span className="text-xs font-mono text-zinc-300 leading-none">
+                                        {num}
+                                      </span>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon-xs"
+                                        onClick={() => removeWhatsAppNumber(num)}
+                                        disabled={removingPhone === num}
+                                        className="ml-0.5 h-5 w-5 text-zinc-600 hover:text-red-400 hover:bg-red-500/10"
+                                      >
+                                        {removingPhone === num ? (
+                                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                        ) : (
+                                          <X className="h-2.5 w-2.5" />
+                                        )}
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-xs font-mono text-zinc-600">
+                                  {t("noNumbers")}
+                                </p>
+                              )}
+                              <form
+                                onSubmit={(e) => {
+                                  e.preventDefault();
+                                  const trimmed = newPhone.trim();
+                                  if (/^\+\d+$/.test(trimmed)) {
+                                    addWhatsAppNumber(trimmed);
+                                  }
+                                }}
+                                className="flex items-center gap-1.5"
+                              >
+                                <Input
+                                  type="tel"
+                                  placeholder="+1234567890"
+                                  value={newPhone}
+                                  onChange={(e) => setNewPhone(e.target.value)}
+                                  className="h-7 flex-1 bg-zinc-950 border-zinc-800 text-xs font-mono text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-emerald-500/30"
+                                />
+                                <Button
+                                  type="submit"
+                                  size="sm"
+                                  disabled={isAddingPhone || !/^\+\d+$/.test(newPhone.trim())}
+                                  className="h-7 px-2.5 bg-emerald-600/80 text-white hover:bg-emerald-500 border border-emerald-500/30 font-mono text-[10px] uppercase tracking-wider gap-1 shadow-none"
+                                >
+                                  {isAddingPhone ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Plus className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              </form>
+                              <div className="flex items-start gap-2 pt-1">
+                                <Info className="h-3 w-3 shrink-0 text-zinc-500 mt-0.5" />
+                                <p className="text-[11px] text-zinc-500 leading-relaxed font-mono">
+                                  {t("allowedNumbersInfo")}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Link WhatsApp instructions */}
+                          <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 overflow-hidden">
+                            <div className="px-4 py-2.5 border-b border-zinc-800/60 bg-zinc-900/50">
+                              <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-zinc-500">
+                                Link Device
+                              </span>
+                            </div>
+                            <div className="px-4 py-3 space-y-2">
+                              <p className="text-xs text-zinc-400 leading-relaxed font-mono">
+                                Link your dedicated WhatsApp number via the Root
+                                Terminal:
+                              </p>
+                              <code className="block rounded-lg bg-zinc-950 border border-zinc-800 px-3 py-2 text-[11px] font-mono text-zinc-300 select-all">
+                                openclaw channels login --channel whatsapp
+                              </code>
+                              <p className="text-[10px] text-zinc-600 leading-relaxed font-mono">
+                                Scan the QR code with WhatsApp on your dedicated
+                                phone. Once linked, messages from your allowed
+                                number will reach your agent automatically.
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                      ) : (
+                        /* Secondary WhatsApp — add channel */
+                        <div className="flex flex-col items-center justify-center py-6 text-center flex-1">
+                          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-zinc-900/80 border border-zinc-800/80">
+                            <WhatsApp className="h-7 w-7 text-zinc-400" />
+                          </div>
+                          <p className="text-sm font-medium text-zinc-300 mb-1">
+                            Add WhatsApp
+                          </p>
+                          <p className="text-xs text-zinc-500 font-mono max-w-xs mb-5 leading-relaxed">
+                            Connect a dedicated WhatsApp number using allowlist
+                            mode. Messages from your authorized number are
+                            accepted automatically — no pairing codes needed.
+                          </p>
+                          <code className="rounded-lg bg-zinc-900 border border-zinc-800 px-4 py-2.5 text-[11px] font-mono text-zinc-300 mb-5 select-all">
+                            openclaw channels add --channel whatsapp
+                          </code>
+                          <div className="flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 max-w-sm">
+                            <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400 mt-0.5" />
+                            <p className="text-[10px] text-emerald-400/80 leading-relaxed font-mono text-left">
+                              WhatsApp uses allowlist policy — pre-authorize
+                              phone numbers, no approval codes required.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

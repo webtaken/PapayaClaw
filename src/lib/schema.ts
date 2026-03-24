@@ -86,6 +86,7 @@ export const instance = pgTable("instance", {
   modelApiKey: text("model_api_key"),
   channel: text("channel").notNull(),
   botToken: text("bot_token").notNull(),
+  channelPhone: text("channel_phone"),
   status: text("status").notNull().default("deploying"),
   provider: text("provider").notNull().default("hetzner"),
   providerServerId: integer("provider_server_id"),

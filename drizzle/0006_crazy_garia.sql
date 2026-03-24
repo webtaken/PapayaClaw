@@ -1,0 +1,1 @@
+ALTER TABLE "instance" ADD COLUMN "channel_phone" text;

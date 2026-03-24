@@ -4,69 +4,16 @@ import { instance } from "@/lib/schema";
 import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { listPairingRequests, approvePairingRequest } from "@/lib/ssh";
+import {
+  getWhatsAppAllowedNumbers,
+  setWhatsAppAllowedNumbers,
+} from "@/lib/ssh";
 
 /**
- * GET /api/instances/[id]/pairing
+ * POST /api/instances/[id]/whatsapp-numbers
  *
- * Lists pending Telegram pairing requests by SSH-ing into the VPS
- * and reading the pairing state file.
- */
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { id } = await params;
-
-  const [inst] = await db
-    .select()
-    .from(instance)
-    .where(and(eq(instance.id, id), eq(instance.userId, session.user.id)));
-
-  if (!inst) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
-  if (!inst.providerServerIp || !inst.sshPrivateKey) {
-    return NextResponse.json(
-      { error: "Instance not ready for SSH" },
-      { status: 400 },
-    );
-  }
-
-  try {
-    const url = new URL(request.url);
-    const channelParam = url.searchParams.get("channel") || inst.channel.split("|")[0];
-    const requests = await listPairingRequests(
-      inst.providerServerIp,
-      inst.sshPrivateKey,
-      channelParam,
-    );
-    return NextResponse.json({ requests });
-  } catch (error) {
-    console.error("Failed to list pairing requests:", error);
-    return NextResponse.json(
-      { error: "Failed to connect to instance" },
-      { status: 502 },
-    );
-  }
-}
-
-/**
- * POST /api/instances/[id]/pairing
- *
- * Approves a Telegram pairing request by SSH-ing into the VPS
- * and running `openclaw pairing approve telegram <CODE>`.
- *
- * Body: { code: string }
+ * Adds a phone number to the WhatsApp allowFrom list.
+ * Body: { phone: string }
  */
 export async function POST(
   request: Request,
@@ -82,11 +29,11 @@ export async function POST(
 
   const { id } = await params;
   const body = await request.json();
-  const { code, channel: channelParam } = body;
+  const { phone } = body;
 
-  if (!code || typeof code !== "string") {
+  if (!phone || typeof phone !== "string" || !/^\+\d+$/.test(phone)) {
     return NextResponse.json(
-      { error: "Missing pairing code" },
+      { error: "Invalid phone number. Must start with + followed by digits." },
       { status: 400 },
     );
   }
@@ -108,21 +55,101 @@ export async function POST(
   }
 
   try {
-    const approveChannel = channelParam || inst.channel.split("|")[0];
-    const result = await approvePairingRequest(
+    const current = await getWhatsAppAllowedNumbers(
       inst.providerServerIp,
       inst.sshPrivateKey,
-      code,
-      approveChannel,
+    );
+
+    if (current.includes(phone)) {
+      return NextResponse.json({ numbers: current });
+    }
+
+    const updated = [...current, phone];
+    const result = await setWhatsAppAllowedNumbers(
+      inst.providerServerIp,
+      inst.sshPrivateKey,
+      updated,
     );
 
     if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ numbers: updated });
   } catch (error) {
-    console.error("Failed to approve pairing:", error);
+    console.error("Failed to add WhatsApp number:", error);
+    return NextResponse.json(
+      { error: "Failed to connect to instance" },
+      { status: 502 },
+    );
+  }
+}
+
+/**
+ * DELETE /api/instances/[id]/whatsapp-numbers
+ *
+ * Removes a phone number from the WhatsApp allowFrom list.
+ * Body: { phone: string }
+ */
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const body = await request.json();
+  const { phone } = body;
+
+  if (!phone || typeof phone !== "string") {
+    return NextResponse.json(
+      { error: "Missing phone number" },
+      { status: 400 },
+    );
+  }
+
+  const [inst] = await db
+    .select()
+    .from(instance)
+    .where(and(eq(instance.id, id), eq(instance.userId, session.user.id)));
+
+  if (!inst) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  if (!inst.providerServerIp || !inst.sshPrivateKey) {
+    return NextResponse.json(
+      { error: "Instance not ready for SSH" },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const current = await getWhatsAppAllowedNumbers(
+      inst.providerServerIp,
+      inst.sshPrivateKey,
+    );
+
+    const updated = current.filter((n) => n !== phone);
+    const result = await setWhatsAppAllowedNumbers(
+      inst.providerServerIp,
+      inst.sshPrivateKey,
+      updated,
+    );
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+
+    return NextResponse.json({ numbers: updated });
+  } catch (error) {
+    console.error("Failed to remove WhatsApp number:", error);
     return NextResponse.json(
       { error: "Failed to connect to instance" },
       { status: 502 },
