@@ -1,0 +1,319 @@
+---
+title: "How to Set Up the WhatsApp Channel for Your OpenClaw Agent on PapayaClaw"
+date: "2026-03-26"
+summary: "A complete guide to connecting your OpenClaw AI agent to WhatsApp using PapayaClaw. Learn how to configure access policies, scan the QR code, manage groups, and go to production with a dedicated number."
+---
+
+# How to Set Up the WhatsApp Channel for Your OpenClaw Agent on PapayaClaw
+
+WhatsApp is the world's most popular messaging app — over 2 billion people use it every day. Now imagine having your own **personal AI assistant** available right inside your WhatsApp chats. With **OpenClaw** running on **PapayaClaw**, that's exactly what you get.
+
+In this guide, we'll walk you through the complete setup process: from installing the WhatsApp plugin to configuring access policies, group messaging, and production-ready deployment.
+
+## Why WhatsApp?
+
+Most AI assistants live behind a web interface or a separate app. But you already spend hours every day on WhatsApp. By connecting your OpenClaw agent to WhatsApp, you can:
+
+- **Ask questions on the go** — Get instant answers without switching apps.
+- **Automate tasks** — Let your agent handle emails, calendar events, file lookups, and more — all from a chat message.
+- **Stay private** — Your OpenClaw instance runs on your own PapayaClaw server. No third-party SaaS sees your messages.
+- **Share with your team** — Add the agent to a group chat and let everyone benefit.
+
+## How It Works
+
+OpenClaw connects to WhatsApp using the **Baileys protocol** — the same technology behind WhatsApp Web. You scan a QR code with your phone, and your PapayaClaw instance becomes a linked device. No Meta Business API verification required, no waiting weeks for approval. Just scan and go.
+
+> **Note**: OpenClaw also supports the official **Meta Cloud API** via the Kapso bridge for users who want a business-grade integration with no ban risk. This guide focuses on the Baileys (WhatsApp Web) method, which is the fastest way to get started.
+
+## Requirements
+
+Before you begin, make sure you have:
+
+- A **PapayaClaw instance** (Basic or Pro plan) with OpenClaw installed and running.
+- **Node.js v22** or higher installed on your instance.
+- A **phone number** with WhatsApp activated — we recommend a dedicated number (more on this below).
+- Access to your PapayaClaw dashboard or SSH terminal.
+
+> **Important**: Bun is **not compatible** with the WhatsApp channel. Make sure your instance uses Node.js.
+
+## Step-by-Step Setup Guide
+
+### Step 1: Install the WhatsApp Plugin
+
+Connect to your PapayaClaw instance via the dashboard terminal or SSH, then run:
+
+```bash
+openclaw plugins install @openclaw/whatsapp
+```
+
+Alternatively, if you haven't configured any channels yet, the onboarding wizard handles it automatically:
+
+```bash
+openclaw onboard
+```
+
+The onboard command will detect that no channels are configured and walk you through the setup interactively.
+
+### Step 2: Configure Access Policies
+
+Before linking your WhatsApp account, you need to define who can talk to your agent. Edit your OpenClaw gateway configuration:
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      dmPolicy: "pairing",
+      allowFrom: ["+15551234567"],
+      groupPolicy: "allowlist",
+      groupAllowFrom: ["+15551234567"],
+    },
+  },
+}
+```
+
+**DM Policy Options:**
+
+| Policy | Behavior |
+|--------|----------|
+| `pairing` | New contacts must request access; you approve them manually (default) |
+| `allowlist` | Only numbers in `allowFrom` can message the agent |
+| `open` | Anyone can message the agent (requires `"*"` in `allowFrom`) |
+| `disabled` | Blocks all direct messages |
+
+All phone numbers use **E.164 format** (e.g., `+15551234567`). OpenClaw normalizes them internally.
+
+### Step 3: Link Your WhatsApp Account
+
+Run the login command:
+
+```bash
+openclaw channels login --channel whatsapp
+```
+
+This will display a **QR code** in your terminal. Open WhatsApp on your phone, go to **Settings > Linked Devices > Link a Device**, and scan the QR code.
+
+> **Tip**: The QR code expires quickly. Have your phone ready before running the command.
+
+For multi-account setups, specify the account name:
+
+```bash
+openclaw channels login --channel whatsapp --account work
+```
+
+### Step 4: Start the Gateway
+
+```bash
+openclaw gateway
+```
+
+Your agent is now live on WhatsApp. Send it a message from an allowed number and watch it respond.
+
+### Step 5: Approve Pairing Requests (if using pairing mode)
+
+If you set `dmPolicy: "pairing"`, new contacts will need your approval. Manage requests with:
+
+```bash
+# List pending requests
+openclaw pairing list whatsapp
+
+# Approve a specific request
+openclaw pairing approve whatsapp <CODE>
+```
+
+Pairing requests expire after **one hour**, and a maximum of **three pending requests** are allowed per channel.
+
+## Dedicated Number vs. Personal Number
+
+### Dedicated Number (Recommended)
+
+We strongly recommend using a **separate WhatsApp number** for your OpenClaw agent:
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      dmPolicy: "allowlist",
+      allowFrom: ["+15551234567"],
+    },
+  },
+}
+```
+
+**Benefits:**
+- Clean separation between personal and AI conversations.
+- No confusion from self-chat messages.
+- Clear routing boundaries — you always know which messages are for the bot.
+- Easier to share the number with your team or clients.
+
+### Personal Number Fallback
+
+If you don't have a spare number, OpenClaw's onboarding supports personal-number mode with automatic protections:
+
+- Sets `dmPolicy: "allowlist"` by default.
+- Adds your personal number to `allowFrom`.
+- Enables `selfChatMode: true` to prevent message loops.
+
+This works, but a dedicated number is always cleaner.
+
+## Group Chat Configuration
+
+One of the most powerful features of WhatsApp with OpenClaw is **group chat support**. Add your agent to a WhatsApp group, and anyone in the group can interact with it.
+
+### Group Access Control
+
+Control which groups the agent participates in and who can trigger it:
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      groups: ["120363012345678901@g.us"],  // Group allowlist (JIDs)
+      groupPolicy: "allowlist",
+      groupAllowFrom: ["+15551234567", "+15559876543"],
+    },
+  },
+}
+```
+
+**Group sender policy options:** `open`, `allowlist`, or `disabled`.
+
+### Mention Gating
+
+By default, the agent only responds in groups when **mentioned by name**. This prevents the bot from interrupting every conversation. Mention detection includes:
+
+- Explicit WhatsApp @mentions.
+- Custom regex patterns via `agents.list[].groupChat.mentionPatterns`.
+- Automatic reply-to-bot detection (replying to a message the bot sent).
+
+You can override this per session with activation commands:
+
+```bash
+/activation always   # Respond to all messages in this session
+/activation mention  # Only respond when mentioned (default)
+```
+
+### Group History Context
+
+When the bot is triggered in a group, OpenClaw automatically injects up to **50 recent unprocessed messages** as context. This means the agent understands the conversation flow, not just the single message that tagged it.
+
+## Message Handling and Media
+
+### Text Messages
+
+OpenClaw automatically chunks long responses to fit WhatsApp's display:
+
+- **Default limit**: 4,000 characters per message.
+- **Chunk modes**: `"length"` (hard cut) or `"newline"` (prefers paragraph boundaries for natural breaks).
+
+### Media Support
+
+Your agent can send and receive rich media:
+
+| Direction | Supported Types |
+|-----------|----------------|
+| **Inbound** | Images, video, audio, documents, stickers |
+| **Outbound** | Images, video, audio, documents, GIFs |
+
+- **File size limit**: 50 MB per file (configurable via `mediaMaxMb`).
+- **Auto-optimization**: Images are automatically resized and quality-adjusted to fit within limits.
+
+### Reply Context
+
+When someone quotes a message, OpenClaw preserves the full reply context:
+
+```
+[Replying to <sender> id:<stanzaId>]
+<quoted content>
+[/Replying]
+```
+
+This lets the agent understand exactly what's being referenced.
+
+## Read Receipts and Reactions
+
+### Read Receipts
+
+By default, OpenClaw sends read receipts (blue ticks) when it processes a message. You can disable this:
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      sendReadReceipts: false,
+    },
+  },
+}
+```
+
+### Acknowledgment Reactions
+
+Want instant visual feedback? Configure the agent to react to messages as soon as they're received:
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      ackReaction: {
+        emoji: "👀",
+        direct: true,
+        group: "mentions",
+      },
+    },
+  },
+}
+```
+
+This drops a 👀 reaction on every message the agent starts processing — so the sender knows it's being handled, even before the full response arrives.
+
+## Multi-Account Setup
+
+Running multiple WhatsApp accounts on the same PapayaClaw instance is fully supported. Credentials are stored at:
+
+```
+~/.openclaw/credentials/whatsapp/<accountId>/creds.json
+```
+
+Each account can have its own overrides for `dmPolicy`, `allowFrom`, `mediaMaxMb`, `sendReadReceipts`, and more:
+
+```json5
+{
+  channels: {
+    whatsapp: {
+      accounts: {
+        work: {
+          dmPolicy: "allowlist",
+          allowFrom: ["+15551111111"],
+        },
+        personal: {
+          dmPolicy: "pairing",
+        },
+      },
+    },
+  },
+}
+```
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| **Not Linked** | Run `openclaw channels login --channel whatsapp` and verify with `openclaw channels status` |
+| **Disconnected / Reconnect Loop** | Run `openclaw doctor` and check logs with `openclaw logs --follow` |
+| **Group Messages Ignored** | Verify `groupPolicy`, `groupAllowFrom`, `groups` allowlist, and mention gating settings |
+| **No Active Listener** | Make sure the gateway is running and the account is linked |
+| **OOM or Crashes** | Ensure you're using Node.js (not Bun) and have sufficient RAM |
+
+## What's Next?
+
+Once your WhatsApp channel is live, explore these next steps:
+
+- **Add more channels** — Connect [Telegram](https://docs.openclaw.ai/channels/telegram) and [Discord](https://docs.openclaw.ai/channels/discord) for multi-platform coverage.
+- **Customize your agent** — Fine-tune the model, system prompt, and available tools.
+- **Set up NemoClaw** — Add enterprise security with NVIDIA's sandbox stack ([read our NemoClaw guide](/blog/getting-started-with-nemoclaw-on-papayaclaw)).
+- **Go multi-account** — Run separate agents for work and personal use.
+
+Ready to get started? Log into your [PapayaClaw dashboard](https://papayaclaw.com) and connect your WhatsApp in under five minutes.
+
+---
+
+*For the latest WhatsApp channel documentation, visit the [official OpenClaw docs](https://docs.openclaw.ai/channels/whatsapp).*
