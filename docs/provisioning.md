@@ -12,6 +12,7 @@ When a user deploys a new instance (`POST /api/instances`):
 
 ### 1. Subscription Validation
 - Checks that the user has an active subscription without an existing instance bound to it
+- **If Polar is not configured** (no `POLAR_ACCESS_TOKEN` / `POLAR_WEBHOOK_SECRET`), this step is skipped. The instance is created with no subscription linked and defaults to server type `cx22`
 
 ### 2. SSH Keypair Generation
 - Generates an Ed25519 keypair via `crypto.generateKeyPairSync`

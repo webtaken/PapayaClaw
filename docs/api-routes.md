@@ -43,7 +43,7 @@ POST /api/instances
 ```
 
 **What it does:**
-1. Validates subscription availability
+1. Validates subscription availability (skipped if Polar is not configured — see [Environment Variables](./environment-variables.md))
 2. Generates SSH keypair
 3. Creates Cloudflare Tunnel + DNS record
 4. Generates cloud-init script

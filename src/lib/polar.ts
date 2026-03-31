@@ -10,6 +10,16 @@ export const POLAR_PRO_PRODUCT_ID =
 
 export type PlanType = "basic" | "pro";
 
+/**
+ * Check whether Polar payment env vars are configured.
+ * When false, subscription checks are bypassed (OSS / dev mode).
+ */
+export function isPolarConfigured(): boolean {
+  return !!(
+    process.env.POLAR_ACCESS_TOKEN && process.env.POLAR_WEBHOOK_SECRET
+  );
+}
+
 // Maps plan type → Hetzner server type
 export const PLAN_SERVER_TYPE: Record<string, string> = {
   basic: "cx23",

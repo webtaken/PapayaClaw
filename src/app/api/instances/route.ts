@@ -5,7 +5,11 @@ import { eq, desc } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { createServer, uploadSSHKey } from "@/lib/hetzner";
-import { getAvailableSubscription, PLAN_SERVER_TYPE } from "@/lib/polar";
+import {
+  getAvailableSubscription,
+  isPolarConfigured,
+  PLAN_SERVER_TYPE,
+} from "@/lib/polar";
 import {
   createTunnel,
   configureTunnel,
@@ -56,19 +60,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Find an active subscription with no instance linked (1:1 rule)
-  const subscription = await getAvailableSubscription(session.user.id);
-  if (!subscription) {
-    return NextResponse.json(
-      {
-        error:
-          "No available subscription. Each subscription supports one instance. Purchase another subscription or delete an existing instance.",
-      },
-      { status: 403 },
-    );
-  }
+  // When Polar is configured, enforce 1:1 subscription-to-instance rule.
+  // When Polar is not configured (OSS / dev mode), skip the check entirely.
+  let subscriptionId: string | null = null;
+  let serverType = "cx22";
 
-  const serverType = PLAN_SERVER_TYPE[subscription.planType] || "cx22";
+  if (isPolarConfigured()) {
+    const subscription = await getAvailableSubscription(session.user.id);
+    if (!subscription) {
+      return NextResponse.json(
+        {
+          error:
+            "No available subscription. Each subscription supports one instance. Purchase another subscription or delete an existing instance.",
+        },
+        { status: 403 },
+      );
+    }
+    subscriptionId = subscription.id;
+    serverType = PLAN_SERVER_TYPE[subscription.planType] || "cx22";
+  }
 
   const body = await request.json();
   const { name, model, modelApiKey, channel, botToken, channelPhone } = body;
@@ -118,7 +128,7 @@ export async function POST(request: Request) {
       channelPhone: channelPhone || null,
       status: "deploying",
       provider: "hetzner",
-      subscriptionId: subscription.id,
+      subscriptionId,
       userId: session.user.id,
     })
     .returning();

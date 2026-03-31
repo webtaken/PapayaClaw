@@ -53,17 +53,19 @@ Create a token with **Read & Write** permissions.
 - Account > Cloudflare Tunnel > Edit
 - Account > Cloudflare Tunnel > Read
 
-### Polar.sh Payments
+### Polar.sh Payments (Optional)
+
+> **OSS / dev mode:** If `POLAR_ACCESS_TOKEN` and `POLAR_WEBHOOK_SECRET` are not set, the subscription check is bypassed entirely. Instances are created with no subscription linked and default to the smallest server type (`cx22`). This lets contributors run the project without setting up Polar.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `POLAR_ACCESS_TOKEN` | Yes | API access token from [Polar dashboard](https://polar.sh) > Settings > Developers |
-| `POLAR_WEBHOOK_SECRET` | Yes | Webhook signing secret (configured when creating the webhook endpoint) |
-| `POLAR_SERVER` | Yes | `sandbox` for testing, `production` for live payments |
-| `NEXT_PUBLIC_POLAR_BASIC_PRODUCT_ID` | Yes | Product ID for the Basic subscription plan |
-| `NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID` | Yes | Product ID for the Pro subscription plan |
+| `POLAR_ACCESS_TOKEN` | No | API access token from [Polar dashboard](https://polar.sh) > Settings > Developers |
+| `POLAR_WEBHOOK_SECRET` | No | Webhook signing secret (configured when creating the webhook endpoint) |
+| `POLAR_SERVER` | No | `sandbox` for testing, `production` for live payments |
+| `NEXT_PUBLIC_POLAR_BASIC_PRODUCT_ID` | No | Product ID for the Basic subscription plan |
+| `NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID` | No | Product ID for the Pro subscription plan |
 
-**Polar setup:**
+**Polar setup (only needed if you want subscription-gated instance creation):**
 1. Create an organization on [polar.sh](https://polar.sh)
 2. Create two products (Basic and Pro plans)
 3. Set up a webhook pointing to `https://yourdomain.com/api/webhook/polar`
