@@ -3,74 +3,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
-import { ClaudeAI } from "@/components/icons/claudeai";
-import { OpenAI } from "@/components/icons/openai";
-import { MistralAI } from "@/components/icons/mistralai";
-import { OpenRouter } from "@/components/icons/openrouter";
-import { Telegram } from "@/components/icons/telegram";
-import { Discord } from "@/components/icons/discord";
-import { WhatsApp } from "@/components/icons/whatsapp";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { PROVIDERS, CHANNELS } from "@/lib/ai-config";
+import { getProviderIcon, getChannelIcon } from "@/lib/ai-config-ui";
 
-const PROVIDERS = [
-  {
-    id: "anthropic",
-    name: "Anthropic",
-    icon: <ClaudeAI className="h-5 w-5" />,
-  },
-  { id: "openai", name: "OpenAI", icon: <OpenAI className="h-5 w-5" /> },
-  {
-    id: "minimax",
-    name: "MiniMax",
-    icon: (
-      <Image
-        src="/icons/MiniMax.jpg"
-        alt="MiniMax"
-        width={20}
-        height={20}
-        className="object-contain"
-      />
-    ),
-  },
-  {
-    id: "zai",
-    name: "Z.AI",
-    icon: (
-      <Image
-        src="/icons/Zai.png"
-        alt="Z.AI"
-        width={20}
-        height={20}
-        className="object-contain"
-      />
-    ),
-  },
-  { id: "mistral", name: "Mistral", icon: <MistralAI className="h-5 w-5" /> },
-  {
-    id: "openrouter",
-    name: "OpenRouter",
-    icon: <OpenRouter className="h-5 w-5 fill-current" />,
-  },
-];
-
-const channels = [
-  {
-    id: "telegram",
-    name: "Telegram",
-    icon: <Telegram className="h-5 w-5" />,
-  },
-  {
-    id: "discord",
-    name: "Discord",
-    icon: <Discord className="h-5 w-5" />,
-  },
-  {
-    id: "whatsapp",
-    name: "WhatsApp",
-    icon: <WhatsApp className="h-5 w-5" />,
-  },
-];
+const CONFIGURATOR_PROVIDERS = PROVIDERS.filter((p) => p.id !== "opencode");
+const CONFIGURATOR_CHANNELS = CHANNELS.filter((c) => c.id !== "slack");
 
 export function Configurator() {
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
@@ -97,7 +35,7 @@ export function Configurator() {
             {t("providerQuestion")}
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {PROVIDERS.map((provider) => (
+            {CONFIGURATOR_PROVIDERS.map((provider) => (
               <button
                 key={provider.id}
                 onClick={() => setSelectedProvider(provider.id)}
@@ -108,7 +46,7 @@ export function Configurator() {
                 }`}
               >
                 <div className="flex items-center justify-center scale-125 mb-1 transition-transform group-hover:scale-150">
-                  {provider.icon}
+                  {getProviderIcon(provider.id)}
                 </div>
                 <span className="text-xs font-medium">{provider.name}</span>
               </button>
@@ -122,7 +60,7 @@ export function Configurator() {
             {t("channelQuestion")}
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {channels.map((channel) => (
+            {CONFIGURATOR_CHANNELS.map((channel) => (
               <button
                 key={channel.id}
                 onClick={() => setSelectedChannel(channel.id)}
@@ -132,7 +70,7 @@ export function Configurator() {
                     : "border-border bg-[#0f1014] text-zinc-300 hover:border-primary hover:text-white neo-card-hover"
                 }`}
               >
-                <span className="text-2xl scale-110">{channel.icon}</span>
+                <span className="text-2xl scale-110">{getChannelIcon(channel.id)}</span>
                 <span className="text-base font-bold uppercase tracking-wide">
                   {channel.name}
                 </span>

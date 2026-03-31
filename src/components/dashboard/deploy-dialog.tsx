@@ -14,116 +14,19 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Rocket, Check } from "lucide-react";
 import { toast } from "sonner";
 import type { Instance } from "./dashboard-content";
-import { ClaudeAI } from "@/components/icons/claudeai";
-import { OpenAI } from "@/components/icons/openai";
-import { MistralAI } from "@/components/icons/mistralai";
-import { OpenRouter } from "@/components/icons/openrouter";
-import { OpenCode } from "@/components/icons/opencode";
-import { Telegram } from "../icons/telegram";
-import { Discord } from "../icons/discord";
-import { WhatsApp } from "../icons/whatsapp";
-import { Slack } from "../icons/slack";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
+import {
+  PROVIDERS,
+  CHANNELS,
+  getModelsByProvider,
+  getProvider,
+  type ProviderId,
+  type ChannelId,
+} from "@/lib/ai-config";
+import { getProviderIcon, getChannelIcon } from "@/lib/ai-config-ui";
 
-const PROVDERS = [
-  {
-    id: "anthropic",
-    name: "Anthropic",
-    icon: <ClaudeAI className="h-5 w-5" />,
-  },
-  { id: "openai", name: "OpenAI", icon: <OpenAI className="h-5 w-5" /> },
-  {
-    id: "zai",
-    name: "Z.AI",
-    icon: (
-      <Image
-        src="/icons/Zai.png"
-        alt="Z.AI"
-        width={20}
-        height={20}
-        className="object-contain"
-      />
-    ),
-  },
-  { id: "mistral", name: "Mistral", icon: <MistralAI className="h-5 w-5" /> },
-  {
-    id: "minimax",
-    name: "MiniMax",
-    icon: (
-      <Image
-        src="/icons/MiniMax.jpg"
-        alt="MiniMax"
-        width={20}
-        height={20}
-        className="object-contain"
-      />
-    ),
-    badge: "recommended",
-  },
-  {
-    id: "openrouter",
-    name: "OpenRouter",
-    icon: <OpenRouter className="h-5 w-5 fill-current" />,
-  },
-  {
-    id: "opencode",
-    name: "OpenCode Zen",
-    icon: <OpenCode className="h-5 w-5" />,
-  },
-];
-
-const MODELS_BY_PROVIDER: Record<
-  string,
-  { id: string; name: string; badge?: string }[]
-> = {
-  anthropic: [
-    { id: "claude-opus-4-6", name: "Claude Opus 4.6" },
-    { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
-    { id: "claude-haiku-4-5", name: "Claude Haiku 4.5" },
-  ],
-  openai: [
-    { id: "gpt-5.2", name: "GPT-5.2" },
-    { id: "gpt-5.1-codex", name: "GPT-5.1 Codex" },
-    { id: "gpt-5.1-codex-mini", name: "GPT-5.1 Codex-Mini" },
-    { id: "gpt-5-mini", name: "GPT-5 Mini" },
-    { id: "gpt-4.1-mini", name: "GPT-4.1 Mini" },
-  ],
-  mistral: [{ id: "mistral-large-latest", name: "Mistral Large" }],
-  zai: [
-    { id: "glm-4.7", name: "GLM 4.7" },
-    { id: "glm-5", name: "GLM 5", badge: "Requires Pro+" },
-  ],
-  minimax: [{ id: "MiniMax-M2.1", name: "MiniMax M2.1" }],
-};
-
-const channels = [
-  {
-    id: "telegram",
-    name: "Telegram",
-    icon: <Telegram className="h-5 w-5" />,
-    available: true,
-  },
-  {
-    id: "discord",
-    name: "Discord",
-    icon: <Discord className="h-5 w-5" />,
-    available: false,
-  },
-  {
-    id: "whatsapp",
-    name: "WhatsApp",
-    icon: <WhatsApp className="h-5 w-5" />,
-    available: true,
-  },
-  {
-    id: "slack",
-    name: "Slack",
-    icon: <Slack className="h-5 w-5" />,
-    available: false,
-  },
-];
+const AVAILABLE_CHANNELS = new Set<ChannelId>(["telegram", "whatsapp"]);
 
 export function DeployDialog({
   open,
@@ -223,15 +126,14 @@ export function DeployDialog({
     }
   };
 
-  const selectedProviderData = PROVDERS.find((p) => p.id === selectedProvider);
-  const selectedChannelData = channels.find((c) => c.id === selectedChannel);
+  const selectedProviderData = PROVIDERS.find((p) => p.id === selectedProvider);
+  const selectedChannelData = CHANNELS.find((c) => c.id === selectedChannel);
 
   const getModelName = () => {
     if (isCustomProvider) return finalModelId;
     if (!selectedProvider || !selectedModel) return "—";
-    const modelObj = MODELS_BY_PROVIDER[selectedProvider]?.find(
-      (m) => m.id === selectedModel,
-    );
+    const models = getModelsByProvider(selectedProvider as ProviderId);
+    const modelObj = models.find((m) => m.id === selectedModel);
     return modelObj ? modelObj.name : selectedModel;
   };
 
@@ -306,7 +208,7 @@ export function DeployDialog({
                   {t("selectProvider")}
                 </Label>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-                  {PROVDERS.map((provider) => (
+                  {PROVIDERS.map((provider) => (
                     <button
                       key={provider.id}
                       onClick={() => {
@@ -321,7 +223,7 @@ export function DeployDialog({
                       }`}
                     >
                       <div className="flex h-5 items-center justify-center scale-75">
-                        {provider.icon}
+                        {getProviderIcon(provider.id)}
                       </div>
                       <span className="text-[10px] font-medium leading-none">
                         {provider.name}
@@ -345,7 +247,7 @@ export function DeployDialog({
                     {t("selectModel")}
                   </Label>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                    {MODELS_BY_PROVIDER[selectedProvider]?.map((m) => {
+                    {getModelsByProvider(selectedProvider as ProviderId).map((m) => {
                       return (
                         <button
                           key={m.id}
@@ -429,37 +331,40 @@ export function DeployDialog({
                   {t("selectChannel")}
                 </Label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {channels.map((channel) => (
-                    <button
-                      key={channel.id}
-                      onClick={() =>
-                        channel.available && setSelectedChannel(channel.id)
-                      }
-                      disabled={!channel.available}
-                      className={`relative flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-left transition-all duration-300 ${
-                        !channel.available
-                          ? "cursor-not-allowed border-zinc-800 bg-zinc-850/30 opacity-50"
-                          : selectedChannel === channel.id
-                            ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
-                            : "border-zinc-700/50 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
-                      }`}
-                    >
-                      <span className="text-sm">{channel.icon}</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-medium leading-none">
-                          {channel.name}
-                        </span>
-                        {!channel.available && (
-                          <Badge
-                            variant="secondary"
-                            className="rounded bg-zinc-700/50 px-1 py-0 text-[8px] tracking-wide text-zinc-400"
-                          >
-                            {t("soon")}
-                          </Badge>
-                        )}
-                      </div>
-                    </button>
-                  ))}
+                  {CHANNELS.map((channel) => {
+                    const available = AVAILABLE_CHANNELS.has(channel.id);
+                    return (
+                      <button
+                        key={channel.id}
+                        onClick={() =>
+                          available && setSelectedChannel(channel.id)
+                        }
+                        disabled={!available}
+                        className={`relative flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-left transition-all duration-300 ${
+                          !available
+                            ? "cursor-not-allowed border-zinc-800 bg-zinc-850/30 opacity-50"
+                            : selectedChannel === channel.id
+                              ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
+                              : "border-zinc-700/50 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                        }`}
+                      >
+                        <span className="text-sm">{getChannelIcon(channel.id)}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-medium leading-none">
+                            {channel.name}
+                          </span>
+                          {!available && (
+                            <Badge
+                              variant="secondary"
+                              className="rounded bg-zinc-700/50 px-1 py-0 text-[8px] tracking-wide text-zinc-400"
+                            >
+                              {t("soon")}
+                            </Badge>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -545,7 +450,7 @@ export function DeployDialog({
                     <span className="text-xs text-zinc-400">{t("selectModel")}</span>
                     <span className="flex items-center gap-1.5 text-xs font-medium text-white">
                       <div className="scale-75 origin-right">
-                        {selectedProviderData?.icon}
+                        {selectedProviderData && getProviderIcon(selectedProviderData.id)}
                       </div>
                       {getModelName()}
                     </span>
@@ -555,7 +460,7 @@ export function DeployDialog({
                     <span className="text-xs text-zinc-400">{t("selectChannel")}</span>
                     <span className="flex items-center gap-1.5 text-xs font-medium text-white">
                       <span className="text-[10px]">
-                        {selectedChannelData?.icon}
+                        {selectedChannelData && getChannelIcon(selectedChannelData.id)}
                       </span>
                       {selectedChannelData?.name}
                     </span>

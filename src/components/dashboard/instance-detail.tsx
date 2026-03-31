@@ -2,7 +2,7 @@
 
 import { toast } from "sonner";
 
-import { useEffect, useState, useCallback, useMemo, ReactNode } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import useSWR from "swr";
 import dynamic from "next/dynamic";
 import { Badge } from "@/components/ui/badge";
@@ -24,16 +24,7 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { ClaudeAI } from "@/components/icons/claudeai";
-import { OpenAI } from "@/components/icons/openai";
-import { MistralAI } from "@/components/icons/mistralai";
-import { OpenRouter } from "@/components/icons/openrouter";
-import { OpenCode } from "@/components/icons/opencode";
-import { Telegram } from "@/components/icons/telegram";
-import Image from "next/image";
-import { Discord } from "../icons/discord";
-import { WhatsApp } from "../icons/whatsapp";
-import { Slack } from "../icons/slack";
+import { formatModelInfo, formatChannelInfo, getChannelIcon, getProviderIcon } from "@/lib/ai-config-ui";
 
 const SshTerminal = dynamic(
   () => import("./ssh-terminal").then((mod) => mod.SshTerminal),
@@ -67,102 +58,6 @@ interface StatusData {
   channels?: string[];
   whatsappNumbers?: string[];
 }
-
-function formatModelInfo(modelId: string): {
-  name: string;
-  icon: React.ReactNode;
-} {
-  if (modelId.startsWith("openrouter/")) {
-    return {
-      name: modelId.replace("openrouter/", ""),
-      icon: <OpenRouter className="h-4 w-4 fill-current" />,
-    };
-  }
-  if (modelId.startsWith("opencode/")) {
-    return {
-      name: modelId.replace("opencode/", ""),
-      icon: <OpenCode className="h-4 w-4" />,
-    };
-  }
-
-  const map: Record<string, { name: string; icon: React.ReactNode }> = {
-    "claude-opus-4-6": {
-      name: "Claude Opus 4.6",
-      icon: <ClaudeAI className="h-4 w-4" />,
-    },
-    "claude-sonnet-4-6": {
-      name: "Claude Sonnet 4.6",
-      icon: <ClaudeAI className="h-4 w-4" />,
-    },
-    "claude-haiku-4-5": {
-      name: "Claude Haiku 4.5",
-      icon: <ClaudeAI className="h-4 w-4" />,
-    },
-    "gpt-5.2": { name: "GPT-5.2", icon: <OpenAI className="h-4 w-4" /> },
-    "gpt-5.1-codex": {
-      name: "GPT-5.1 Codex",
-      icon: <OpenAI className="h-4 w-4" />,
-    },
-    "gpt-5.1-codex-mini": {
-      name: "GPT-5.1 Codex-Mini",
-      icon: <OpenAI className="h-4 w-4" />,
-    },
-    "gpt-5-mini": { name: "GPT-5 Mini", icon: <OpenAI className="h-4 w-4" /> },
-    "gpt-4.1-mini": {
-      name: "GPT-4.1 Mini",
-      icon: <OpenAI className="h-4 w-4" />,
-    },
-    "mistral-large-latest": {
-      name: "Mistral Large",
-      icon: <MistralAI className="h-4 w-4" />,
-    },
-    "glm-4.7": {
-      name: "GLM 4.7",
-      icon: (
-        <Image
-          src="/icons/Zai.png"
-          alt="Z.AI"
-          width={16}
-          height={16}
-          className="object-contain"
-        />
-      ),
-    },
-    "glm-5": {
-      name: "GLM 5",
-      icon: (
-        <Image
-          src="/icons/Zai.png"
-          alt="Z.AI"
-          width={16}
-          height={16}
-          className="object-contain"
-        />
-      ),
-    },
-    "MiniMax-M2.1": {
-      name: "MiniMax M2.1",
-      icon: (
-        <Image
-          src="/icons/MiniMax.jpg"
-          alt="MiniMax"
-          width={16}
-          height={16}
-          className="object-contain"
-        />
-      ),
-    },
-  };
-
-  return map[modelId] || { name: modelId, icon: "⚪" };
-}
-
-const channelLabels: Record<string, { name: string; icon: ReactNode }> = {
-  telegram: { name: "Telegram", icon: <Telegram className="w-4 h-4" /> },
-  discord: { name: "Discord", icon: <Discord className="w-4 h-4" /> },
-  whatsapp: { name: "WhatsApp", icon: <WhatsApp className="w-4 h-4" /> },
-  slack: { name: "Slack", icon: <Slack className="w-4 h-4" /> },
-};
 
 const statusConfig: Record<
   string,
@@ -482,14 +377,12 @@ export function InstanceDetail({
               </span>
               <span className="flex items-center gap-2 text-sm text-zinc-200 flex-wrap">
                 {channels.map((ch) => {
-                  const info = channelLabels[ch];
-                  return info ? (
+                  const info = formatChannelInfo(ch);
+                  return (
                     <span key={ch} className="flex items-center gap-1.5" title={info.name}>
                       <span className="text-xs text-zinc-400">{info.icon}</span>
                       <span>{info.name}</span>
                     </span>
-                  ) : (
-                    <span key={ch}>{ch}</span>
                   );
                 })}
               </span>
@@ -643,7 +536,7 @@ export function InstanceDetail({
                           : "text-zinc-500 hover:text-zinc-300"
                       }`}
                     >
-                      <Telegram className="h-3.5 w-3.5" />
+                      {getChannelIcon("telegram", "h-3.5 w-3.5")}
                       <span>Telegram</span>
                       {hasTelegram ? (
                         <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
@@ -666,7 +559,7 @@ export function InstanceDetail({
                           : "text-zinc-500 hover:text-zinc-300"
                       }`}
                     >
-                      <WhatsApp className="h-3.5 w-3.5" />
+                      {getChannelIcon("whatsapp", "h-3.5 w-3.5")}
                       <span>WhatsApp</span>
                       {hasWhatsApp ? (
                         <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
@@ -791,7 +684,7 @@ export function InstanceDetail({
                         /* Secondary Telegram — add channel */
                         <div className="flex flex-col items-center justify-center py-6 text-center flex-1">
                           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-zinc-900/80 border border-zinc-800/80">
-                            <Telegram className="h-7 w-7 text-zinc-400" />
+                            {getChannelIcon("telegram", "h-7 w-7 text-zinc-400")}
                           </div>
                           <p className="text-sm font-medium text-zinc-300 mb-1">
                             Add Telegram
@@ -947,7 +840,7 @@ export function InstanceDetail({
                         /* Secondary WhatsApp — add channel */
                         <div className="flex flex-col items-center justify-center py-6 text-center flex-1">
                           <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-zinc-900/80 border border-zinc-800/80">
-                            <WhatsApp className="h-7 w-7 text-zinc-400" />
+                            {getChannelIcon("whatsapp", "h-7 w-7 text-zinc-400")}
                           </div>
                           <p className="text-sm font-medium text-zinc-300 mb-1">
                             Add WhatsApp
@@ -1006,7 +899,7 @@ export function InstanceDetail({
                 {!isTerminalOpen ? (
                   <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-zinc-950/50">
                     <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-zinc-900/50 border border-zinc-800/80">
-                      <OpenCode className="h-8 w-8 text-zinc-500" />
+                      {getProviderIcon("opencode", "h-8 w-8 text-zinc-500")}
                     </div>
                     <p className="mb-6 max-w-[260px] text-sm text-zinc-400 leading-relaxed font-mono">
                       Secure WebRTC shell protocol. Direct root access to

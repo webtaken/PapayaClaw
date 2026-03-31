@@ -1,23 +1,14 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { useState } from "react";
 import type { Instance } from "./dashboard-content";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Square, Play, Trash2, Shield, Eye } from "lucide-react";
 import { PairingDialog } from "./pairing-dialog";
-import { ClaudeAI } from "@/components/icons/claudeai";
-import { OpenAI } from "@/components/icons/openai";
-import { MistralAI } from "@/components/icons/mistralai";
-import { OpenRouter } from "@/components/icons/openrouter";
-import { OpenCode } from "@/components/icons/opencode";
-import Image from "next/image";
-import { Telegram } from "../icons/telegram";
-import { Discord } from "../icons/discord";
-import { WhatsApp } from "../icons/whatsapp";
-import { Slack } from "../icons/slack";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { formatModelInfo, formatChannelInfo } from "@/lib/ai-config-ui";
 
 import {
   AlertDialog,
@@ -30,102 +21,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-function formatModelInfo(modelId: string): {
-  name: string;
-  icon: React.ReactNode;
-} {
-  if (modelId.startsWith("openrouter/")) {
-    return {
-      name: modelId.replace("openrouter/", ""),
-      icon: <OpenRouter className="h-4 w-4 fill-current" />,
-    };
-  }
-  if (modelId.startsWith("opencode/")) {
-    return {
-      name: modelId.replace("opencode/", ""),
-      icon: <OpenCode className="h-4 w-4" />,
-    };
-  }
-
-  const map: Record<string, { name: string; icon: React.ReactNode }> = {
-    "claude-opus-4-6": {
-      name: "Claude Opus 4.6",
-      icon: <ClaudeAI className="h-4 w-4" />,
-    },
-    "claude-sonnet-4-6": {
-      name: "Claude Sonnet 4.6",
-      icon: <ClaudeAI className="h-4 w-4" />,
-    },
-    "claude-haiku-4-5": {
-      name: "Claude Haiku 4.5",
-      icon: <ClaudeAI className="h-4 w-4" />,
-    },
-    "gpt-5.2": { name: "GPT-5.2", icon: <OpenAI className="h-4 w-4" /> },
-    "gpt-5.1-codex": {
-      name: "GPT-5.1 Codex",
-      icon: <OpenAI className="h-4 w-4" />,
-    },
-    "gpt-5.1-codex-mini": {
-      name: "GPT-5.1 Codex-Mini",
-      icon: <OpenAI className="h-4 w-4" />,
-    },
-    "gpt-5-mini": { name: "GPT-5 Mini", icon: <OpenAI className="h-4 w-4" /> },
-    "gpt-4.1-mini": {
-      name: "GPT-4.1 Mini",
-      icon: <OpenAI className="h-4 w-4" />,
-    },
-    "mistral-large-latest": {
-      name: "Mistral Large",
-      icon: <MistralAI className="h-4 w-4" />,
-    },
-    "glm-4.7": {
-      name: "GLM 4.7",
-      icon: (
-        <Image
-          src="/icons/Zai.png"
-          alt="Z.AI"
-          width={16}
-          height={16}
-          className="object-contain"
-        />
-      ),
-    },
-    "glm-5": {
-      name: "GLM 5",
-      icon: (
-        <Image
-          src="/icons/Zai.png"
-          alt="Z.AI"
-          width={16}
-          height={16}
-          className="object-contain"
-        />
-      ),
-    },
-    "MiniMax-M2.1": {
-      name: "MiniMax M2.1",
-      icon: (
-        <Image
-          src="/icons/MiniMax.jpg"
-          alt="MiniMax"
-          width={16}
-          height={16}
-          className="object-contain"
-        />
-      ),
-    },
-  };
-
-  return map[modelId] || { name: modelId, icon: "⚪" };
-}
-
-const channelLabels: Record<string, { name: string; icon: ReactNode }> = {
-  telegram: { name: "Telegram", icon: <Telegram className="w-4 h-4" /> },
-  discord: { name: "Discord", icon: <Discord className="w-4 h-4" /> },
-  whatsapp: { name: "WhatsApp", icon: <WhatsApp className="w-4 h-4" /> },
-  slack: { name: "Slack", icon: <Slack className="w-4 h-4" /> },
-};
 
 export function InstanceCard({
   instance,
@@ -213,16 +108,14 @@ export function InstanceCard({
             </span>
             <span className="flex items-center gap-1.5 text-xs text-zinc-300 flex-wrap">
               {channels.map((ch) => {
-                const info = channelLabels[ch];
-                return info ? (
+                const info = formatChannelInfo(ch);
+                return (
                   <span key={ch} className="flex items-center gap-1" title={info.name}>
                     <span className="text-[10px] text-zinc-400 shrink-0">
                       {info.icon}
                     </span>
                     <span className="truncate">{info.name}</span>
                   </span>
-                ) : (
-                  <span key={ch} className="truncate">{ch}</span>
                 );
               })}
             </span>

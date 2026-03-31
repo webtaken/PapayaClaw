@@ -22,6 +22,8 @@
  *   - runcmd: invoke the bash script (runcmd uses sh, not bash)
  */
 
+import { detectProviderByModelId } from "./ai-config";
+
 export interface OpenClawConfig {
   instanceId: string;
   instanceName: string;
@@ -44,71 +46,46 @@ export interface OpenClawConfig {
  */
 export function generateCloudInit(config: OpenClawConfig): string {
   const key = config.modelApiKey || "YOUR_API_KEY";
-  let authChoice = "openai-api-key";
-  let apiKeyFlag = "--openai-api-key";
   let primaryModel = config.model;
   let customModelsJson = "";
 
-  if (config.model.startsWith("claude")) {
-    authChoice = "apiKey";
-    apiKeyFlag = "--anthropic-api-key";
-    primaryModel = `anthropic/${config.model}`;
-  } else if (
-    config.model.startsWith("gpt-") ||
-    config.model.startsWith("o1-") ||
-    config.model.startsWith("o3-")
-  ) {
-    authChoice = "openai-api-key";
-    apiKeyFlag = "--openai-api-key";
-    primaryModel = `openai/${config.model.replace("openai/", "")}`;
-  } else if (config.model.startsWith("glm-")) {
-    authChoice = "zai-api-key";
-    apiKeyFlag = "--zai-api-key";
-    primaryModel = `zai/${config.model}`;
-  } else if (config.model.startsWith("mistral")) {
-    authChoice = "mistral-api-key";
-    apiKeyFlag = "--mistral-api-key";
-    primaryModel = `mistral/${config.model}`;
-  } else if (
-    config.model.startsWith("MiniMax") ||
-    config.model.startsWith("minimax")
-  ) {
-    authChoice = "minimax-api";
-    apiKeyFlag = "--minimax-api-key";
-    primaryModel = `minimax/${config.model}`;
+  const detected = detectProviderByModelId(config.model);
+  const authChoice = detected?.authChoice ?? "openai-api-key";
+  const apiKeyFlag = detected?.apiKeyFlag ?? "--openai-api-key";
+
+  if (detected) {
+    // openrouter/ and opencode/ models already include the provider prefix
+    if (detected.id !== "openrouter" && detected.id !== "opencode") {
+      primaryModel = `${detected.id}/${config.model}`;
+    }
+
     // MiniMax requires a custom models block per OpenClaw docs:
     // https://docs.openclaw.ai/providers/minimax
-    customModelsJson = JSON.stringify({
-      mode: "merge",
-      providers: {
-        minimax: {
-          baseUrl: "https://api.minimax.io/anthropic",
-          apiKey: "${MINIMAX_API_KEY}",
-          api: "anthropic-messages",
-          models: [
-            {
-              id: "MiniMax-M2.1",
-              name: "MiniMax M2.1",
-              reasoning: false,
-              input: ["text"],
-              cost: { input: 15, output: 60, cacheRead: 2, cacheWrite: 10 },
-              contextWindow: 200000,
-              maxTokens: 8192,
-            },
-          ],
+    if (detected.id === "minimax") {
+      customModelsJson = JSON.stringify({
+        mode: "merge",
+        providers: {
+          minimax: {
+            baseUrl: "https://api.minimax.io/anthropic",
+            apiKey: "${MINIMAX_API_KEY}",
+            api: "anthropic-messages",
+            models: [
+              {
+                id: "MiniMax-M2.1",
+                name: "MiniMax M2.1",
+                reasoning: false,
+                input: ["text"],
+                cost: { input: 15, output: 60, cacheRead: 2, cacheWrite: 10 },
+                contextWindow: 200000,
+                maxTokens: 8192,
+              },
+            ],
+          },
         },
-      },
-    });
-  } else if (config.model.startsWith("openrouter/")) {
-    authChoice = "openrouter-api-key";
-    apiKeyFlag = "--openrouter-api-key";
-  } else if (config.model.startsWith("opencode/")) {
-    authChoice = "opencode-zen";
-    apiKeyFlag = "--opencode-zen-api-key";
+      });
+    }
   } else {
-    // Fallback
-    authChoice = "openai-api-key";
-    apiKeyFlag = "--openai-api-key";
+    // Fallback: assume OpenAI-compatible
     if (!primaryModel.includes("/")) {
       primaryModel = `openai/${config.model.replace("openai/", "")}`;
     }
