@@ -31,6 +31,12 @@ const SshTerminal = dynamic(
   { ssr: false },
 );
 
+const ModelProviderModule = dynamic(
+  () =>
+    import("./model-provider-module").then((mod) => mod.ModelProviderModule),
+  { ssr: false },
+);
+
 interface InstanceData {
   id: string;
   name: string;
@@ -868,6 +874,17 @@ export function InstanceDetail({
               </div>
             ) : null}
           </div>
+
+          {/* AI Provider Module */}
+          {currentIp ? (
+            <ModelProviderModule
+              instanceId={instance.id}
+              currentModel={instance.model}
+              onModelChanged={(newModel) =>
+                setInstance((prev) => ({ ...prev, model: newModel }))
+              }
+            />
+          ) : null}
 
           {/* SSH Terminal Module */}
           {currentIp ? (

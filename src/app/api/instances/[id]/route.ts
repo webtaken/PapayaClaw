@@ -47,7 +47,7 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await request.json();
-  const { name, status } = body;
+  const { name, status, model, modelApiKey } = body;
 
   // Fetch the current instance to get the Hetzner server ID
   const [current] = await db
@@ -76,9 +76,11 @@ export async function PATCH(
     }
   }
 
-  const updateData: Record<string, string> = {};
+  const updateData: Record<string, string | null> = {};
   if (name) updateData.name = name;
   if (status) updateData.status = status;
+  if (model) updateData.model = model;
+  if (modelApiKey !== undefined) updateData.modelApiKey = modelApiKey;
 
   if (Object.keys(updateData).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

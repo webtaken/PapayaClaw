@@ -6,6 +6,21 @@ import { OpenAI } from "@/components/icons/openai";
 import { MistralAI } from "@/components/icons/mistralai";
 import { OpenRouter } from "@/components/icons/openrouter";
 import { OpenCode } from "@/components/icons/opencode";
+import { DeepSeek } from "@/components/icons/deepseek";
+import { Groq } from "@/components/icons/groq";
+import { HuggingFace } from "@/components/icons/huggingface";
+import { KiloCode } from "@/components/icons/kilocode";
+import MoonshotAI from "@/components/icons/moonshot-ai";
+import { NVIDIA } from "@/components/icons/nvidia";
+
+import { TogetherAI } from "@/components/icons/together-ai";
+import { XAIGrok } from "@/components/icons/x-ai-grok";
+import { Qwen } from "@/components/icons/qwen";
+import { AmazonWebServices } from "@/components/icons/amazon";
+import { Cloudflare } from "@/components/icons/cloudflare";
+import { Gemini } from "@/components/icons/gemini";
+import { Vercel } from "@/components/icons/vercel";
+import VLLM from "@/components/icons/vllm";
 import { Telegram } from "@/components/icons/telegram";
 import { Discord } from "@/components/icons/discord";
 import { WhatsApp } from "@/components/icons/whatsapp";
@@ -20,6 +35,7 @@ export function getProviderIcon(
 ): React.ReactNode {
   const size = parseInt(className.match(/h-(\d+)/)?.[1] || "5") * 4;
   switch (id) {
+    // Phase 1 — Simple API key
     case "anthropic":
       return <ClaudeAI className={className} />;
     case "openai":
@@ -29,7 +45,24 @@ export function getProviderIcon(
     case "openrouter":
       return <OpenRouter className={`${className} fill-current`} />;
     case "opencode":
+    case "opencode-go":
       return <OpenCode className={className} />;
+    case "deepseek":
+      return <DeepSeek className={className} />;
+    case "groq":
+      return <Groq className={className} />;
+    case "huggingface":
+      return <HuggingFace className={className} />;
+    case "kilocode":
+      return <KiloCode className={className} />;
+    case "moonshot":
+      return <MoonshotAI className={className} />;
+    case "nvidia":
+      return <NVIDIA className={className} />;
+    case "together":
+      return <TogetherAI className={className} />;
+    case "xai":
+      return <XAIGrok className={className} />;
     case "zai":
       return (
         <Image
@@ -50,6 +83,88 @@ export function getProviderIcon(
           className="object-contain"
         />
       );
+    case "synthetic":
+      return (
+        <Image
+          src="/icons/synthetic-ai.png"
+          alt="Synthetic"
+          width={size}
+          height={size}
+          className="object-contain"
+        />
+      );
+    case "venice":
+      return (
+        <Image
+          src="/icons/venice-ai.png"
+          alt="Venice"
+          width={size}
+          height={size}
+          className="object-contain"
+        />
+      );
+    case "xiaomi":
+      return (
+        <Image
+          src="/icons/xiaomi-mimo.png"
+          alt="Xiaomi"
+          width={size}
+          height={size}
+          className="object-contain"
+        />
+      );
+    case "volcengine":
+      return (
+        <Image
+          src="/icons/volcengine.png"
+          alt="Volcengine"
+          width={size}
+          height={size}
+          className="object-contain"
+        />
+      );
+    case "litellm":
+      return <span className={className}>🔀</span>;
+    case "qianfan":
+      return <span className={className}>🌐</span>;
+
+    case "gemini":
+    case "gemini-cli":
+      return <Gemini className={className} />;
+    case "vercel-ai":
+      return <Vercel className={className} />;
+
+    // Phase 2 — Complex
+    case "bedrock":
+      return <AmazonWebServices className={className} />;
+    case "cloudflare":
+      return <Cloudflare className={className} />;
+    case "qwen":
+      return <Qwen className={className} />;
+
+    // Phase 3 — Local
+    case "ollama":
+      return <span className={className}>🦙</span>;
+    case "vllm":
+      return <VLLM className={className} />;
+    case "sglang":
+      return (
+        <Image
+          src="/icons/sglang.png"
+          alt="SGLang"
+          width={size}
+          height={size}
+          className="object-contain"
+        />
+      );
+
+    // CLI-auth
+    case "copilot":
+      return <span className={className}>🤖</span>;
+    case "claude-cli":
+      return <ClaudeAI className={className} />;
+    case "codex-cli":
+      return <OpenAI className={className} />;
   }
 }
 
