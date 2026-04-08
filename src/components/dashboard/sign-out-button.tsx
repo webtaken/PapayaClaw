@@ -18,7 +18,7 @@ export function SignOutButton() {
     <Button
       variant="ghost"
       onClick={handleSignOut}
-      className="cursor-pointer text-sm text-zinc-400 transition-colors hover:text-white"
+      className="cursor-pointer text-sm text-muted-foreground transition-colors hover:text-foreground"
     >
       {t("signOut")}
     </Button>

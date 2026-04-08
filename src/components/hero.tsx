@@ -17,16 +17,16 @@ export async function Hero() {
             </span>
           </div>
 
-          <h1 className="text-4xl font-extrabold uppercase leading-[0.9] tracking-tighter text-white sm:text-5xl md:text-6xl lg:text-[6rem]">
+          <h1 className="text-4xl font-extrabold uppercase leading-[0.9] tracking-tighter text-foreground sm:text-5xl md:text-6xl lg:text-[6rem]">
             {t("titleLine1")} <br />
             <span className="text-primary [-webkit-text-stroke:2px_#000] drop-shadow-[4px_4px_0_rgba(205,220,57,1)]">
               {t("titleLine2")}
             </span>
           </h1>
 
-          <p className="animate-slide-up-fade-delay-1 mx-auto mt-12 max-w-2xl text-xl font-medium leading-relaxed text-zinc-300 md:text-2xl">
+          <p className="animate-slide-up-fade-delay-1 mx-auto mt-12 max-w-2xl text-xl font-medium leading-relaxed text-muted-foreground md:text-2xl">
             {t("description")}{" "}
-            <span className="font-bold text-white underline decoration-primary decoration-4 underline-offset-4">
+            <span className="font-bold text-foreground underline decoration-primary decoration-4 underline-offset-4">
               {t("descriptionHighlight")}
             </span>
             .

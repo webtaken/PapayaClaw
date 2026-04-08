@@ -89,10 +89,10 @@ export function DashboardContent({
   return (
     <div className="animate-fade-in-up flex flex-col gap-6 font-sans">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
+      <div className="flex items-center justify-between border-b border-border pb-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-xl font-medium tracking-tight text-white">
+            <h1 className="text-xl font-medium tracking-tight text-foreground">
               {t("yourInstances")}
             </h1>
             <span
@@ -101,14 +101,14 @@ export function DashboardContent({
                   ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                   : planLabel === "Basic"
                     ? "bg-sky-500/10 text-sky-400 border border-sky-500/20"
-                    : "bg-zinc-800 text-zinc-500 border border-zinc-700"
+                    : "bg-muted text-muted-foreground border border-border"
               }`}
             >
               {planLabel === "Pro" && <Crown className="h-2.5 w-2.5" />}
               {planLabel}
             </span>
           </div>
-          <p className="text-xs font-mono text-zinc-500">
+          <p className="text-xs font-mono text-muted-foreground">
             {t("manageDescription")}
           </p>
         </div>
@@ -116,7 +116,7 @@ export function DashboardContent({
           {/* Subscription actions */}
           <Link
             href="/dashboard/subscriptions"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 border border-zinc-800 px-3 h-9 text-xs font-mono text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 transition-all"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-muted border border-border px-3 h-9 text-xs font-mono text-muted-foreground hover:text-foreground/90 hover:border-border transition-all"
           >
             <CreditCard className="h-3 w-3" />
             {t("navSubscriptions")}
@@ -124,7 +124,7 @@ export function DashboardContent({
           {subscription ? (
             <a
               href="/api/portal"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 border border-zinc-800 px-3 h-9 text-xs font-mono text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 transition-all"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-muted border border-border px-3 h-9 text-xs font-mono text-muted-foreground hover:text-foreground/90 hover:border-border transition-all"
             >
               {t("managePlan")}
               <ExternalLink className="h-3 w-3" />
@@ -152,7 +152,7 @@ export function DashboardContent({
           )}
           <Button
             onClick={() => setDeployOpen(true)}
-            className="bg-zinc-100 text-zinc-950 hover:bg-white font-medium shadow-none h-9 px-4 border border-transparent transition-all hover:border-zinc-300 gap-2 font-mono text-xs uppercase tracking-wider"
+            className="bg-foreground text-background hover:bg-foreground/90 font-medium shadow-none h-9 px-4 border border-transparent transition-all hover:border-border gap-2 font-mono text-xs uppercase tracking-wider"
           >
             <Plus className="h-3.5 w-3.5" />
             {t("deployNew")}
@@ -168,10 +168,10 @@ export function DashboardContent({
               <Crown className="h-4 w-4 text-amber-400" />
             </div>
             <div>
-              <p className="text-sm font-medium text-white">
+              <p className="text-sm font-medium text-foreground">
                 {t("subscribeBanner")}
               </p>
-              <p className="text-xs text-zinc-500 font-mono">
+              <p className="text-xs text-muted-foreground font-mono">
                 {t("subscribeBannerDescription")}
               </p>
             </div>
@@ -187,22 +187,22 @@ export function DashboardContent({
 
       {/* Instance Grid */}
       {instances.length === 0 ? (
-        <div className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden mt-4">
+        <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xl overflow-hidden mt-4">
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-900/50 border border-zinc-800/80">
-              <Plus className="h-6 w-6 text-zinc-600" />
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-muted/50 border border-border/80">
+              <Plus className="h-6 w-6 text-muted-foreground/60" />
             </div>
-            <p className="text-sm text-zinc-300 font-mono mb-1">
+            <p className="text-sm text-foreground/80 font-mono mb-1">
               {t("noInstances")}
             </p>
-            <p className="text-xs text-zinc-500 font-mono mb-6 max-w-xs leading-relaxed">
+            <p className="text-xs text-muted-foreground font-mono mb-6 max-w-xs leading-relaxed">
               {t("noInstancesDescription")}
             </p>
             <Button
               onClick={() => setDeployOpen(true)}
-              className="bg-zinc-800 text-zinc-200 hover:bg-zinc-700 border border-zinc-700 hover:text-white font-medium shadow-none gap-2 font-mono text-xs uppercase tracking-wider h-10 px-6"
+              className="bg-muted text-foreground/90 hover:bg-muted border border-border hover:text-foreground font-medium shadow-none gap-2 font-mono text-xs uppercase tracking-wider h-10 px-6"
             >
-              <Plus className="h-3.5 w-3.5 text-zinc-400" />
+              <Plus className="h-3.5 w-3.5 text-muted-foreground" />
               {t("initializeDeployment")}
             </Button>
           </div>

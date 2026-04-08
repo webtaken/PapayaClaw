@@ -118,16 +118,16 @@ export function ModelProviderModule({
   }, [canSave, finalModelId, modelApiKey, instanceId, onModelChanged, resetForm]);
 
   return (
-    <div className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl">
+    <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xl">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-zinc-400">
+          <span className="text-xs text-muted-foreground">
             {currentProvider
               ? getProviderIcon(currentProvider.id, "h-4 w-4")
               : "⚪"}
           </span>
-          <h3 className="text-xs font-mono font-semibold tracking-wide text-zinc-300 uppercase">
+          <h3 className="text-xs font-mono font-semibold tracking-wide text-foreground/80 uppercase">
             AI Provider
           </h3>
         </div>
@@ -136,7 +136,7 @@ export function ModelProviderModule({
             variant="ghost"
             size="sm"
             onClick={startEditing}
-            className="h-6 px-2 text-[10px] font-mono hover:bg-zinc-800 hover:text-white text-zinc-400 border border-zinc-700/50 rounded gap-1"
+            className="h-6 px-2 text-[10px] font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded gap-1"
           >
             <Pencil className="h-3 w-3" />
             CHANGE
@@ -147,7 +147,7 @@ export function ModelProviderModule({
             size="sm"
             onClick={cancelEditing}
             disabled={isSaving}
-            className="h-6 px-2 text-[10px] font-mono hover:bg-zinc-800 hover:text-white text-zinc-400 border border-zinc-700/50 rounded gap-1"
+            className="h-6 px-2 text-[10px] font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded gap-1"
           >
             <X className="h-3 w-3" />
             CANCEL
@@ -160,16 +160,16 @@ export function ModelProviderModule({
           /* ── View mode ── */
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3">
-              <span className="text-zinc-400">
+              <span className="text-muted-foreground">
                 {currentProvider
                   ? getProviderIcon(currentProvider.id, "h-8 w-8")
                   : "⚪"}
               </span>
               <div className="flex flex-col gap-0.5 min-w-0">
-                <span className="text-sm font-medium text-white truncate">
+                <span className="text-sm font-medium text-foreground truncate">
                   {currentInfo.name}
                 </span>
-                <span className="text-[10px] font-mono text-zinc-500 truncate">
+                <span className="text-[10px] font-mono text-muted-foreground truncate">
                   {currentProvider?.name ?? "Unknown"} &middot;{" "}
                   {currentModel}
                 </span>
@@ -181,7 +181,7 @@ export function ModelProviderModule({
           <div className="flex flex-col gap-4">
             {/* Provider grid */}
             <div>
-              <Label className="mb-2 block text-xs font-medium text-zinc-300">
+              <Label className="mb-2 block text-xs font-medium text-foreground/80">
                 Select Provider
               </Label>
               <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
@@ -196,7 +196,7 @@ export function ModelProviderModule({
                     className={`relative flex flex-col items-center justify-center gap-1.5 rounded-lg border p-2 text-center transition-all duration-300 ${
                       selectedProvider === provider.id
                         ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
-                        : "border-zinc-700/50 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                        : "border-border/50 bg-muted/50 text-foreground/80 hover:border-border hover:bg-muted hover:text-foreground"
                     }`}
                   >
                     <div className="flex h-5 items-center justify-center scale-75">
@@ -221,7 +221,7 @@ export function ModelProviderModule({
             {/* Model selection — predefined models */}
             {selectedProvider && !isCustom && (
               <div className="animate-fade-in-up">
-                <Label className="mb-2 block text-xs font-medium text-zinc-300">
+                <Label className="mb-2 block text-xs font-medium text-foreground/80">
                   Select Model
                 </Label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -233,13 +233,13 @@ export function ModelProviderModule({
                         className={`relative flex flex-col gap-0.5 rounded-lg border px-2.5 py-1.5 text-left transition-all duration-300 ${
                           selectedModel === m.id
                             ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
-                            : "border-zinc-700/50 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                            : "border-border/50 bg-muted/50 text-foreground/80 hover:border-border hover:bg-muted hover:text-foreground"
                         }`}
                       >
                         <span className="text-xs font-medium truncate w-full pr-4">
                           {m.name}
                         </span>
-                        <span className="text-[9px] text-zinc-500 font-mono truncate w-full flex-1">
+                        <span className="text-[9px] text-muted-foreground font-mono truncate w-full flex-1">
                           {m.id}
                         </span>
                         {m.badge && (
@@ -259,12 +259,12 @@ export function ModelProviderModule({
               <div className="animate-fade-in-up">
                 <Label
                   htmlFor="reconfigure-model-id"
-                  className="mb-1.5 block text-xs font-medium text-zinc-300"
+                  className="mb-1.5 block text-xs font-medium text-foreground/80"
                 >
                   Model ID
                 </Label>
-                <div className="flex rounded-lg overflow-hidden border border-zinc-700 bg-zinc-800/50 shadow-sm focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500/20">
-                  <div className="bg-zinc-800 px-2.5 py-1.5 text-xs font-mono text-zinc-400 flex items-center border-r border-zinc-700">
+                <div className="flex rounded-lg overflow-hidden border border-border bg-muted/50 shadow-sm focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500/20">
+                  <div className="bg-muted px-2.5 py-1.5 text-xs font-mono text-muted-foreground flex items-center border-r border-border">
                     {selectedProvider}/
                   </div>
                   <input
@@ -273,7 +273,7 @@ export function ModelProviderModule({
                     placeholder="model-name"
                     value={customModelId}
                     onChange={(e) => setCustomModelId(e.target.value)}
-                    className="flex-1 bg-transparent px-2.5 py-1.5 text-xs text-white font-mono placeholder:text-zinc-600 focus:outline-none"
+                    className="flex-1 bg-transparent px-2.5 py-1.5 text-xs text-foreground font-mono placeholder:text-muted-foreground/60 focus:outline-none"
                   />
                 </div>
               </div>
@@ -284,7 +284,7 @@ export function ModelProviderModule({
               <div className="animate-fade-in-up">
                 <Label
                   htmlFor="reconfigure-api-key"
-                  className="mb-1.5 block text-xs font-medium text-zinc-300"
+                  className="mb-1.5 block text-xs font-medium text-foreground/80"
                 >
                   API Key for {selectedProviderData?.name ?? ""}
                 </Label>
@@ -294,7 +294,7 @@ export function ModelProviderModule({
                   placeholder="sk-..."
                   value={modelApiKey}
                   onChange={(e) => setModelApiKey(e.target.value)}
-                  className="h-8 rounded-lg border-zinc-700 bg-zinc-800/50 font-mono text-xs text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20"
+                  className="h-8 rounded-lg border-border bg-muted/50 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:border-violet-500 focus:ring-violet-500/20"
                 />
               </div>
             )}

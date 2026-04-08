@@ -139,9 +139,9 @@ export function DeployDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-xl sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] overflow-y-auto border-zinc-800 bg-zinc-900 p-0 text-white">
-        <DialogHeader className="border-b border-zinc-800 px-6 pt-6 pb-4">
-          <DialogTitle className="text-lg font-semibold text-white">
+      <DialogContent className="max-w-xl sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] overflow-y-auto border-border bg-muted p-0 text-foreground">
+        <DialogHeader className="border-b border-border px-6 pt-6 pb-4">
+          <DialogTitle className="text-lg font-semibold text-foreground">
             {t("title")}
           </DialogTitle>
 
@@ -154,7 +154,7 @@ export function DeployDialog({
                     className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold transition-all duration-300 ${
                       step >= s.number
                         ? "bg-violet-500 text-white shadow-lg shadow-violet-500/25"
-                        : "bg-zinc-800 text-zinc-500"
+                        : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {step > s.number ? (
@@ -165,7 +165,7 @@ export function DeployDialog({
                   </div>
                   <span
                     className={`text-xs font-medium transition-colors ${
-                      step >= s.number ? "text-white" : "text-zinc-500"
+                      step >= s.number ? "text-foreground" : "text-muted-foreground"
                     }`}
                   >
                     {s.label}
@@ -174,7 +174,7 @@ export function DeployDialog({
                 {i < steps.length - 1 && (
                   <div
                     className={`mx-3 h-px w-8 transition-colors sm:w-12 ${
-                      step > s.number ? "bg-violet-500" : "bg-zinc-700"
+                      step > s.number ? "bg-violet-500" : "bg-border"
                     }`}
                   />
                 )}
@@ -190,7 +190,7 @@ export function DeployDialog({
               <div>
                 <Label
                   htmlFor="instance-name"
-                  className="mb-1.5 block text-xs font-medium text-zinc-300"
+                  className="mb-1.5 block text-xs font-medium text-foreground/80"
                 >
                   {t("instanceName")}
                 </Label>
@@ -199,12 +199,12 @@ export function DeployDialog({
                   placeholder={t("instanceNamePlaceholder")}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="h-8 rounded-lg border-zinc-700 bg-zinc-800/50 text-sm text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20"
+                  className="h-8 rounded-lg border-border bg-muted/50 text-sm text-foreground placeholder:text-muted-foreground focus:border-violet-500 focus:ring-violet-500/20"
                 />
               </div>
 
               <div>
-                <Label className="mb-2 block text-xs font-medium text-zinc-300">
+                <Label className="mb-2 block text-xs font-medium text-foreground/80">
                   {t("selectProvider")}
                 </Label>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
@@ -219,7 +219,7 @@ export function DeployDialog({
                       className={`relative flex flex-col items-center justify-center gap-1.5 rounded-lg border p-2 text-center transition-all duration-300 ${
                         selectedProvider === provider.id
                           ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
-                          : "border-zinc-700/50 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                          : "border-border/50 bg-muted/50 text-foreground/80 hover:border-border hover:bg-muted hover:text-foreground"
                       }`}
                     >
                       <div className="flex h-5 items-center justify-center scale-75">
@@ -243,7 +243,7 @@ export function DeployDialog({
 
               {selectedProvider && !isCustomProvider && (
                 <div className="animate-fade-in-up">
-                  <Label className="mb-2 block text-xs font-medium text-zinc-300">
+                  <Label className="mb-2 block text-xs font-medium text-foreground/80">
                     {t("selectModel")}
                   </Label>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
@@ -257,13 +257,13 @@ export function DeployDialog({
                           className={`relative flex flex-col gap-0.5 rounded-lg border px-2.5 py-1.5 text-left transition-all duration-300 ${
                             selectedModel === m.id
                               ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
-                              : "border-zinc-700/50 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                              : "border-border/50 bg-muted/50 text-foreground/80 hover:border-border hover:bg-muted hover:text-foreground"
                           }`}
                         >
                           <span className="text-xs font-medium truncate w-full pr-4">
                             {m.name}
                           </span>
-                          <span className="text-[9px] text-zinc-500 font-mono truncate w-full flex-1">
+                          <span className="text-[9px] text-muted-foreground font-mono truncate w-full flex-1">
                             {m.id}
                           </span>
                           {m.badge && (
@@ -282,12 +282,12 @@ export function DeployDialog({
                 <div className="animate-fade-in-up">
                   <Label
                     htmlFor="custom-model-id"
-                    className="mb-1.5 block text-xs font-medium text-zinc-300"
+                    className="mb-1.5 block text-xs font-medium text-foreground/80"
                   >
                     {t("customModelString")}
                   </Label>
-                  <div className="flex rounded-lg overflow-hidden border border-zinc-700 bg-zinc-800/50 shadow-sm focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500/20">
-                    <div className="bg-zinc-800 px-2.5 py-1.5 text-xs font-mono text-zinc-400 flex items-center border-r border-zinc-700">
+                  <div className="flex rounded-lg overflow-hidden border border-border bg-muted/50 shadow-sm focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500/20">
+                    <div className="bg-muted px-2.5 py-1.5 text-xs font-mono text-muted-foreground flex items-center border-r border-border">
                       {selectedProvider}/
                     </div>
                     <input
@@ -296,7 +296,7 @@ export function DeployDialog({
                       placeholder={t("customModelPlaceholder")}
                       value={customModelId}
                       onChange={(e) => setCustomModelId(e.target.value)}
-                      className="flex-1 bg-transparent px-2.5 py-1.5 text-xs text-white font-mono placeholder:text-zinc-600 focus:outline-none"
+                      className="flex-1 bg-transparent px-2.5 py-1.5 text-xs text-foreground font-mono placeholder:text-muted-foreground/60 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -306,7 +306,7 @@ export function DeployDialog({
                 <div className="animate-fade-in-up mt-2">
                   <Label
                     htmlFor="model-api-key"
-                    className="mb-1.5 block text-xs font-medium text-zinc-300"
+                    className="mb-1.5 block text-xs font-medium text-foreground/80"
                   >
                     {t("apiKeyFor", { provider: selectedProviderData?.name ?? "" })}
                   </Label>
@@ -316,7 +316,7 @@ export function DeployDialog({
                     placeholder="sk-..."
                     value={modelApiKey}
                     onChange={(e) => setModelApiKey(e.target.value)}
-                    className="h-8 rounded-lg border-zinc-700 bg-zinc-800/50 font-mono text-xs text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20"
+                    className="h-8 rounded-lg border-border bg-muted/50 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:border-violet-500 focus:ring-violet-500/20"
                   />
                 </div>
               )}
@@ -327,7 +327,7 @@ export function DeployDialog({
           {step === 2 && (
             <div className="space-y-4 animate-fade-in-up">
               <div>
-                <Label className="mb-2 block text-xs font-medium text-zinc-300">
+                <Label className="mb-2 block text-xs font-medium text-foreground/80">
                   {t("selectChannel")}
                 </Label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -342,10 +342,10 @@ export function DeployDialog({
                         disabled={!available}
                         className={`relative flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-left transition-all duration-300 ${
                           !available
-                            ? "cursor-not-allowed border-zinc-800 bg-zinc-850/30 opacity-50"
+                            ? "cursor-not-allowed border-border bg-muted/30 opacity-50"
                             : selectedChannel === channel.id
                               ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
-                              : "border-zinc-700/50 bg-zinc-800/50 text-zinc-300 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white"
+                              : "border-border/50 bg-muted/50 text-foreground/80 hover:border-border hover:bg-muted hover:text-foreground"
                         }`}
                       >
                         <span className="text-sm">{getChannelIcon(channel.id)}</span>
@@ -356,7 +356,7 @@ export function DeployDialog({
                           {!available && (
                             <Badge
                               variant="secondary"
-                              className="rounded bg-zinc-700/50 px-1 py-0 text-[8px] tracking-wide text-zinc-400"
+                              className="rounded bg-border/50 px-1 py-0 text-[8px] tracking-wide text-muted-foreground"
                             >
                               {t("soon")}
                             </Badge>
@@ -372,7 +372,7 @@ export function DeployDialog({
                 <div className="space-y-2 animate-fade-in-up mt-2">
                   <Label
                     htmlFor="bot-token"
-                    className="mb-1 block text-xs font-medium text-zinc-300"
+                    className="mb-1 block text-xs font-medium text-foreground/80"
                   >
                     {t("telegramBotToken")}
                   </Label>
@@ -382,9 +382,9 @@ export function DeployDialog({
                     placeholder="123456:ABC-DEF..."
                     value={botToken}
                     onChange={(e) => setBotToken(e.target.value)}
-                    className="h-8 rounded-lg border-zinc-700 bg-zinc-800/50 font-mono text-xs text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20"
+                    className="h-8 rounded-lg border-border bg-muted/50 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:border-violet-500 focus:ring-violet-500/20"
                   />
-                  <p className="text-[10px] leading-relaxed text-zinc-500">
+                  <p className="text-[10px] leading-relaxed text-muted-foreground">
                     {t("telegramTokenHelp")}{" "}
                     <a
                       href="https://t.me/BotFather"
@@ -403,7 +403,7 @@ export function DeployDialog({
                 <div className="space-y-2 animate-fade-in-up mt-2">
                   <Label
                     htmlFor="whatsapp-phone"
-                    className="mb-1 block text-xs font-medium text-zinc-300"
+                    className="mb-1 block text-xs font-medium text-foreground/80"
                   >
                     {t("whatsappPhoneNumber")}
                   </Label>
@@ -413,13 +413,13 @@ export function DeployDialog({
                     placeholder="+15551234567"
                     value={whatsappPhone}
                     onChange={(e) => setWhatsappPhone(e.target.value)}
-                    className="h-8 rounded-lg border-zinc-700 bg-zinc-800/50 font-mono text-xs text-white placeholder:text-zinc-500 focus:border-violet-500 focus:ring-violet-500/20"
+                    className="h-8 rounded-lg border-border bg-muted/50 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:border-violet-500 focus:ring-violet-500/20"
                   />
-                  <p className="text-[10px] leading-relaxed text-zinc-500">
+                  <p className="text-[10px] leading-relaxed text-muted-foreground">
                     {t("whatsappPhoneHelp")}
                   </p>
                   <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2">
-                    <p className="text-[10px] leading-relaxed text-zinc-400">
+                    <p className="text-[10px] leading-relaxed text-muted-foreground">
                       <span className="font-medium text-emerald-400">
                         {t("whatsappDedicatedLabel")}
                       </span>{" "}
@@ -434,45 +434,45 @@ export function DeployDialog({
           {/* Step 3: Review & Deploy */}
           {step === 3 && (
             <div className="space-y-4 animate-fade-in-up">
-              <div className="rounded-lg border border-zinc-800 bg-zinc-800/30 p-4">
-                <h4 className="mb-3 text-xs font-semibold text-white uppercase tracking-wider">
+              <div className="rounded-lg border border-border bg-muted/30 p-4">
+                <h4 className="mb-3 text-xs font-semibold text-foreground uppercase tracking-wider">
                   {t("summary")}
                 </h4>
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-400">{t("name")}</span>
-                    <span className="text-xs font-medium text-white">
+                    <span className="text-xs text-muted-foreground">{t("name")}</span>
+                    <span className="text-xs font-medium text-foreground">
                       {name}
                     </span>
                   </div>
-                  <div className="h-px bg-zinc-800/60" />
+                  <div className="h-px bg-border/60" />
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-400">{t("selectModel")}</span>
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-white">
+                    <span className="text-xs text-muted-foreground">{t("selectModel")}</span>
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                       <div className="scale-75 origin-right">
                         {selectedProviderData && getProviderIcon(selectedProviderData.id)}
                       </div>
                       {getModelName()}
                     </span>
                   </div>
-                  <div className="h-px bg-zinc-800/60" />
+                  <div className="h-px bg-border/60" />
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-400">{t("selectChannel")}</span>
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-white">
+                    <span className="text-xs text-muted-foreground">{t("selectChannel")}</span>
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                       <span className="text-[10px]">
                         {selectedChannelData && getChannelIcon(selectedChannelData.id)}
                       </span>
                       {selectedChannelData?.name}
                     </span>
                   </div>
-                  <div className="h-px bg-zinc-800/60" />
+                  <div className="h-px bg-border/60" />
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-400">
+                    <span className="text-xs text-muted-foreground">
                       {selectedChannel === "whatsapp"
                         ? t("phoneNumber")
                         : t("token")}
                     </span>
-                    <span className="font-mono text-[10px] text-zinc-400">
+                    <span className="font-mono text-[10px] text-muted-foreground">
                       {selectedChannel === "whatsapp"
                         ? whatsappPhone
                         : `${botToken.slice(0, 8)}•••••`}
@@ -482,7 +482,7 @@ export function DeployDialog({
               </div>
 
               <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 px-3 py-2.5">
-                <p className="text-[10px] leading-relaxed text-zinc-400">
+                <p className="text-[10px] leading-relaxed text-muted-foreground">
                   <span className="font-medium text-violet-400">{t("deployNoteLabel")}</span>{" "}
                   {t("deployNote")}
                 </p>
@@ -492,12 +492,12 @@ export function DeployDialog({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-zinc-800 px-6 py-4">
+        <div className="flex items-center justify-between border-t border-border px-6 py-4">
           {step > 1 ? (
             <Button
               variant="ghost"
               onClick={() => setStep(step - 1)}
-              className="cursor-pointer gap-1.5 text-sm text-zinc-400 hover:text-white"
+              className="cursor-pointer gap-1.5 text-sm text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
               {t("back")}
@@ -510,7 +510,7 @@ export function DeployDialog({
             <Button
               onClick={() => setStep(step + 1)}
               disabled={step === 1 ? !canProceedStep1 : !canProceedStep2}
-              className="cursor-pointer gap-1.5 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-lg transition-all duration-300 hover:bg-zinc-100 hover:shadow-xl disabled:opacity-40"
+              className="cursor-pointer gap-1.5 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background shadow-lg transition-all duration-300 hover:bg-foreground/90 hover:shadow-xl disabled:opacity-40"
             >
               {t("next")}
               <ArrowRight className="h-4 w-4" />

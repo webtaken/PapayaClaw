@@ -142,30 +142,30 @@ export function SubscriptionsContent({
   if (subscriptions.length === 0 && unlinkedInstances.length === 0) {
     return (
       <div className="animate-fade-in-up flex flex-col gap-6 font-sans">
-        <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
+        <div className="flex items-center justify-between border-b border-border pb-4">
           <div>
-            <h1 className="text-xl font-medium tracking-tight text-white mb-1">
+            <h1 className="text-xl font-medium tracking-tight text-foreground mb-1">
               {t("title")}
             </h1>
-            <p className="text-xs font-mono text-zinc-500">
+            <p className="text-xs font-mono text-muted-foreground">
               {t("description")}
             </p>
           </div>
         </div>
 
-        <div className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden mt-4">
+        <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xl overflow-hidden mt-4">
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-zinc-900/50 border border-zinc-800/80">
-              <CircleDot className="h-7 w-7 text-zinc-600" />
+            <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-xl bg-muted/50 border border-border/80">
+              <CircleDot className="h-7 w-7 text-muted-foreground/60" />
             </div>
-            <p className="text-sm text-zinc-300 font-mono mb-1">
+            <p className="text-sm text-foreground/80 font-mono mb-1">
               {t("noSubscriptions")}
             </p>
-            <p className="text-xs text-zinc-500 font-mono mb-8 max-w-sm leading-relaxed">
+            <p className="text-xs text-muted-foreground font-mono mb-8 max-w-sm leading-relaxed">
               {t("noSubscriptionsDescription")}
             </p>
             <Link href="/pricing">
-              <Button className="bg-zinc-100 text-zinc-950 hover:bg-white font-medium shadow-none h-10 px-6 border border-transparent transition-all hover:border-zinc-300 gap-2 font-mono text-xs uppercase tracking-wider">
+              <Button className="bg-foreground text-background hover:bg-foreground/90 font-medium shadow-none h-10 px-6 border border-transparent transition-all hover:border-border gap-2 font-mono text-xs uppercase tracking-wider">
                 {t("viewPlans")}
                 <ArrowRight className="h-3.5 w-3.5" />
               </Button>
@@ -179,17 +179,17 @@ export function SubscriptionsContent({
   return (
     <div className="animate-fade-in-up flex flex-col gap-6 font-sans">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
+      <div className="flex items-center justify-between border-b border-border pb-4">
         <div>
-          <h1 className="text-xl font-medium tracking-tight text-white mb-1">
+          <h1 className="text-xl font-medium tracking-tight text-foreground mb-1">
             {t("title")}
           </h1>
-          <p className="text-xs font-mono text-zinc-500">
+          <p className="text-xs font-mono text-muted-foreground">
             {t("description")}
           </p>
         </div>
         <Link href="/pricing">
-          <Button className="bg-zinc-100 text-zinc-950 hover:bg-white font-medium shadow-none h-9 px-4 border border-transparent transition-all hover:border-zinc-300 gap-2 font-mono text-xs uppercase tracking-wider">
+          <Button className="bg-foreground text-background hover:bg-foreground/90 font-medium shadow-none h-9 px-4 border border-transparent transition-all hover:border-border gap-2 font-mono text-xs uppercase tracking-wider">
             <Plus className="h-3.5 w-3.5" />
             {t("addSubscription")}
           </Button>
@@ -209,18 +209,18 @@ export function SubscriptionsContent({
           return (
             <div
               key={sub.id}
-              className={`flex flex-col rounded-xl border bg-zinc-950 shadow-2xl overflow-hidden transition-all duration-300 hover:border-zinc-700 ${
+              className={`flex flex-col rounded-xl border bg-card shadow-2xl overflow-hidden transition-all duration-300 hover:border-border ${
                 i === 0
                   ? "animate-slide-up-fade"
                   : i === 1
                     ? "animate-slide-up-fade-delay-1"
                     : "animate-slide-up-fade-delay-2"
               } ${
-                isPro ? "border-amber-500/20" : "border-zinc-800"
+                isPro ? "border-amber-500/20" : "border-border"
               }`}
             >
               {/* Card header */}
-              <div className="flex items-center justify-between border-b border-zinc-800/80 bg-zinc-900/20 px-5 py-3.5">
+              <div className="flex items-center justify-between border-b border-border/80 bg-muted/20 px-5 py-3.5">
                 <span
                   className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-widest ${
                     isPro
@@ -256,22 +256,22 @@ export function SubscriptionsContent({
 
               <div className="p-5 flex flex-col flex-1 gap-4">
                 {/* VPS Spec + Billing Period */}
-                <div className="grid grid-cols-2 gap-px bg-zinc-800/50 border border-zinc-800/50 rounded-lg overflow-hidden">
-                  <div className="bg-zinc-950/80 p-3 flex flex-col gap-1.5">
-                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+                <div className="grid grid-cols-2 gap-px bg-muted/50 border border-border/50 rounded-lg overflow-hidden">
+                  <div className="bg-card/80 p-3 flex flex-col gap-1.5">
+                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
                       <Server className="h-2.5 w-2.5" />
                       {t("vpsSpec")}
                     </span>
-                    <span className="text-xs text-zinc-300 font-mono">
+                    <span className="text-xs text-foreground/80 font-mono">
                       {isPro ? t("proSpec") : t("basicSpec")}
                     </span>
                   </div>
-                  <div className="bg-zinc-950/80 p-3 flex flex-col gap-1.5">
-                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+                  <div className="bg-card/80 p-3 flex flex-col gap-1.5">
+                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
                       <CalendarDays className="h-2.5 w-2.5" />
                       {t("billingPeriod")}
                     </span>
-                    <span className="text-xs text-zinc-300 font-mono">
+                    <span className="text-xs text-foreground/80 font-mono">
                       {formatDate(sub.currentPeriodStart)} {t("to")}{" "}
                       {formatDate(sub.currentPeriodEnd)}
                     </span>
@@ -279,8 +279,8 @@ export function SubscriptionsContent({
                 </div>
 
                 {/* Linked Instance */}
-                <div className="rounded-lg border border-zinc-800/80 bg-zinc-900/30 p-4">
-                  <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-3 block">
+                <div className="rounded-lg border border-border/80 bg-muted/30 p-4">
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-3 block">
                     {t("linkedInstance")}
                   </span>
 
@@ -301,7 +301,7 @@ export function SubscriptionsContent({
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-white truncate">
+                          <p className="text-sm font-medium text-foreground truncate">
                             {sub.instance.name}
                           </p>
                           <Badge
@@ -319,7 +319,7 @@ export function SubscriptionsContent({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="shrink-0 gap-1.5 rounded-lg border-zinc-800 bg-zinc-900/50 text-[10px] font-mono uppercase tracking-wider text-zinc-400 transition-all hover:border-zinc-700 hover:bg-zinc-800 hover:text-white h-8 shadow-none"
+                          className="shrink-0 gap-1.5 rounded-lg border-border bg-muted/50 text-[10px] font-mono uppercase tracking-wider text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground h-8 shadow-none"
                         >
                           View
                           <ArrowRight className="h-3 w-3" />
@@ -328,14 +328,14 @@ export function SubscriptionsContent({
                     </div>
                   ) : (
                     <div className="flex items-center justify-between">
-                      <p className="text-xs text-zinc-500 font-mono">
+                      <p className="text-xs text-muted-foreground font-mono">
                         {t("noInstanceLinked")}
                       </p>
                       {sub.status === "active" && (
                         <Link href="/dashboard">
                           <Button
                             size="sm"
-                            className="gap-1.5 bg-zinc-100 text-zinc-950 hover:bg-white font-medium shadow-none h-8 px-3 border border-transparent transition-all hover:border-zinc-300 font-mono text-[10px] uppercase tracking-wider"
+                            className="gap-1.5 bg-foreground text-background hover:bg-foreground/90 font-medium shadow-none h-8 px-3 border border-transparent transition-all hover:border-border font-mono text-[10px] uppercase tracking-wider"
                           >
                             <Plus className="h-3 w-3" />
                             {t("deployInstance")}
@@ -350,7 +350,7 @@ export function SubscriptionsContent({
                 <div className="mt-auto pt-1">
                   <a
                     href="/api/portal"
-                    className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-zinc-500 hover:text-zinc-300 transition-colors"
+                    className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground/80 transition-colors"
                   >
                     {t("managePlan")}
                     <ExternalLink className="h-2.5 w-2.5" />
@@ -365,7 +365,7 @@ export function SubscriptionsContent({
       {/* Add subscription hint */}
       {subscriptions.length > 0 && (
         <div className="flex items-center justify-center py-2">
-          <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider">
+          <p className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-wider">
             {t("addSubscriptionDescription")}
           </p>
         </div>
@@ -375,12 +375,12 @@ export function SubscriptionsContent({
       {unlinkedInstances.length > 0 && (
         <div className="animate-slide-up-fade-delay-2">
           <div className="flex items-center gap-2 mb-3">
-            <Unlink className="h-3.5 w-3.5 text-zinc-600" />
-            <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-600 font-semibold">
+            <Unlink className="h-3.5 w-3.5 text-muted-foreground/60" />
+            <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 font-semibold">
               {t("unlinked")}
             </span>
           </div>
-          <div className="rounded-xl border border-zinc-800/50 bg-zinc-950/50 divide-y divide-zinc-800/50">
+          <div className="rounded-xl border border-border/50 bg-card/50 divide-y divide-border/50">
             {unlinkedInstances.map((inst) => {
               const instStatus =
                 INSTANCE_STATUS_CONFIG[inst.status] ??
@@ -391,7 +391,7 @@ export function SubscriptionsContent({
                   className="flex items-center justify-between px-5 py-3"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-sm text-zinc-400 truncate">
+                    <span className="text-sm text-muted-foreground truncate">
                       {inst.name}
                     </span>
                     <Badge
@@ -408,7 +408,7 @@ export function SubscriptionsContent({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="shrink-0 gap-1.5 rounded-lg border-zinc-800 bg-zinc-900/50 text-[10px] font-mono uppercase tracking-wider text-zinc-400 transition-all hover:border-zinc-700 hover:bg-zinc-800 hover:text-white h-7 shadow-none"
+                      className="shrink-0 gap-1.5 rounded-lg border-border bg-muted/50 text-[10px] font-mono uppercase tracking-wider text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground h-7 shadow-none"
                     >
                       View
                       <ArrowRight className="h-3 w-3" />

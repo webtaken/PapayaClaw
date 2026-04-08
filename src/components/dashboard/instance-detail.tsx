@@ -318,12 +318,12 @@ export function InstanceDetail({
   return (
     <div className="animate-fade-in-up flex flex-col gap-6 font-sans">
       {/* Top Command Bar */}
-      <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
+      <div className="flex items-center justify-between border-b border-border pb-4">
         <Link
           href="/dashboard"
-          className="group flex items-center gap-2 text-sm text-zinc-500 transition-colors hover:text-zinc-300"
+          className="group flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground/80"
         >
-          <div className="flex h-6 w-6 items-center justify-center rounded-md border border-zinc-800 bg-zinc-900/50 group-hover:border-zinc-700">
+          <div className="flex h-6 w-6 items-center justify-center rounded-md border border-border bg-muted/50 group-hover:border-border">
             <ArrowLeft className="h-3.5 w-3.5" />
           </div>
           <span className="font-medium">Dashboard</span>
@@ -340,16 +340,16 @@ export function InstanceDetail({
       </div>
 
       {/* Telemetry Databand */}
-      <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5 shadow-2xl">
+      <div className="rounded-xl border border-border bg-card p-5 shadow-2xl">
         <div className="flex flex-col gap-6">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-xl font-medium tracking-tight text-white mb-1">
+              <h1 className="text-xl font-medium tracking-tight text-foreground mb-1">
                 {instance.name}
               </h1>
-              <div className="flex items-center gap-2 text-xs font-mono text-zinc-500">
+              <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
                 <span>ID: {instance.id}</span>
-                <span className="text-zinc-800">|</span>
+                <span className="text-border">|</span>
                 <span>
                   CREATED{" "}
                   {new Date(instance.createdAt).toISOString().split("T")[0]}
@@ -359,46 +359,46 @@ export function InstanceDetail({
             {/* Quick action buttons can go here if needed */}
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-zinc-800/50 border border-zinc-800/50 rounded-lg overflow-hidden">
-            <div className="bg-zinc-950 p-4 flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-muted/50 border border-border/50 rounded-lg overflow-hidden">
+            <div className="bg-card p-4 flex flex-col gap-1.5">
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
                 IP Address
               </span>
-              <span className="font-mono text-sm text-zinc-200">
+              <span className="font-mono text-sm text-foreground/90">
                 {currentIp || "AWAITING ALLOCATION"}
               </span>
             </div>
-            <div className="bg-zinc-950 p-4 flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+            <div className="bg-card p-4 flex flex-col gap-1.5">
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
                 Model
               </span>
-              <span className="flex items-center gap-2 text-sm text-zinc-200">
-                <span className="text-xs text-zinc-400">{model.icon}</span>
+              <span className="flex items-center gap-2 text-sm text-foreground/90">
+                <span className="text-xs text-muted-foreground">{model.icon}</span>
                 {model.name}
               </span>
             </div>
-            <div className="bg-zinc-950 p-4 flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+            <div className="bg-card p-4 flex flex-col gap-1.5">
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
                 {channels.length === 1 ? "Channel" : "Channels"}
               </span>
-              <span className="flex items-center gap-2 text-sm text-zinc-200 flex-wrap">
+              <span className="flex items-center gap-2 text-sm text-foreground/90 flex-wrap">
                 {channels.map((ch) => {
                   const info = formatChannelInfo(ch);
                   return (
                     <span key={ch} className="flex items-center gap-1.5" title={info.name}>
-                      <span className="text-xs text-zinc-400">{info.icon}</span>
+                      <span className="text-xs text-muted-foreground">{info.icon}</span>
                       <span>{info.name}</span>
                     </span>
                   );
                 })}
               </span>
             </div>
-            <div className="bg-zinc-950 p-4 flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+            <div className="bg-card p-4 flex flex-col gap-1.5">
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
                 Gateway
               </span>
               <span
-                className="font-mono text-sm text-zinc-200 truncate"
+                className="font-mono text-sm text-foreground/90 truncate"
                 title={instance.cfTunnelHostname || "PENDING TUNNEL"}
               >
                 {instance.cfTunnelHostname || "PENDING TUNNEL"}
@@ -410,10 +410,10 @@ export function InstanceDetail({
 
       {isProvisioning ? (
         /* The Mono-log (Provisioning Sequence) */
-        <div className="rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden flex flex-col">
-          <div className="flex items-center gap-2 border-b border-zinc-800 bg-zinc-900/50 px-4 py-2.5">
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-400" />
-            <span className="text-xs font-mono font-medium tracking-wide text-zinc-300">
+        <div className="rounded-xl border border-border bg-card shadow-2xl overflow-hidden flex flex-col">
+          <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-4 py-2.5">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+            <span className="text-xs font-mono font-medium tracking-wide text-foreground/80">
               SYSTEM BOOT SEQUENCE
             </span>
           </div>
@@ -424,12 +424,12 @@ export function InstanceDetail({
               const isPending = i > activeStep;
 
               let linePrefix = "[PENDING]";
-              let lineClass = "text-zinc-600";
+              let lineClass = "text-muted-foreground/60";
               let animationClass = "";
 
               if (isComplete) {
                 linePrefix = "[   OK  ]";
-                lineClass = "text-zinc-400";
+                lineClass = "text-muted-foreground";
               } else if (isActive) {
                 linePrefix = "[WORKING]";
                 lineClass = "text-violet-400";
@@ -451,7 +451,7 @@ export function InstanceDetail({
               );
             })}
 
-            <div className="mt-8 flex items-center gap-2 text-xs text-zinc-600">
+            <div className="mt-8 flex items-center gap-2 text-xs text-muted-foreground/60">
               <span className="inline-block h-2 w-1.5 animate-pulse bg-violet-500/50" />
               <span>Awaiting telemetry broadcast...</span>
             </div>
@@ -463,11 +463,11 @@ export function InstanceDetail({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Dashboard Control Panel Module */}
             {instance.cfTunnelHostname ? (
-              <div className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl h-full">
-                <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 py-3">
+              <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xl h-full">
+                <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <ExternalLink className="h-4 w-4 text-zinc-400" />
-                    <h3 className="text-xs font-mono font-semibold tracking-wide text-zinc-300 uppercase">
+                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="text-xs font-mono font-semibold tracking-wide text-foreground/80 uppercase">
                       Gateway Console
                     </h3>
                   </div>
@@ -479,7 +479,7 @@ export function InstanceDetail({
                   </div>
                 </div>
                 <div className="p-6 flex flex-col justify-between gap-6 flex-1">
-                  <p className="text-sm text-zinc-400 leading-relaxed max-w-3xl border-l-[3px] border-emerald-500/30 pl-4 py-1">
+                  <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl border-l-[3px] border-emerald-500/30 pl-4 py-1">
                     Access the OpenClaw securely-tunneled web interface to
                     interact with your agent, view internal logs, manage skills,
                     and monitor inference metrics.
@@ -498,7 +498,7 @@ export function InstanceDetail({
                       rel="noopener noreferrer"
                       className="group"
                     >
-                      <Button className="w-full sm:w-auto px-6 bg-zinc-100 text-zinc-950 hover:bg-white font-medium shadow-none h-11 border border-transparent transition-all group-hover:border-zinc-300 gap-2 font-mono text-xs uppercase tracking-wider">
+                      <Button className="w-full sm:w-auto px-6 bg-foreground text-background hover:bg-foreground/90 font-medium shadow-none h-11 border border-transparent transition-all group-hover:border-border gap-2 font-mono text-xs uppercase tracking-wider">
                         <ExternalLink className="h-4 w-4" />
                         Launch Interface
                       </Button>
@@ -510,13 +510,13 @@ export function InstanceDetail({
 
             {/* Channels Module */}
             {currentIp ? (
-              <div className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl h-full">
+              <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xl h-full">
                 {/* Header with channel tabs */}
-                <div className="border-b border-zinc-800 bg-zinc-900/50">
+                <div className="border-b border-border bg-muted/50">
                   <div className="flex items-center justify-between px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <Radio className="h-4 w-4 text-zinc-400" />
-                      <h3 className="text-xs font-mono font-semibold tracking-wide text-zinc-300 uppercase">
+                      <Radio className="h-4 w-4 text-muted-foreground" />
+                      <h3 className="text-xs font-mono font-semibold tracking-wide text-foreground/80 uppercase">
                         Channels
                       </h3>
                     </div>
@@ -538,8 +538,8 @@ export function InstanceDetail({
                       onClick={() => setActiveChannelTab("telegram")}
                       className={`group relative flex items-center gap-2 px-3 py-2 text-[11px] font-mono font-medium uppercase tracking-wider transition-all ${
                         activeChannelTab === "telegram"
-                          ? "text-white"
-                          : "text-zinc-500 hover:text-zinc-300"
+                          ? "text-foreground"
+                          : "text-muted-foreground hover:text-foreground/80"
                       }`}
                     >
                       {getChannelIcon("telegram", "h-3.5 w-3.5")}
@@ -547,22 +547,22 @@ export function InstanceDetail({
                       {hasTelegram ? (
                         <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
                       ) : (
-                        <Plus className="h-3 w-3 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                        <Plus className="h-3 w-3 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
                       )}
                       {activeChannelTab === "telegram" && (
-                        <span className="absolute bottom-0 left-0 right-0 h-px bg-white" />
+                        <span className="absolute bottom-0 left-0 right-0 h-px bg-foreground" />
                       )}
                     </button>
 
-                    <div className="w-px bg-zinc-800 my-1.5" />
+                    <div className="w-px bg-border my-1.5" />
 
                     {/* WhatsApp tab */}
                     <button
                       onClick={() => setActiveChannelTab("whatsapp")}
                       className={`group relative flex items-center gap-2 px-3 py-2 text-[11px] font-mono font-medium uppercase tracking-wider transition-all ${
                         activeChannelTab === "whatsapp"
-                          ? "text-white"
-                          : "text-zinc-500 hover:text-zinc-300"
+                          ? "text-foreground"
+                          : "text-muted-foreground hover:text-foreground/80"
                       }`}
                     >
                       {getChannelIcon("whatsapp", "h-3.5 w-3.5")}
@@ -570,10 +570,10 @@ export function InstanceDetail({
                       {hasWhatsApp ? (
                         <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
                       ) : (
-                        <Plus className="h-3 w-3 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                        <Plus className="h-3 w-3 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
                       )}
                       {activeChannelTab === "whatsapp" && (
-                        <span className="absolute bottom-0 left-0 right-0 h-px bg-white" />
+                        <span className="absolute bottom-0 left-0 right-0 h-px bg-foreground" />
                       )}
                     </button>
                   </div>
@@ -593,7 +593,7 @@ export function InstanceDetail({
                               size="sm"
                               onClick={fetchPairingRequests}
                               disabled={isPairingLoading}
-                              className="h-6 px-2 text-[10px] font-mono hover:bg-zinc-800 hover:text-white text-zinc-400 border border-zinc-700/50 rounded gap-1"
+                              className="h-6 px-2 text-[10px] font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded gap-1"
                             >
                               <RefreshCw
                                 className={`h-3 w-3 ${
@@ -621,7 +621,7 @@ export function InstanceDetail({
 
                           {isPairingLoading &&
                           pairingRequests.length === 0 ? (
-                            <div className="flex items-center justify-center py-8 gap-2 text-zinc-500">
+                            <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
                               <Loader2 className="h-4 w-4 animate-spin" />
                               <span className="text-xs font-mono">
                                 Loading pairing requests...
@@ -629,13 +629,13 @@ export function InstanceDetail({
                             </div>
                           ) : pairingRequests.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-8 text-center flex-1">
-                              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-900/50 border border-zinc-800/80">
-                                <MessageCircle className="h-6 w-6 text-zinc-600" />
+                              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-muted/50 border border-border/80">
+                                <MessageCircle className="h-6 w-6 text-muted-foreground/60" />
                               </div>
-                              <p className="text-sm text-zinc-500 font-mono">
+                              <p className="text-sm text-muted-foreground font-mono">
                                 No pending pairing requests
                               </p>
-                              <p className="mt-1 text-xs text-zinc-600 font-mono max-w-xs">
+                              <p className="mt-1 text-xs text-muted-foreground/60 font-mono max-w-xs">
                                 Send a message to your Telegram bot to initiate
                                 a pairing request
                               </p>
@@ -645,23 +645,23 @@ export function InstanceDetail({
                               {pairingRequests.map((req) => (
                                 <div
                                   key={req.code}
-                                  className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/30 px-4 py-3 transition-colors hover:border-zinc-700"
+                                  className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3 transition-colors hover:border-border"
                                 >
                                   <div className="flex flex-col gap-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                      <span className="text-sm font-mono font-medium text-zinc-200 truncate">
+                                      <span className="text-sm font-mono font-medium text-foreground/90 truncate">
                                         {req.senderName ||
                                           `User ${req.senderId}`}
                                       </span>
-                                      <span className="text-[10px] font-mono text-zinc-600">
+                                      <span className="text-[10px] font-mono text-muted-foreground/60">
                                         ID: {req.senderId}
                                       </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-[11px] font-mono text-amber-400">
+                                      <code className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-mono text-amber-400">
                                         {req.code}
                                       </code>
-                                      <span className="text-[10px] font-mono text-zinc-600">
+                                      <span className="text-[10px] font-mono text-muted-foreground/60">
                                         {new Date(
                                           req.timestamp,
                                         ).toLocaleString()}
@@ -689,22 +689,22 @@ export function InstanceDetail({
                       ) : (
                         /* Secondary Telegram — add channel */
                         <div className="flex flex-col items-center justify-center py-6 text-center flex-1">
-                          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-zinc-900/80 border border-zinc-800/80">
-                            {getChannelIcon("telegram", "h-7 w-7 text-zinc-400")}
+                          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-muted/80 border border-border/80">
+                            {getChannelIcon("telegram", "h-7 w-7 text-muted-foreground")}
                           </div>
-                          <p className="text-sm font-medium text-zinc-300 mb-1">
+                          <p className="text-sm font-medium text-foreground/80 mb-1">
                             Add Telegram
                           </p>
-                          <p className="text-xs text-zinc-500 font-mono max-w-xs mb-5 leading-relaxed">
+                          <p className="text-xs text-muted-foreground font-mono max-w-xs mb-5 leading-relaxed">
                             Connect a Telegram bot to this instance via the Root
                             Terminal. Run the command below to start linking.
                           </p>
-                          <code className="rounded-lg bg-zinc-900 border border-zinc-800 px-4 py-2.5 text-[11px] font-mono text-zinc-300 mb-5 select-all">
+                          <code className="rounded-lg bg-muted border border-border px-4 py-2.5 text-[11px] font-mono text-foreground/80 mb-5 select-all">
                             openclaw channels add --channel telegram
                           </code>
-                          <div className="flex items-start gap-2 rounded-lg border border-zinc-800 bg-zinc-900/30 px-3 py-2 max-w-sm">
-                            <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-zinc-500 mt-0.5" />
-                            <p className="text-[10px] text-zinc-500 leading-relaxed font-mono text-left">
+                          <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 max-w-sm">
+                            <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-muted-foreground mt-0.5" />
+                            <p className="text-[10px] text-muted-foreground leading-relaxed font-mono text-left">
                               After adding the channel, pairing requests will
                               appear here for you to approve.
                             </p>
@@ -730,7 +730,7 @@ export function InstanceDetail({
                                 </span>{" "}
                                 policy.
                               </p>
-                              <p className="mt-1 text-zinc-500">
+                              <p className="mt-1 text-muted-foreground">
                                 Only messages from pre-authorized numbers are
                                 accepted — no pairing codes needed.
                               </p>
@@ -738,12 +738,12 @@ export function InstanceDetail({
                           </div>
 
                           {/* Allowlist details */}
-                          <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 overflow-hidden">
-                            <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800/60 bg-zinc-900/50">
-                              <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-zinc-500">
+                          <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
+                            <div className="flex items-center justify-between px-3 py-2 border-b border-border/60 bg-muted/50">
+                              <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-muted-foreground">
                                 {t("allowedNumbers")}
                               </span>
-                              <span className="text-[10px] font-mono text-zinc-600">
+                              <span className="text-[10px] font-mono text-muted-foreground/60">
                                 {(statusData?.whatsappNumbers ?? []).length}
                               </span>
                             </div>
@@ -753,10 +753,10 @@ export function InstanceDetail({
                                   {statusData!.whatsappNumbers!.map((num) => (
                                     <div
                                       key={num}
-                                      className="inline-flex items-center gap-1.5 rounded-md bg-zinc-800/60 border border-zinc-700/40 pl-2.5 pr-1 py-1 group"
+                                      className="inline-flex items-center gap-1.5 rounded-md bg-muted/60 border border-border/40 pl-2.5 pr-1 py-1 group"
                                     >
                                       <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.4)]" />
-                                      <span className="text-xs font-mono text-zinc-300 leading-none">
+                                      <span className="text-xs font-mono text-foreground/80 leading-none">
                                         {num}
                                       </span>
                                       <Button
@@ -764,7 +764,7 @@ export function InstanceDetail({
                                         size="icon-xs"
                                         onClick={() => removeWhatsAppNumber(num)}
                                         disabled={removingPhone === num}
-                                        className="ml-0.5 h-5 w-5 text-zinc-600 hover:text-red-400 hover:bg-red-500/10"
+                                        className="ml-0.5 h-5 w-5 text-muted-foreground/60 hover:text-red-400 hover:bg-red-500/10"
                                       >
                                         {removingPhone === num ? (
                                           <Loader2 className="h-2.5 w-2.5 animate-spin" />
@@ -776,7 +776,7 @@ export function InstanceDetail({
                                   ))}
                                 </div>
                               ) : (
-                                <p className="text-xs font-mono text-zinc-600">
+                                <p className="text-xs font-mono text-muted-foreground/60">
                                   {t("noNumbers")}
                                 </p>
                               )}
@@ -795,7 +795,7 @@ export function InstanceDetail({
                                   placeholder="+1234567890"
                                   value={newPhone}
                                   onChange={(e) => setNewPhone(e.target.value)}
-                                  className="h-7 flex-1 bg-zinc-950 border-zinc-800 text-xs font-mono text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-emerald-500/30"
+                                  className="h-7 flex-1 bg-card border-border text-xs font-mono text-foreground/90 placeholder:text-muted-foreground/60 focus-visible:ring-emerald-500/30"
                                 />
                                 <Button
                                   type="submit"
@@ -811,8 +811,8 @@ export function InstanceDetail({
                                 </Button>
                               </form>
                               <div className="flex items-start gap-2 pt-1">
-                                <Info className="h-3 w-3 shrink-0 text-zinc-500 mt-0.5" />
-                                <p className="text-[11px] text-zinc-500 leading-relaxed font-mono">
+                                <Info className="h-3 w-3 shrink-0 text-muted-foreground mt-0.5" />
+                                <p className="text-[11px] text-muted-foreground leading-relaxed font-mono">
                                   {t("allowedNumbersInfo")}
                                 </p>
                               </div>
@@ -820,21 +820,21 @@ export function InstanceDetail({
                           </div>
 
                           {/* Link WhatsApp instructions */}
-                          <div className="rounded-lg border border-zinc-800 bg-zinc-900/30 overflow-hidden">
-                            <div className="px-4 py-2.5 border-b border-zinc-800/60 bg-zinc-900/50">
-                              <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-zinc-500">
+                          <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
+                            <div className="px-4 py-2.5 border-b border-border/60 bg-muted/50">
+                              <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-muted-foreground">
                                 Link Device
                               </span>
                             </div>
                             <div className="px-4 py-3 space-y-2">
-                              <p className="text-xs text-zinc-400 leading-relaxed font-mono">
+                              <p className="text-xs text-muted-foreground leading-relaxed font-mono">
                                 Link your dedicated WhatsApp number via the Root
                                 Terminal:
                               </p>
-                              <code className="block rounded-lg bg-zinc-950 border border-zinc-800 px-3 py-2 text-[11px] font-mono text-zinc-300 select-all">
+                              <code className="block rounded-lg bg-card border border-border px-3 py-2 text-[11px] font-mono text-foreground/80 select-all">
                                 openclaw channels login --channel whatsapp
                               </code>
-                              <p className="text-[10px] text-zinc-600 leading-relaxed font-mono">
+                              <p className="text-[10px] text-muted-foreground/60 leading-relaxed font-mono">
                                 Scan the QR code with WhatsApp on your dedicated
                                 phone. Once linked, messages from your allowed
                                 number will reach your agent automatically.
@@ -845,18 +845,18 @@ export function InstanceDetail({
                       ) : (
                         /* Secondary WhatsApp — add channel */
                         <div className="flex flex-col items-center justify-center py-6 text-center flex-1">
-                          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-zinc-900/80 border border-zinc-800/80">
-                            {getChannelIcon("whatsapp", "h-7 w-7 text-zinc-400")}
+                          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-muted/80 border border-border/80">
+                            {getChannelIcon("whatsapp", "h-7 w-7 text-muted-foreground")}
                           </div>
-                          <p className="text-sm font-medium text-zinc-300 mb-1">
+                          <p className="text-sm font-medium text-foreground/80 mb-1">
                             Add WhatsApp
                           </p>
-                          <p className="text-xs text-zinc-500 font-mono max-w-xs mb-5 leading-relaxed">
+                          <p className="text-xs text-muted-foreground font-mono max-w-xs mb-5 leading-relaxed">
                             Connect a dedicated WhatsApp number using allowlist
                             mode. Messages from your authorized number are
                             accepted automatically — no pairing codes needed.
                           </p>
-                          <code className="rounded-lg bg-zinc-900 border border-zinc-800 px-4 py-2.5 text-[11px] font-mono text-zinc-300 mb-5 select-all">
+                          <code className="rounded-lg bg-muted border border-border px-4 py-2.5 text-[11px] font-mono text-foreground/80 mb-5 select-all">
                             openclaw channels add --channel whatsapp
                           </code>
                           <div className="flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 max-w-sm">
@@ -888,11 +888,11 @@ export function InstanceDetail({
 
           {/* SSH Terminal Module */}
           {currentIp ? (
-            <div className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 py-3">
+            <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xl">
+              <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <Server className="h-4 w-4 text-zinc-400" />
-                  <h3 className="text-xs font-mono font-semibold tracking-wide text-zinc-300 uppercase">
+                  <Server className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-xs font-mono font-semibold tracking-wide text-foreground/80 uppercase">
                     Root Terminal
                   </h3>
                 </div>
@@ -901,12 +901,12 @@ export function InstanceDetail({
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsTerminalOpen(false)}
-                    className="h-6 px-2 text-[10px] font-mono hover:bg-zinc-800 hover:text-white text-zinc-400 border border-zinc-700/50 rounded"
+                    className="h-6 px-2 text-[10px] font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded"
                   >
                     DISCONNECT
                   </Button>
                 ) : (
-                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+                  <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
                     Idle
                   </span>
                 )}
@@ -914,17 +914,17 @@ export function InstanceDetail({
 
               <div className="p-0 flex flex-col h-[550px] sm:h-[650px]">
                 {!isTerminalOpen ? (
-                  <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-zinc-950/50">
-                    <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-zinc-900/50 border border-zinc-800/80">
-                      {getProviderIcon("opencode", "h-8 w-8 text-zinc-500")}
+                  <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-card/50">
+                    <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-muted/50 border border-border/80">
+                      {getProviderIcon("opencode", "h-8 w-8 text-muted-foreground")}
                     </div>
-                    <p className="mb-6 max-w-[260px] text-sm text-zinc-400 leading-relaxed font-mono">
+                    <p className="mb-6 max-w-[260px] text-sm text-muted-foreground leading-relaxed font-mono">
                       Secure WebRTC shell protocol. Direct root access to
                       standard input/output.
                     </p>
                     <Button
                       onClick={() => setIsTerminalOpen(true)}
-                      className="bg-zinc-800 text-zinc-200 hover:bg-zinc-700 border border-zinc-700 hover:text-white font-medium shadow-none gap-2 font-mono text-xs uppercase tracking-wider"
+                      className="bg-muted text-foreground/90 hover:bg-muted border border-border hover:text-foreground font-medium shadow-none gap-2 font-mono text-xs uppercase tracking-wider"
                     >
                       <span className="text-emerald-400">root@</span> Connect
                     </Button>

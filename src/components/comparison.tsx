@@ -22,7 +22,7 @@ export async function Comparison() {
 
   return (
     <section className="mx-auto max-w-6xl px-6 py-24 border-t-2 border-border bg-gradient-mesh">
-      <h2 className="mb-16 text-center text-4xl font-extrabold uppercase tracking-tight text-white sm:text-5xl">
+      <h2 className="mb-16 text-center text-4xl font-extrabold uppercase tracking-tight text-foreground sm:text-5xl">
         {t("title")}{" "}
         <span className="text-secondary drop-shadow-[2px_2px_0_rgba(255,87,34,1)]">
           {t("titleHighlight")}
@@ -31,8 +31,8 @@ export async function Comparison() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Traditional Column */}
-        <div className="neo-card flex flex-col rounded-none border-2 border-border bg-[#0f1014] p-8 neo-shadow transition-transform hover:-translate-y-1">
-          <h3 className="mb-8 text-2xl font-bold uppercase text-zinc-500">
+        <div className="neo-card flex flex-col rounded-none border-2 border-border bg-card p-8 neo-shadow transition-transform hover:-translate-y-1">
+          <h3 className="mb-8 text-2xl font-bold uppercase text-muted-foreground">
             {t("traditionalTitle")}
           </h3>
           <div className="space-y-3">
@@ -41,29 +41,29 @@ export async function Comparison() {
                 key={i}
                 className="flex items-center justify-between border-b-2 border-border py-4"
               >
-                <span className="text-base font-medium text-zinc-400">
+                <span className="text-base font-medium text-muted-foreground">
                   {step.label}
                 </span>
-                <span className="ml-4 whitespace-nowrap text-base font-bold text-zinc-500">
+                <span className="ml-4 whitespace-nowrap text-base font-bold text-muted-foreground">
                   {step.time}
                 </span>
               </div>
             ))}
           </div>
-          <div className="mt-8 flex items-center justify-between bg-zinc-900 px-4 py-3 border-2 border-zinc-800">
-            <span className="text-lg font-bold uppercase text-zinc-500">
+          <div className="mt-8 flex items-center justify-between bg-muted px-4 py-3 border-2 border-border">
+            <span className="text-lg font-bold uppercase text-muted-foreground">
               {t("total")}
             </span>
-            <span className="text-xl font-black text-zinc-500">{t("totalTime")}</span>
+            <span className="text-xl font-black text-muted-foreground">{t("totalTime")}</span>
           </div>
-          <p className="mt-3 text-xs leading-relaxed text-zinc-500">
+          <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
             {t("nonTechNote")}
           </p>
         </div>
 
         {/* PapayaClaw Column */}
         <div className="neo-card flex flex-col justify-center rounded-none border-2 border-primary bg-[#ff5722]/5 p-8 neo-shadow-lime transition-transform hover:-translate-y-1">
-          <h3 className="mb-8 text-2xl font-bold uppercase text-white drop-shadow-[2px_2px_0_rgba(255,87,34,1)]">
+          <h3 className="mb-8 text-2xl font-bold uppercase text-foreground drop-shadow-[2px_2px_0_rgba(255,87,34,1)]">
             {t("papayaclawTitle")}
           </h3>
           <div className="animate-float mb-8 flex items-center gap-4">
@@ -74,7 +74,7 @@ export async function Comparison() {
               {t("minsWord")}
             </span>
           </div>
-          <p className="mb-10 text-lg font-medium leading-relaxed text-zinc-300 border-l-4 border-secondary pl-4">
+          <p className="mb-10 text-lg font-medium leading-relaxed text-muted-foreground border-l-4 border-secondary pl-4">
             {t("papayaclawDescription")}
           </p>
           <div className="w-full space-y-3">
@@ -86,7 +86,7 @@ export async function Comparison() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-none border-2 border-secondary bg-secondary text-black font-bold">
                   ✓
                 </div>
-                <span className="text-base font-bold text-white">
+                <span className="text-base font-bold text-foreground">
                   {benefit}
                 </span>
               </div>

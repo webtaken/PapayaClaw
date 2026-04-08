@@ -53,41 +53,41 @@ export async function generateMetadata({ params }: BlogPostPageProps) {
 }
 
 const components = {
-  h1: (props: any) => <h1 className="text-4xl font-bold mb-6 text-white" {...props} />,
-  h2: (props: any) => <h2 className="text-3xl font-semibold mt-10 mb-4 text-white" {...props} />,
-  h3: (props: any) => <h3 className="text-2xl font-semibold mt-8 mb-4 text-zinc-100" {...props} />,
+  h1: (props: any) => <h1 className="text-4xl font-bold mb-6 text-foreground" {...props} />,
+  h2: (props: any) => <h2 className="text-3xl font-semibold mt-10 mb-4 text-foreground" {...props} />,
+  h3: (props: any) => <h3 className="text-2xl font-semibold mt-8 mb-4 text-foreground" {...props} />,
   p: ({ children, ...props }: any) => {
     const hasBlockChild =
       Children.toArray(children).some(
         (child: any) => child?.type === "figure" || child?.props?.src
       );
     return hasBlockChild ? (
-      <div className="text-lg leading-relaxed mb-6 text-zinc-300" {...props}>{children}</div>
+      <div className="text-lg leading-relaxed mb-6 text-muted-foreground" {...props}>{children}</div>
     ) : (
-      <p className="text-lg leading-relaxed mb-6 text-zinc-300" {...props}>{children}</p>
+      <p className="text-lg leading-relaxed mb-6 text-muted-foreground" {...props}>{children}</p>
     );
   },
-  ul: (props: any) => <ul className="list-disc list-inside mb-6 text-zinc-300 space-y-2" {...props} />,
-  ol: (props: any) => <ol className="list-decimal list-inside mb-6 text-zinc-300 space-y-2" {...props} />,
+  ul: (props: any) => <ul className="list-disc list-inside mb-6 text-muted-foreground space-y-2" {...props} />,
+  ol: (props: any) => <ol className="list-decimal list-inside mb-6 text-muted-foreground space-y-2" {...props} />,
   li: (props: any) => <li className="pl-2" {...props} />,
   a: (props: any) => <a className="text-primary hover:underline font-medium" {...props} />,
-  blockquote: (props: any) => <blockquote className="border-l-4 border-primary pl-4 italic my-6 text-zinc-400 bg-zinc-900/50 py-2 pr-4 rounded-r" {...props} />,
-  code: (props: any) => <code className="bg-zinc-800 text-pink-400 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />,
-  pre: (props: any) => <pre className="bg-[#111] p-4 rounded-xl overflow-x-auto mb-6 border border-zinc-800 shadow-2xl" {...props} />,
-  strong: (props: any) => <strong className="font-bold text-white" {...props} />,
+  blockquote: (props: any) => <blockquote className="border-l-4 border-primary pl-4 italic my-6 text-muted-foreground bg-muted/50 py-2 pr-4 rounded-r" {...props} />,
+  code: (props: any) => <code className="bg-muted text-pink-400 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />,
+  pre: (props: any) => <pre className="bg-muted p-4 rounded-xl overflow-x-auto mb-6 border border-border shadow-2xl" {...props} />,
+  strong: (props: any) => <strong className="font-bold text-foreground" {...props} />,
   table: (props: any) => (
     <div className="overflow-x-auto mb-6">
-      <table className="w-full text-sm text-left text-zinc-300 border-collapse border border-zinc-700" {...props} />
+      <table className="w-full text-sm text-left text-muted-foreground border-collapse border border-border" {...props} />
     </div>
   ),
-  thead: (props: any) => <thead className="bg-zinc-800 text-white uppercase text-xs tracking-wider" {...props} />,
-  tbody: (props: any) => <tbody className="divide-y divide-zinc-700" {...props} />,
-  tr: (props: any) => <tr className="border-b border-zinc-700 hover:bg-zinc-800/50 transition-colors" {...props} />,
-  th: (props: any) => <th className="px-4 py-3 font-bold border border-zinc-700" {...props} />,
-  td: (props: any) => <td className="px-4 py-3 border border-zinc-700" {...props} />,
+  thead: (props: any) => <thead className="bg-muted text-foreground uppercase text-xs tracking-wider" {...props} />,
+  tbody: (props: any) => <tbody className="divide-y divide-border" {...props} />,
+  tr: (props: any) => <tr className="border-b border-border hover:bg-muted/50 transition-colors" {...props} />,
+  th: (props: any) => <th className="px-4 py-3 font-bold border border-border" {...props} />,
+  td: (props: any) => <td className="px-4 py-3 border border-border" {...props} />,
   img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
     <figure className="my-8">
-      <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-zinc-800 bg-zinc-900/50">
+      <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-border bg-muted/50">
         <Image
           src={(props.src as string) || ""}
           alt={props.alt || ""}
@@ -97,7 +97,7 @@ const components = {
         />
       </div>
       {props.title && (
-        <figcaption className="mt-2 text-center text-sm text-zinc-500 italic">
+        <figcaption className="mt-2 text-center text-sm text-muted-foreground italic">
           {props.title}
         </figcaption>
       )}
@@ -167,21 +167,21 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-[#07080a] text-zinc-100 flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Header />
       <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-20">
-        <Link href="/blog" className="inline-flex items-center text-sm font-semibold text-primary hover:text-white transition-colors mb-8">
+        <Link href="/blog" className="inline-flex items-center text-sm font-semibold text-primary hover:text-foreground transition-colors mb-8">
           <span className="mr-2">←</span> {t("readArticle") === "Leer artículo" ? "Volver al Blog" : "Back to Blog"}
         </Link>
         
         <article>
-          <header className="mb-12 border-b border-zinc-800 pb-8">
+          <header className="mb-12 border-b border-border pb-8">
             {frontmatter.image && (
-              <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-zinc-800 mb-8">
+              <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-border mb-8">
                 <Image
                   src={frontmatter.image}
                   alt={frontmatter.title}
@@ -192,10 +192,10 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                 />
               </div>
             )}
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-6 leading-tight">
+            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-6 leading-tight">
               {frontmatter.title}
             </h1>
-            <div className="flex items-center text-sm text-zinc-400 font-medium tracking-wide uppercase">
+            <div className="flex items-center text-sm text-muted-foreground font-medium tracking-wide uppercase">
               <time dateTime={frontmatter.date}>
                 {new Date(frontmatter.date).toLocaleDateString(dateLocale, {
                   year: "numeric",

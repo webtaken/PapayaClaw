@@ -84,13 +84,13 @@ export function PairingDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md border-zinc-800 bg-zinc-900 p-0">
-        <DialogHeader className="border-b border-zinc-800 px-6 pt-6 pb-4">
-          <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-white">
+      <DialogContent className="max-w-md border-border bg-muted p-0">
+        <DialogHeader className="border-b border-border px-6 pt-6 pb-4">
+          <DialogTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
             <Shield className="h-5 w-5 text-violet-400" />
             {t("title")}
           </DialogTitle>
-          <p className="mt-1 text-sm text-zinc-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             {t("subtitle")}
           </p>
         </DialogHeader>
@@ -107,20 +107,20 @@ export function PairingDialog({
           {loading && (
             <div className="flex flex-col items-center justify-center py-10">
               <RefreshCw className="mb-3 h-6 w-6 animate-spin text-violet-400" />
-              <p className="text-sm text-zinc-400">{t("connecting")}</p>
+              <p className="text-sm text-muted-foreground">{t("connecting")}</p>
             </div>
           )}
 
           {/* Empty state */}
           {!loading && !error && requests.length === 0 && (
             <div className="flex flex-col items-center justify-center py-10">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800/50">
-                <Users className="h-6 w-6 text-zinc-500" />
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted/50">
+                <Users className="h-6 w-6 text-muted-foreground" />
               </div>
-              <p className="text-sm font-medium text-zinc-300">
+              <p className="text-sm font-medium text-foreground/80">
                 {t("noPending")}
               </p>
-              <p className="mt-1 text-center text-xs text-zinc-500">
+              <p className="mt-1 text-center text-xs text-muted-foreground">
                 {t("noPendingDescription")}
               </p>
             </div>
@@ -132,7 +132,7 @@ export function PairingDialog({
               {requests.map((req) => (
                 <div
                   key={req.code}
-                  className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-800/30 px-4 py-3 transition-all duration-200"
+                  className="flex items-center justify-between rounded-xl border border-border bg-muted/30 px-4 py-3 transition-all duration-200"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -143,9 +143,9 @@ export function PairingDialog({
                         {req.code}
                       </Badge>
                     </div>
-                    <p className="mt-1.5 text-xs text-zinc-500">
+                    <p className="mt-1.5 text-xs text-muted-foreground">
                       {req.senderName ? (
-                        <span className="text-zinc-400">{req.senderName}</span>
+                        <span className="text-muted-foreground">{req.senderName}</span>
                       ) : (
                         <span>{t("user")} {req.senderId}</span>
                       )}
@@ -185,14 +185,14 @@ export function PairingDialog({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-zinc-800 px-6 py-3">
-          <p className="text-[11px] text-zinc-500">{t("codesExpire")}</p>
+        <div className="flex items-center justify-between border-t border-border px-6 py-3">
+          <p className="text-[11px] text-muted-foreground">{t("codesExpire")}</p>
           <Button
             variant="ghost"
             size="sm"
             onClick={fetchRequests}
             disabled={loading}
-            className="cursor-pointer gap-1.5 text-xs text-zinc-400 hover:text-white"
+            className="cursor-pointer gap-1.5 text-xs text-muted-foreground hover:text-foreground"
           >
             <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
             {t("refresh")}

@@ -5,9 +5,9 @@ export async function Footer() {
   const t = await getTranslations("Footer");
 
   return (
-    <footer className="border-t-2 border-border bg-[#0f1014]">
+    <footer className="border-t-2 border-border bg-card">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-6 py-12 sm:flex-row sm:justify-between">
-        <p className="text-base font-bold uppercase tracking-wide text-zinc-500">
+        <p className="text-base font-bold uppercase tracking-wide text-muted-foreground">
           {t("builtWith")}{" "}
           <a
             href="https://x.com/node_srojas1"
@@ -21,7 +21,7 @@ export async function Footer() {
         <div className="flex items-center gap-8">
           <Link
             href="/blog"
-            className="text-sm font-bold uppercase tracking-wide text-zinc-500 transition-colors hover:text-white"
+            className="text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
           >
             {t("blog")}
           </Link>
@@ -29,13 +29,13 @@ export async function Footer() {
             href="https://x.com/node_srojas1"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-bold uppercase tracking-wide text-zinc-500 transition-colors hover:text-white"
+            className="text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
           >
             Saul Rojas
           </a>
           <a
             href="mailto:support@papayaclaw.com"
-            className="text-sm font-bold uppercase tracking-wide text-zinc-500 transition-colors hover:text-white"
+            className="text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
           >
             {t("support")}
           </a>

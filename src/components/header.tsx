@@ -5,6 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { useTranslations, useLocale } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function Header() {
   const { data: session, isPending } = authClient.useSession();
@@ -24,7 +25,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b-2 border-border bg-[#0f1014]/90 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 w-full border-b-2 border-border bg-background/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link
           href="/"
@@ -37,26 +38,26 @@ export function Header() {
             alt="PapayaClaw Logo"
             className="object-contain"
           />
-          <span className="text-2xl font-bold tracking-tight text-white uppercase">
+          <span className="text-2xl font-bold tracking-tight text-foreground uppercase">
             PapayaClaw
           </span>
         </Link>
         <div className="flex items-center gap-6">
           <Link
             href="/blog"
-            className="text-sm font-bold uppercase tracking-wide text-zinc-300 transition-colors hover:text-primary"
+            className="text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:text-primary"
           >
             {t("blog")}
           </Link>
           <Link
             href="/pricing"
-            className="text-sm font-bold uppercase tracking-wide text-zinc-300 transition-colors hover:text-primary"
+            className="text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:text-primary"
           >
             {t("pricing")}
           </Link>
           <Link
             href="/dashboard"
-            className="text-sm font-bold uppercase tracking-wide text-zinc-300 transition-colors hover:text-primary"
+            className="text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:text-primary"
           >
             {t("dashboard")}
           </Link>
@@ -64,10 +65,12 @@ export function Header() {
           {/* Language Switcher */}
           <button
             onClick={switchLocale}
-            className="flex items-center gap-1.5 rounded-full border-2 border-border bg-[#18191f] px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-zinc-300 transition-all hover:border-primary hover:text-white cursor-pointer"
+            className="flex items-center gap-1.5 rounded-full border-2 border-border bg-card px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground transition-all hover:border-primary hover:text-foreground cursor-pointer"
           >
             {locale === "en" ? "🇪🇸 ES" : "🇺🇸 EN"}
           </button>
+
+          <ThemeToggle />
 
           {!isPending && session ? (
             <Button

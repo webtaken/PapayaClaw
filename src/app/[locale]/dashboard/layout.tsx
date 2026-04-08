@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function DashboardLayout({
   children,
@@ -37,8 +38,8 @@ export default async function DashboardLayout({
     : "U";
 
   return (
-    <div className="min-h-screen bg-[#07080a]">
-      <header className="sticky top-0 z-50 w-full border-b border-zinc-800/50 bg-[#07080a]/80 backdrop-blur-xl">
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-8">
             <Link
@@ -52,26 +53,27 @@ export default async function DashboardLayout({
                 alt="PapayaClaw Logo"
                 className="object-contain"
               />
-              <span className="text-2xl font-bold tracking-tight text-white uppercase">
+              <span className="text-2xl font-bold tracking-tight text-foreground uppercase">
                 PapayaClaw
               </span>
             </Link>
             <nav className="hidden items-center gap-6 sm:flex">
               <Link
                 href="/dashboard"
-                className="text-sm font-medium text-white"
+                className="text-sm font-medium text-foreground"
               >
                 {t("navDashboard")}
               </Link>
               <Link
                 href="/dashboard/subscriptions"
-                className="text-sm font-medium text-zinc-400 hover:text-white transition-colors"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 {t("navSubscriptions")}
               </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8">
                 <AvatarImage
@@ -82,7 +84,7 @@ export default async function DashboardLayout({
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <span className="hidden text-sm text-zinc-300 sm:block">
+              <span className="hidden text-sm text-muted-foreground sm:block">
                 {session.user.name}
               </span>
             </div>
@@ -91,7 +93,7 @@ export default async function DashboardLayout({
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
-      <Toaster theme="dark" />
+      <Toaster />
     </div>
   );
 }

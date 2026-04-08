@@ -78,7 +78,7 @@ export default async function PricingPage({
   };
 
   return (
-    <div className="min-h-screen bg-[#07080a]">
+    <div className="min-h-screen bg-background">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}

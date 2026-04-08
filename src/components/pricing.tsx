@@ -32,7 +32,7 @@ export function Pricing() {
       accentColor: "primary",
       shadow: "neo-shadow",
       borderColor: "border-border",
-      bgTint: "bg-[#0f1014]",
+      bgTint: "bg-background",
       icon: Zap,
       featureKeys: [
         "plans.basic.features.f1",
@@ -44,7 +44,7 @@ export function Pricing() {
       ] as const,
       ctaKey: "plans.basic.cta" as const,
       ctaStyle:
-        "bg-white text-black border-2 border-white hover:bg-primary hover:border-primary hover:neo-shadow transition-all font-bold uppercase tracking-wider",
+        "bg-foreground text-background border-2 border-foreground hover:bg-primary hover:border-primary hover:neo-shadow transition-all font-bold uppercase tracking-wider",
       productId: basicProductId,
     },
     {
@@ -88,13 +88,13 @@ export function Pricing() {
               {t("badge")}
             </span>
           </div>
-          <h1 className="text-4xl font-extrabold uppercase leading-[0.95] tracking-tighter text-white sm:text-5xl md:text-6xl">
+          <h1 className="text-4xl font-extrabold uppercase leading-[0.95] tracking-tighter text-foreground sm:text-5xl md:text-6xl">
             {t("title")}{" "}
             <span className="text-primary [-webkit-text-stroke:2px_#000] drop-shadow-[4px_4px_0_rgba(205,220,57,1)]">
               {t("titleHighlight")}
             </span>
           </h1>
-          <p className="mx-auto mt-8 max-w-xl text-lg font-medium text-zinc-400">
+          <p className="mx-auto mt-8 max-w-xl text-lg font-medium text-muted-foreground">
             {t("subtitle")}
           </p>
         </div>
@@ -131,28 +131,28 @@ export function Pricing() {
                     >
                       <Icon className="h-5 w-5" strokeWidth={2.5} />
                     </div>
-                    <h3 className="text-2xl font-bold uppercase tracking-tight text-white">
+                    <h3 className="text-2xl font-bold uppercase tracking-tight text-foreground">
                       {t(plan.nameKey)}
                     </h3>
                   </div>
 
-                  <p className="text-sm font-medium text-zinc-400 mb-8">
+                  <p className="text-sm font-medium text-muted-foreground mb-8">
                     {t(plan.descriptionKey)}
                   </p>
 
                   {/* Price */}
                   <div className="flex items-baseline gap-1 mb-8">
-                    <span className="text-sm font-bold text-zinc-500">$</span>
+                    <span className="text-sm font-bold text-muted-foreground">$</span>
                     <span
                       className={`text-6xl font-black tracking-tighter ${
                         plan.accentColor === "secondary"
                           ? "text-secondary [-webkit-text-stroke:1px_#000] drop-shadow-[3px_3px_0_rgba(255,87,34,1)]"
-                          : "text-white"
+                          : "text-foreground"
                       }`}
                     >
                       {plan.price}
                     </span>
-                    <span className="text-base font-bold text-zinc-500 uppercase ml-1">
+                    <span className="text-base font-bold text-muted-foreground uppercase ml-1">
                       / {plan.interval}
                     </span>
                   </div>
@@ -187,12 +187,12 @@ export function Pricing() {
                           className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-none border-2 ${
                             plan.accentColor === "secondary"
                               ? "border-secondary bg-secondary text-black"
-                              : "border-zinc-600 bg-zinc-800 text-zinc-400"
+                              : "border-border bg-muted text-muted-foreground"
                           } text-xs font-bold`}
                         >
                           <Check className="h-3.5 w-3.5" strokeWidth={3} />
                         </div>
-                        <span className="text-sm font-semibold text-zinc-300">
+                        <span className="text-sm font-semibold text-muted-foreground">
                           {t(featureKey)}
                         </span>
                       </div>
@@ -236,14 +236,14 @@ export function Pricing() {
 
         {/* Bottom note */}
         <div className="mt-16 text-center animate-slide-up-fade-delay-2">
-          <p className="text-sm font-medium text-zinc-500">
+          <p className="text-sm font-medium text-muted-foreground">
             {t("bottomNote")}{" "}
-            <span className="font-bold text-zinc-300">
+            <span className="font-bold text-muted-foreground">
               {t("bottomNoteHighlight")}
             </span>{" "}
             {t("bottomNoteEnd")}
           </p>
-          <p className="mt-2 text-xs text-zinc-600">
+          <p className="mt-2 text-xs text-muted-foreground/60">
             {t("portalNote")}{" "}
             <span className="text-primary font-semibold">{t("portalLink")}</span>.
           </p>

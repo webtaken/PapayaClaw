@@ -68,14 +68,14 @@ export function InstanceCard({
   const [pairingOpen, setPairingOpen] = useState(false);
 
   return (
-    <div className="flex flex-col rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl h-full transition-all duration-300 hover:border-zinc-700">
+    <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xl h-full transition-all duration-300 hover:border-border">
       {/* Top row: name + status */}
-      <div className="flex items-center justify-between border-b border-zinc-800/80 bg-zinc-900/20 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-border/80 bg-muted/20 px-4 py-3">
         <div className="flex flex-col min-w-0 pr-3">
-          <h3 className="text-sm font-medium tracking-tight text-white mb-0.5 truncate">
+          <h3 className="text-sm font-medium tracking-tight text-foreground mb-0.5 truncate">
             {instance.name}
           </h3>
-          <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest truncate">
+          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest truncate">
             {new Date(instance.createdAt).toISOString().split("T")[0]}
           </p>
         </div>
@@ -90,28 +90,28 @@ export function InstanceCard({
 
       <div className="p-4 flex flex-col flex-1 gap-4">
         {/* Model + Channel */}
-        <div className="grid grid-cols-2 gap-px bg-zinc-800/50 border border-zinc-800/50 rounded-lg overflow-hidden shrink-0">
-          <div className="bg-zinc-950/80 p-3 flex flex-col gap-1.5">
-            <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+        <div className="grid grid-cols-2 gap-px bg-muted/50 border border-border/50 rounded-lg overflow-hidden shrink-0">
+          <div className="bg-card/80 p-3 flex flex-col gap-1.5">
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
               {t("model")}
             </span>
-            <span className="flex items-center gap-1.5 text-xs text-zinc-300">
-              <span className="text-[10px] text-zinc-400 shrink-0">
+            <span className="flex items-center gap-1.5 text-xs text-foreground/80">
+              <span className="text-[10px] text-muted-foreground shrink-0">
                 {model.icon}
               </span>
               <span className="truncate">{model.name}</span>
             </span>
           </div>
-          <div className="bg-zinc-950/80 p-3 flex flex-col gap-1.5">
-            <span className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">
+          <div className="bg-card/80 p-3 flex flex-col gap-1.5">
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
               {channels.length === 1 ? t("channel") : t("channel")}
             </span>
-            <span className="flex items-center gap-1.5 text-xs text-zinc-300 flex-wrap">
+            <span className="flex items-center gap-1.5 text-xs text-foreground/80 flex-wrap">
               {channels.map((ch) => {
                 const info = formatChannelInfo(ch);
                 return (
                   <span key={ch} className="flex items-center gap-1" title={info.name}>
-                    <span className="text-[10px] text-zinc-400 shrink-0">
+                    <span className="text-[10px] text-muted-foreground shrink-0">
                       {info.icon}
                     </span>
                     <span className="truncate">{info.name}</span>
@@ -131,7 +131,7 @@ export function InstanceCard({
               onClick={() =>
                 onStatusChange(instance.id, isRunning ? "stopped" : "running")
               }
-              className="cursor-pointer gap-1.5 rounded-lg border-zinc-800 bg-zinc-900/50 text-[10px] font-mono uppercase tracking-wider text-zinc-400 transition-all hover:border-zinc-700 hover:bg-zinc-800 hover:text-white h-8 shadow-none"
+              className="cursor-pointer gap-1.5 rounded-lg border-border bg-muted/50 text-[10px] font-mono uppercase tracking-wider text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground h-8 shadow-none"
             >
               {isRunning ? (
                 <>
@@ -172,7 +172,7 @@ export function InstanceCard({
             <Button
               variant="outline"
               size="sm"
-              className="w-full cursor-pointer gap-1.5 rounded-lg border-zinc-800 bg-zinc-900/50 text-[10px] font-mono uppercase tracking-wider text-zinc-400 transition-all hover:border-zinc-700 hover:bg-zinc-800 hover:text-white h-8 shadow-none"
+              className="w-full cursor-pointer gap-1.5 rounded-lg border-border bg-muted/50 text-[10px] font-mono uppercase tracking-wider text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground h-8 shadow-none"
             >
               <Eye className="h-3 w-3" />
               {t("view")}
@@ -190,19 +190,19 @@ export function InstanceCard({
                 {t("delete")}
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="bg-zinc-950 border-zinc-800 font-sans">
+            <AlertDialogContent className="bg-card border-border font-sans">
               <AlertDialogHeader>
-                <AlertDialogTitle className="text-white">
+                <AlertDialogTitle className="text-foreground">
                   {t("deleteTitle")}
                 </AlertDialogTitle>
-                <AlertDialogDescription className="text-zinc-400 text-sm">
+                <AlertDialogDescription className="text-muted-foreground text-sm">
                   {t("deleteDescription")}{" "}
-                  <span className="text-white font-mono">{instance.name}</span>
+                  <span className="text-foreground font-mono">{instance.name}</span>
                   {t("deleteDescriptionEnd")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="mt-4">
-                <AlertDialogCancel className="bg-zinc-900/50 text-zinc-300 border-zinc-800 hover:bg-zinc-800 hover:text-white font-mono text-[10px] uppercase tracking-wider px-6 h-9 transition-colors">
+                <AlertDialogCancel className="bg-muted/50 text-foreground/80 border-border hover:bg-muted hover:text-foreground font-mono text-[10px] uppercase tracking-wider px-6 h-9 transition-colors">
                   {t("cancel")}
                 </AlertDialogCancel>
                 <AlertDialogAction
