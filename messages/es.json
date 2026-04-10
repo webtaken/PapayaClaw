@@ -7,18 +7,36 @@
     "contact": "Contacto"
   },
   "Hero": {
-    "badge": "Ya Disponible",
-    "titleLine1": "Despliega",
-    "titleLine2": "OpenClaw",
-    "description": "Evita toda la complejidad técnica. Despliega tu propia instancia segura, activa 24/7 en",
-    "descriptionHighlight": "pocos minutos"
+    "badge": "Plataforma de Empleados IA",
+    "titleLine1": "Contrata",
+    "titleLine2": "Empleados IA",
+    "description": "Explora plantillas de agentes listas para usar. Despliega tu propio empleado IA con 🦞 OpenClaw — online 24/7, en",
+    "descriptionHighlight": "pocos minutos",
+    "ctaPrimary": "Comenzar",
+    "ctaSecondary": "Ver Precios"
+  },
+  "HowItWorks": {
+    "title": "Cómo",
+    "titleHighlight": "Funciona",
+    "step1Number": "01",
+    "step1Title": "Inicia Sesión",
+    "step1Description": "Crea tu cuenta con un simple login de Google — sin formularios, sin contraseñas.",
+    "step2Number": "02",
+    "step2Title": "Configura",
+    "step2Description": "Selecciona tu proveedor de IA, modelo y el canal donde trabajará tu empleado.",
+    "step3Number": "03",
+    "step3Title": "Despliega",
+    "step3Description": "Observa cómo tu empleado IA se activa en tiempo real — listo en menos de un minuto.",
+    "step4Number": "04",
+    "step4Title": "Explora",
+    "step4Description": "Navega por el marketplace de plantillas y asigna habilidades especializadas a tu empleado IA."
   },
   "Configurator": {
-    "providerQuestion": "¿Qué proveedor de IA prefieres?",
-    "channelQuestion": "¿Qué canal quieres usar para enviar mensajes?",
+    "providerQuestion": "Elige el cerebro de tu empleado IA",
+    "channelQuestion": "¿Dónde debería trabajar tu empleado IA?",
     "signInWithGoogle": "Iniciar sesión con Google",
-    "signInDescription": "Inicia sesión para desplegar tu asistente de IA y conectar tus canales.",
-    "limitedServers": "Servidores limitados"
+    "signInDescription": "Inicia sesión para contratar tu empleado IA y conectar tus canales.",
+    "limitedServers": "Plazas limitadas"
   },
   "Comparison": {
     "title": "Método Tradicional vs",
@@ -30,7 +48,7 @@
     "papayaclawTitle": "PapayaClaw",
     "fewWord": "POCOS",
     "minsWord": "mins",
-    "papayaclawDescription": "Elige un modelo, conecta Telegram, despliega — tu instancia segura lista en pocos minutos.",
+    "papayaclawDescription": "Elige una plantilla, selecciona un canal, despliega — tu empleado IA está listo en pocos minutos.",
     "steps": {
       "step1": "Comprar máquina virtual local",
       "step1Time": "15 min",
@@ -50,60 +68,60 @@
       "step8Time": "4 min"
     },
     "benefits": {
-      "benefit1": "Servidores, SSH y entorno OpenClaw ya están configurados",
-      "benefit2": "Esperando ser asignado",
-      "benefit3": "Conexión simple, segura y rápida a tu bot"
+      "benefit1": "Infraestructura, entorno y agente IA preconfigurados",
+      "benefit2": "Listo para empezar a trabajar para ti",
+      "benefit3": "Simple, seguro y siempre online"
     }
   },
   "UseCases": {
-    "title": "¿Qué puede",
-    "titleHighlight": "OpenClaw",
-    "titleEnd": "hacer por ti?",
-    "subtitle": "Un asistente,",
-    "subtitleHighlight": "miles",
-    "subtitleEnd": "de casos de uso.",
+    "title": "Plantillas de",
+    "titleHighlight": "Empleados IA",
+    "titleEnd": "listas para desplegar",
+    "subtitle": "Una plataforma,",
+    "subtitleHighlight": "decenas",
+    "subtitleEnd": "de roles.",
     "cases": {
-      "customerSupport": "Soporte al Cliente",
+      "customerSupport": "Agente de Soporte al Cliente",
       "personalAssistant": "Asistente Personal",
-      "languageLearning": "Aprendizaje de Idiomas",
-      "codeReview": "Revisión de Código",
-      "contentWriting": "Redacción de Contenido",
-      "dataAnalysis": "Análisis de Datos",
+      "languageLearning": "Tutor de Idiomas",
+      "codeReview": "Revisor de Código",
+      "contentWriting": "Redactor de Contenido",
+      "dataAnalysis": "Analista de Datos",
       "socialMediaManager": "Gestor de Redes Sociales",
-      "emailDrafting": "Redacción de Correos",
-      "meetingSummarizer": "Resumen de Reuniones",
-      "researchAssistant": "Asistente de Investigación",
-      "recipeGenerator": "Generador de Recetas",
+      "emailDrafting": "Asistente de Email",
+      "meetingSummarizer": "Resumidor de Reuniones",
+      "researchAssistant": "Analista de Investigación",
+      "recipeGenerator": "Asistente de Recetas",
       "travelPlanner": "Planificador de Viajes",
       "studyBuddy": "Compañero de Estudio",
       "healthFitnessCoach": "Coach de Salud y Fitness",
       "financialAdvisor": "Asesor Financiero",
-      "legalDocumentReview": "Revisión de Documentos Legales",
-      "interviewPrep": "Preparación de Entrevistas",
-      "newsSummarizer": "Resumen de Noticias",
-      "therapyChatbot": "Chatbot de Terapia",
-      "languageTranslation": "Traducción de Idiomas"
+      "legalDocumentReview": "Revisor de Documentos Legales",
+      "interviewPrep": "Coach de Entrevistas",
+      "newsSummarizer": "Informador de Noticias",
+      "therapyChatbot": "Coach de Bienestar",
+      "languageTranslation": "Traductor"
     }
   },
   "Pricing": {
     "badge": "Precios Simples",
     "title": "Elige Tu",
-    "titleHighlight": "Potencia",
+    "titleHighlight": "Plan",
     "subtitle": "Sin costos ocultos. Sin costos de configuración. Cancela en cualquier momento.",
     "popular": "Popular",
     "loading": "Cargando...",
-    "bottomNote": "Ambos planes incluyen una",
-    "bottomNoteHighlight": "instancia VPS dedicada",
-    "bottomNoteEnd": "— tu bot funciona 24/7 en su propio servidor.",
+    "bottomNote": "Cada plan alimenta un",
+    "bottomNoteHighlight": "empleado IA",
+    "bottomNoteEnd": "— funcionando 24/7 en un servidor dedicado.",
     "portalNote": "Administra tu suscripción en cualquier momento a través del",
     "portalLink": "Portal del Cliente",
     "plans": {
       "basic": {
         "name": "Básico",
-        "description": "Todo lo que necesitas para desplegar y ejecutar tu bot OpenClaw.",
+        "description": "Todo lo que necesitas para contratar tu primer empleado IA.",
         "cta": "Comenzar",
         "features": {
-          "f1": "1 bot desplegado",
+          "f1": "1 empleado IA",
           "f2": "2 vCPU, 4 GB RAM, 40 GB SSD",
           "f3": "Canales Telegram y SSH",
           "f4": "Panel web seguro",
@@ -113,10 +131,10 @@
       },
       "pro": {
         "name": "Pro",
-        "description": "Máxima potencia para despliegues serios.",
+        "description": "Máxima potencia para tus empleados IA más exigentes.",
         "cta": "Hazte Pro",
         "features": {
-          "f1": "1 instancia de bot",
+          "f1": "1 empleado IA",
           "f2": "4 vCPU, 8 GB RAM, 80 GB SSD",
           "f3": "Canales Telegram y SSH",
           "f4": "Panel web seguro",
@@ -126,6 +144,12 @@
         }
       }
     }
+  },
+  "Enterprise": {
+    "title": "¿Eres una empresa?",
+    "description": "Ofrecemos despliegues personalizados, infraestructura dedicada y soporte prioritario para equipos. Construyamos algo juntos.",
+    "cta": "Agenda una llamada",
+    "ctaAriaLabel": "Agenda una llamada de 30 minutos con nuestro equipo (abre en nueva pestaña)"
   },
   "Footer": {
     "builtWith": "Hecho con ❤️ por",
@@ -140,11 +164,11 @@
   },
   "PricingPage": {
     "title": "Precios — PapayaClaw",
-    "description": "Elige tu plan PapayaClaw. Básico o Pro — despliega instancias seguras de OpenClaw en minutos."
+    "description": "Elige tu plan PapayaClaw. Básico o Pro — contrata empleados IA con OpenClaw en minutos."
   },
   "Subscriptions": {
     "title": "Tus Suscripciones",
-    "description": "Cada suscripción alimenta una instancia de OpenClaw.",
+    "description": "Cada suscripción alimenta un empleado IA.",
     "plan": "Plan",
     "basic": "Básico",
     "pro": "Pro",
@@ -158,14 +182,14 @@
     "vpsSpec": "Especificación VPS",
     "basicSpec": "2 vCPU, 4 GB RAM, 40 GB SSD",
     "proSpec": "4 vCPU, 8 GB RAM, 80 GB SSD",
-    "linkedInstance": "Instancia Vinculada",
-    "noInstanceLinked": "Sin instancia desplegada aún",
-    "deployInstance": "Desplegar Instancia",
+    "linkedInstance": "Empleado IA Vinculado",
+    "noInstanceLinked": "Sin empleado IA contratado aún",
+    "deployInstance": "Contratar Empleado IA",
     "managePlan": "Gestionar Plan",
     "addSubscription": "Agregar Otra Suscripción",
-    "addSubscriptionDescription": "Cada suscripción soporta una instancia de OpenClaw.",
+    "addSubscriptionDescription": "Cada suscripción alimenta un empleado IA.",
     "noSubscriptions": "Sin suscripciones aún",
-    "noSubscriptionsDescription": "Suscríbete a un plan para desplegar tu primera instancia de OpenClaw.",
+    "noSubscriptionsDescription": "Suscríbete a un plan para contratar tu primer empleado IA.",
     "viewPlans": "Ver Planes",
     "cancelingAtEnd": "Se cancela al final del período",
     "unlinked": "Sin vincular"
@@ -174,21 +198,21 @@
     "navDashboard": "Panel",
     "navSubscriptions": "Suscripciones",
     "signOut": "Cerrar sesión",
-    "yourInstances": "Tus Instancias",
-    "manageDescription": "Administra y monitorea tus despliegues de OpenClaw",
+    "yourInstances": "Tus Empleados IA",
+    "manageDescription": "Administra y monitorea tus empleados IA",
     "managePlan": "Gestionar Plan",
-    "deployNew": "Nuevo Despliegue",
-    "subscribeBanner": "Suscríbete para desplegar instancias",
-    "subscribeBannerDescription": "Se requiere un plan activo para desplegar y gestionar bots de OpenClaw.",
+    "deployNew": "Contratar Nuevo",
+    "subscribeBanner": "Suscríbete para contratar empleados IA",
+    "subscribeBannerDescription": "Se requiere un plan activo para contratar y gestionar empleados IA.",
     "viewPlans": "Ver Planes",
-    "noInstances": "Sin instancias desplegadas",
-    "noInstancesDescription": "Despliega tu primera instancia de OpenClaw para comenzar. El aprovisionamiento toma menos de 1 minuto.",
-    "initializeDeployment": "Iniciar Despliegue",
+    "noInstances": "Sin empleados IA contratados",
+    "noInstancesDescription": "Contrata tu primer empleado IA para comenzar. La configuración toma menos de 1 minuto.",
+    "initializeDeployment": "Contratar Empleado IA",
     "model": "Modelo",
     "channel": "Canal"
   },
   "DeployDialog": {
-    "title": "Desplegar Nueva Instancia",
+    "title": "Contratar Nuevo Empleado IA",
     "step1": "Nombre y Modelo",
     "step2": "Canal",
     "step3": "Desplegar",
@@ -212,14 +236,14 @@
     "summary": "Resumen",
     "name": "Nombre",
     "token": "Token",
-    "deployNote": "Tu instancia se desplegará de forma segura. Puedes gestionarla desde el panel en cualquier momento.",
+    "deployNote": "Tu empleado IA se configurará de forma segura. Puedes gestionarlo desde el panel en cualquier momento.",
     "deployNoteLabel": "Nota:",
     "back": "Atrás",
     "next": "Siguiente",
     "deploying": "Desplegando...",
-    "deployInstance": "Desplegar Instancia",
+    "deployInstance": "Contratar Empleado",
     "recommended": "Recomendado",
-    "deployError": "Error al desplegar la instancia. Por favor intenta de nuevo.",
+    "deployError": "Error al configurar el empleado IA. Por favor intenta de nuevo.",
     "networkError": "Error de red — no se pudo conectar al servidor. Por favor intenta de nuevo."
   },
   "InstanceCard": {
@@ -257,10 +281,10 @@
     "allowedNumbersInfo": "Solo los mensajes de los números listados aquí serán reenviados a tu agente. Añade los números en formato internacional incluyendo el código de país."
   },
   "Metadata": {
-    "title": "PapayaClaw — Despliega Instancias Seguras de OpenClaw en Pocos Minutos",
-    "description": "Despliega instancias seguras de OpenClaw en pocos minutos. Evita toda la complejidad técnica y despliega tu propia instancia de OpenClaw activa 24/7 con un solo clic.",
-    "ogTitle": "PapayaClaw — Despliega Instancias Seguras de OpenClaw",
-    "ogDescription": "Despliega instancias seguras de OpenClaw en pocos minutos. Evita toda la complejidad técnica.",
-    "twitterDescription": "Evita toda la complejidad técnica y despliega tu propia instancia de OpenClaw activa 24/7 con un solo clic."
+    "title": "PapayaClaw — Contrata Empleados IA con OpenClaw",
+    "description": "Explora plantillas de agentes y contrata empleados IA con OpenClaw. Online 24/7, configurados en minutos. Sin conocimientos técnicos.",
+    "ogTitle": "PapayaClaw — Empleados IA con OpenClaw",
+    "ogDescription": "Explora plantillas de agentes y contrata empleados IA con OpenClaw. Online 24/7, configurados en minutos.",
+    "twitterDescription": "Explora plantillas de agentes y contrata empleados IA con OpenClaw. Online 24/7, configurados en minutos."
   }
 }

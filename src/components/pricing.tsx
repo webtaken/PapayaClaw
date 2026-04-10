@@ -4,6 +4,15 @@ import { Check, Zap, Crown } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 
 export function Pricing() {
   const { data: session, isPending } = authClient.useSession();
@@ -13,7 +22,7 @@ export function Pricing() {
     try {
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/pricing",
+        callbackURL: "/dashboard",
       });
     } catch (error) {
       console.error("Error signing in:", error);
@@ -75,7 +84,7 @@ export function Pricing() {
   ];
 
   return (
-    <section className="relative overflow-hidden border-b-2 border-border">
+    <section id="pricing" className="relative overflow-hidden border-b-2 border-border scroll-mt-24">
       {/* Background effects — matching hero */}
       <div className="cyber-grid absolute inset-0 opacity-20 pointer-events-none" />
       <div className="gradient-mesh absolute inset-0 opacity-20 pointer-events-none mix-blend-screen" />
@@ -83,17 +92,15 @@ export function Pricing() {
       <div className="relative mx-auto max-w-5xl px-6 py-24">
         {/* Section Header */}
         <div className="text-center mb-20 animate-slide-up-fade">
-          <div className="inline-block rounded-full border-2 border-primary bg-primary/10 px-4 py-1.5 mb-8">
-            <span className="text-sm font-bold leading-none tracking-wider text-primary uppercase">
-              {t("badge")}
-            </span>
-          </div>
-          <h1 className="text-4xl font-extrabold uppercase leading-[0.95] tracking-tighter text-foreground sm:text-5xl md:text-6xl">
+          <Badge className="mb-8 rounded-full border-2 border-primary bg-primary/10 px-4 py-1.5 text-sm font-bold leading-none tracking-wider text-primary uppercase">
+            {t("badge")}
+          </Badge>
+          <h2 className="text-4xl font-extrabold uppercase leading-[0.95] tracking-tighter text-foreground sm:text-5xl md:text-6xl">
             {t("title")}{" "}
             <span className="text-primary [-webkit-text-stroke:2px_#000] drop-shadow-[4px_4px_0_rgba(205,220,57,1)]">
               {t("titleHighlight")}
             </span>
-          </h1>
+          </h2>
           <p className="mx-auto mt-8 max-w-xl text-lg font-medium text-muted-foreground">
             {t("subtitle")}
           </p>
@@ -108,19 +115,19 @@ export function Pricing() {
               : "/dashboard";
 
             return (
-              <div
+              <Card
                 key={plan.nameKey}
-                className={`neo-card relative flex flex-col rounded-none border-2 ${plan.borderColor} ${plan.bgTint} p-0 ${plan.shadow} transition-transform hover:-translate-y-1`}
+                className={`neo-card relative rounded-none border-2 py-0 shadow-none gap-0 ${plan.borderColor} ${plan.bgTint} ${plan.shadow} transition-transform hover:-translate-y-1`}
               >
                 {/* Popular Badge */}
                 {plan.popular && (
-                  <div className="absolute -top-px -right-px bg-secondary text-black px-4 py-1.5 text-xs font-black uppercase tracking-widest border-l-2 border-b-2 border-secondary">
+                  <Badge className="absolute -top-px -right-px rounded-none bg-secondary text-black px-4 py-1.5 text-xs font-black uppercase tracking-widest border-l-2 border-b-2 border-secondary">
                     {t("popular")}
-                  </div>
+                  </Badge>
                 )}
 
                 {/* Card Header */}
-                <div className={`p-8 pb-0`}>
+                <CardHeader className="p-8 pb-0">
                   <div className="flex items-center gap-3 mb-6">
                     <div
                       className={`flex h-10 w-10 items-center justify-center rounded-none border-2 ${
@@ -156,19 +163,19 @@ export function Pricing() {
                       / {plan.interval}
                     </span>
                   </div>
-                </div>
+                </CardHeader>
 
                 {/* Divider */}
-                <div
-                  className={`mx-8 border-t-2 ${
+                <Separator
+                  className={`mx-8 w-auto ${
                     plan.accentColor === "secondary"
-                      ? "border-secondary/30"
-                      : "border-border"
+                      ? "bg-secondary/30"
+                      : "bg-border"
                   }`}
                 />
 
                 {/* Features */}
-                <div className="p-8 flex-1">
+                <CardContent className="p-8 flex-1">
                   <div className="space-y-0">
                     {plan.featureKeys.map((featureKey, i) => (
                       <div
@@ -198,38 +205,39 @@ export function Pricing() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </CardContent>
 
                 {/* CTA */}
-                <div className="p-8 pt-0">
+                <CardFooter className="p-8 pt-0">
                   {isPending ? (
-                    <button
+                    <Button
                       disabled
-                      className={`flex w-full items-center justify-center rounded-none px-6 py-4 text-sm opacity-50 cursor-not-allowed ${plan.ctaStyle}`}
+                      className={`w-full rounded-none px-6 py-4 text-sm h-auto opacity-50 cursor-not-allowed ${plan.ctaStyle}`}
                     >
                       {t("loading")}
-                    </button>
+                    </Button>
                   ) : !session ? (
-                    <button
+                    <Button
                       onClick={handleSignIn}
-                      className={`flex w-full items-center justify-center rounded-none px-6 py-4 text-sm cursor-pointer ${plan.ctaStyle}`}
+                      className={`w-full rounded-none px-6 py-4 text-sm h-auto cursor-pointer ${plan.ctaStyle}`}
                     >
                       {t(plan.ctaKey)}
-                    </button>
+                    </Button>
                   ) : (
-                    <Link
-                      href={
-                        plan.productId
-                          ? `${checkoutUrl}&customerExternalId=${session.user.id}&customerEmail=${encodeURIComponent(session.user.email)}`
-                          : checkoutUrl
-                      }
-                      className={`flex w-full items-center justify-center rounded-none px-6 py-4 text-sm ${plan.ctaStyle}`}
-                    >
-                      {t(plan.ctaKey)}
-                    </Link>
+                    <Button asChild className={`w-full rounded-none px-6 py-4 text-sm h-auto ${plan.ctaStyle}`}>
+                      <Link
+                        href={
+                          plan.productId
+                            ? `${checkoutUrl}&customerExternalId=${session.user.id}&customerEmail=${encodeURIComponent(session.user.email)}`
+                            : checkoutUrl
+                        }
+                      >
+                        {t(plan.ctaKey)}
+                      </Link>
+                    </Button>
                   )}
-                </div>
-              </div>
+                </CardFooter>
+              </Card>
             );
           })}
         </div>

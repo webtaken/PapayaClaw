@@ -7,18 +7,36 @@
     "contact": "Contact"
   },
   "Hero": {
-    "badge": "Now Available",
-    "titleLine1": "Deploy",
-    "titleLine2": "OpenClaw",
-    "description": "Avoid all technical complexity. One-click deploy your own secure, 24/7 active instance in a",
-    "descriptionHighlight": "few minutes"
+    "badge": "AI Employees Platform",
+    "titleLine1": "Hire AI",
+    "titleLine2": "Employees",
+    "description": "Browse ready-made agent templates. Deploy your own AI employee powered by 🦞 OpenClaw — online 24/7, in a",
+    "descriptionHighlight": "few minutes",
+    "ctaPrimary": "Get Started",
+    "ctaSecondary": "See Pricing"
+  },
+  "HowItWorks": {
+    "title": "How It",
+    "titleHighlight": "Works",
+    "step1Number": "01",
+    "step1Title": "Sign In",
+    "step1Description": "Create your account with a simple Google login — no forms, no passwords.",
+    "step2Number": "02",
+    "step2Title": "Configure",
+    "step2Description": "Select your AI provider, model, and the channel where your employee will work.",
+    "step3Number": "03",
+    "step3Title": "Deploy",
+    "step3Description": "Watch your AI employee come online in real-time — live in under a minute.",
+    "step4Number": "04",
+    "step4Title": "Explore",
+    "step4Description": "Browse the template marketplace and assign specialized skills to your AI employee."
   },
   "Configurator": {
-    "providerQuestion": "Which AI provider do you prefer?",
-    "channelQuestion": "Which channel do you want to use for sending messages?",
+    "providerQuestion": "Choose the brain for your AI employee",
+    "channelQuestion": "Where should your AI employee work?",
     "signInWithGoogle": "Sign in with Google",
-    "signInDescription": "Sign in to deploy your AI assistant and connect your channels.",
-    "limitedServers": "Limited cloud servers"
+    "signInDescription": "Sign in to hire your AI employee and connect your channels.",
+    "limitedServers": "Limited spots available"
   },
   "Comparison": {
     "title": "Traditional Method vs",
@@ -30,7 +48,7 @@
     "papayaclawTitle": "PapayaClaw",
     "fewWord": "FEW",
     "minsWord": "mins",
-    "papayaclawDescription": "Pick a model, connect Telegram, deploy — spinning up your secure instance in a few minutes.",
+    "papayaclawDescription": "Pick a template, choose a channel, deploy — your AI employee is live in a few minutes.",
     "steps": {
       "step1": "Purchasing local virtual machine",
       "step1Time": "15 min",
@@ -50,60 +68,60 @@
       "step8Time": "4 min"
     },
     "benefits": {
-      "benefit1": "Servers, SSH and OpenClaw Environment are already set up",
-      "benefit2": "Waiting to get assigned",
-      "benefit3": "Simple, secure and fast connection to your bot"
+      "benefit1": "Infrastructure, environment, and AI agent pre-configured",
+      "benefit2": "Ready to start working for you",
+      "benefit3": "Simple, secure, and always online"
     }
   },
   "UseCases": {
-    "title": "What can",
-    "titleHighlight": "OpenClaw",
-    "titleEnd": "do for you?",
-    "subtitle": "One assistant,",
-    "subtitleHighlight": "thousands",
-    "subtitleEnd": "of use cases.",
+    "title": "Ready-to-deploy",
+    "titleHighlight": "AI Employee",
+    "titleEnd": "templates",
+    "subtitle": "One platform,",
+    "subtitleHighlight": "dozens",
+    "subtitleEnd": "of roles.",
     "cases": {
-      "customerSupport": "Customer Support",
+      "customerSupport": "Customer Support Agent",
       "personalAssistant": "Personal Assistant",
-      "languageLearning": "Language Learning",
-      "codeReview": "Code Review",
-      "contentWriting": "Content Writing",
-      "dataAnalysis": "Data Analysis",
+      "languageLearning": "Language Tutor",
+      "codeReview": "Code Reviewer",
+      "contentWriting": "Content Writer",
+      "dataAnalysis": "Data Analyst",
       "socialMediaManager": "Social Media Manager",
-      "emailDrafting": "Email Drafting",
+      "emailDrafting": "Email Assistant",
       "meetingSummarizer": "Meeting Summarizer",
-      "researchAssistant": "Research Assistant",
-      "recipeGenerator": "Recipe Generator",
+      "researchAssistant": "Research Analyst",
+      "recipeGenerator": "Recipe Assistant",
       "travelPlanner": "Travel Planner",
       "studyBuddy": "Study Buddy",
       "healthFitnessCoach": "Health & Fitness Coach",
       "financialAdvisor": "Financial Advisor",
-      "legalDocumentReview": "Legal Document Review",
-      "interviewPrep": "Interview Prep",
-      "newsSummarizer": "News Summarizer",
-      "therapyChatbot": "Therapy Chatbot",
-      "languageTranslation": "Language Translation"
+      "legalDocumentReview": "Legal Document Reviewer",
+      "interviewPrep": "Interview Coach",
+      "newsSummarizer": "News Briefer",
+      "therapyChatbot": "Wellness Coach",
+      "languageTranslation": "Translator"
     }
   },
   "Pricing": {
     "badge": "Simple Pricing",
     "title": "Pick Your",
-    "titleHighlight": "Power",
+    "titleHighlight": "Plan",
     "subtitle": "No hidden fees. No setup costs. Cancel anytime.",
     "popular": "Popular",
     "loading": "Loading...",
-    "bottomNote": "Both plans include a",
-    "bottomNoteHighlight": "dedicated VPS instance",
-    "bottomNoteEnd": "— your bot runs 24/7 on its own server.",
+    "bottomNote": "Each plan powers one",
+    "bottomNoteHighlight": "AI employee",
+    "bottomNoteEnd": "— running 24/7 on a dedicated server.",
     "portalNote": "Manage your subscription anytime via the",
     "portalLink": "Customer Portal",
     "plans": {
       "basic": {
         "name": "Basic",
-        "description": "Everything you need to deploy and run your OpenClaw bot.",
+        "description": "Everything you need to hire your first AI employee.",
         "cta": "Get Started",
         "features": {
-          "f1": "1 bot deployment",
+          "f1": "1 AI employee",
           "f2": "2 vCPU, 4 GB RAM, 40 GB SSD",
           "f3": "Telegram & SSH channels",
           "f4": "Secure web dashboard",
@@ -113,10 +131,10 @@
       },
       "pro": {
         "name": "Pro",
-        "description": "Maximum power for serious deployments.",
+        "description": "Maximum power for your most demanding AI employees.",
         "cta": "Go Pro",
         "features": {
-          "f1": "1 bot instance",
+          "f1": "1 AI employee",
           "f2": "4 vCPU, 8 GB RAM, 80 GB SSD",
           "f3": "Telegram & SSH channels",
           "f4": "Secure web dashboard",
@@ -126,6 +144,12 @@
         }
       }
     }
+  },
+  "Enterprise": {
+    "title": "Are you a company?",
+    "description": "We offer custom deployments, dedicated infrastructure, and priority support for teams. Let's build something together.",
+    "cta": "Book a call",
+    "ctaAriaLabel": "Book a 30-minute call with our team (opens in new tab)"
   },
   "Footer": {
     "builtWith": "Built with ❤️ by",
@@ -140,11 +164,11 @@
   },
   "PricingPage": {
     "title": "Pricing — PapayaClaw",
-    "description": "Choose your PapayaClaw plan. Basic or Pro — deploy secure OpenClaw instances in minutes."
+    "description": "Choose your PapayaClaw plan. Basic or Pro — hire AI employees powered by OpenClaw in minutes."
   },
   "Subscriptions": {
     "title": "Your Subscriptions",
-    "description": "Each subscription powers one OpenClaw instance.",
+    "description": "Each subscription powers one AI employee.",
     "plan": "Plan",
     "basic": "Basic",
     "pro": "Pro",
@@ -158,14 +182,14 @@
     "vpsSpec": "VPS Spec",
     "basicSpec": "2 vCPU, 4 GB RAM, 40 GB SSD",
     "proSpec": "4 vCPU, 8 GB RAM, 80 GB SSD",
-    "linkedInstance": "Linked Instance",
-    "noInstanceLinked": "No instance deployed yet",
-    "deployInstance": "Deploy Instance",
+    "linkedInstance": "Linked AI Employee",
+    "noInstanceLinked": "No AI employee hired yet",
+    "deployInstance": "Hire AI Employee",
     "managePlan": "Manage Plan",
     "addSubscription": "Add Another Subscription",
-    "addSubscriptionDescription": "Each subscription supports one OpenClaw instance.",
+    "addSubscriptionDescription": "Each subscription powers one AI employee.",
     "noSubscriptions": "No subscriptions yet",
-    "noSubscriptionsDescription": "Subscribe to a plan to deploy your first OpenClaw instance.",
+    "noSubscriptionsDescription": "Subscribe to a plan to hire your first AI employee.",
     "viewPlans": "View Plans",
     "cancelingAtEnd": "Cancels at period end",
     "unlinked": "Unlinked"
@@ -174,21 +198,21 @@
     "navDashboard": "Dashboard",
     "navSubscriptions": "Subscriptions",
     "signOut": "Sign Out",
-    "yourInstances": "Your Instances",
-    "manageDescription": "Manage and monitor your OpenClaw deployments",
+    "yourInstances": "Your AI Employees",
+    "manageDescription": "Manage and monitor your AI employees",
     "managePlan": "Manage Plan",
-    "deployNew": "Deploy New",
-    "subscribeBanner": "Subscribe to deploy instances",
-    "subscribeBannerDescription": "An active plan is required to deploy and manage OpenClaw bots.",
+    "deployNew": "Hire New",
+    "subscribeBanner": "Subscribe to hire AI employees",
+    "subscribeBannerDescription": "An active plan is required to hire and manage AI employees.",
     "viewPlans": "View Plans",
-    "noInstances": "No instances deployed",
-    "noInstancesDescription": "Deploy your first OpenClaw instance to get started. Provisioning takes under 1 minute.",
-    "initializeDeployment": "Initialize Deployment",
+    "noInstances": "No AI employees hired yet",
+    "noInstancesDescription": "Hire your first AI employee to get started. Setup takes under 1 minute.",
+    "initializeDeployment": "Hire AI Employee",
     "model": "Model",
     "channel": "Channel"
   },
   "DeployDialog": {
-    "title": "Deploy New Instance",
+    "title": "Hire New AI Employee",
     "step1": "Name & Model",
     "step2": "Channel",
     "step3": "Deploy",
@@ -212,14 +236,14 @@
     "summary": "Summary",
     "name": "Name",
     "token": "Token",
-    "deployNote": "Your instance will be deployed securely. You can manage it from the dashboard anytime.",
+    "deployNote": "Your AI employee will be set up securely. You can manage it from the dashboard anytime.",
     "deployNoteLabel": "Note:",
     "back": "Back",
     "next": "Next",
     "deploying": "Deploying...",
-    "deployInstance": "Deploy Instance",
+    "deployInstance": "Hire Employee",
     "recommended": "Recommended",
-    "deployError": "Failed to deploy instance. Please try again.",
+    "deployError": "Failed to set up AI employee. Please try again.",
     "networkError": "Network error — could not reach the server. Please try again."
   },
   "InstanceCard": {
@@ -257,10 +281,10 @@
     "allowedNumbersInfo": "Only messages from numbers listed here will be forwarded to your agent. Add numbers in international format including the country code."
   },
   "Metadata": {
-    "title": "PapayaClaw — Deploy Secure OpenClaw Instances in a Few Minutes",
-    "description": "Deploy secure OpenClaw instances in a few minutes. Avoid all technical complexity and one-click deploy your own 24/7 active OpenClaw instance.",
-    "ogTitle": "PapayaClaw — Deploy Secure OpenClaw Instances",
-    "ogDescription": "Deploy secure OpenClaw instances in a few minutes. Avoid all technical complexity.",
-    "twitterDescription": "Avoid all technical complexity and one-click deploy your own 24/7 active OpenClaw instance."
+    "title": "PapayaClaw — Deploy AI Employees Powered by OpenClaw",
+    "description": "Browse agent templates and deploy AI employees powered by OpenClaw. Online 24/7, set up in minutes. No technical skills required.",
+    "ogTitle": "PapayaClaw — AI Employees Powered by OpenClaw",
+    "ogDescription": "Browse agent templates and deploy AI employees powered by OpenClaw. Online 24/7, set up in minutes.",
+    "twitterDescription": "Browse agent templates and hire AI employees powered by OpenClaw. Online 24/7, set up in minutes."
   }
 }

@@ -89,7 +89,7 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} className="dark" suppressHydrationWarning>
       <body
         className={`${syne.variable} ${dmSans.variable} font-sans antialiased`}
       >

@@ -24,6 +24,15 @@ export function Header() {
     router.replace(pathname, { locale: newLocale });
   };
 
+  const handlePricingClick = (e: React.MouseEvent) => {
+    // If on home page, scroll to pricing section
+    if (pathname === "/") {
+      e.preventDefault();
+      document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
+    }
+    // Otherwise, the Link navigates to /#pricing
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b-2 border-border bg-background/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -50,7 +59,8 @@ export function Header() {
             {t("blog")}
           </Link>
           <Link
-            href="/pricing"
+            href="/#pricing"
+            onClick={handlePricingClick}
             className="text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:text-primary"
           >
             {t("pricing")}

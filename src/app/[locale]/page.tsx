@@ -1,8 +1,8 @@
 import { Header } from "@/components/header";
 import { Hero } from "@/components/hero";
-import { Configurator } from "@/components/configurator";
-import { Comparison } from "@/components/comparison";
-import { UseCases } from "@/components/use-cases";
+import { HowItWorks } from "@/components/how-it-works";
+import { Pricing } from "@/components/pricing";
+import { Enterprise } from "@/components/enterprise";
 import { Footer } from "@/components/footer";
 import { setRequestLocale } from "next-intl/server";
 
@@ -23,7 +23,7 @@ export default async function Home({
       name: "PapayaClaw",
       url: baseUrl,
       description:
-        "Deploy secure OpenClaw instances in a few minutes. Avoid all technical complexity.",
+        "Deploy AI employees powered by OpenClaw. Browse agent templates and hire AI employees that work 24/7.",
       publisher: {
         "@type": "Organization",
         name: "PapayaClaw",
@@ -35,22 +35,62 @@ export default async function Home({
       name: "PapayaClaw",
       url: baseUrl,
       description:
-        "Managed deployment platform for OpenClaw — deploy your own AI assistant to a VPS in minutes.",
+        "AI employees platform — browse templates and deploy AI agents powered by OpenClaw in minutes.",
     },
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       name: "PapayaClaw",
       url: baseUrl,
-      applicationCategory: "DeveloperApplication",
+      applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description:
-        "One-click deploy secure OpenClaw AI assistant instances to dedicated VPS servers. No technical knowledge required.",
+        "Browse agent templates and hire AI employees powered by OpenClaw. Online 24/7, set up in minutes. No technical skills required.",
       offers: {
         "@type": "AggregateOffer",
         priceCurrency: "USD",
+        lowPrice: "11.90",
+        highPrice: "17.90",
         availability: "https://schema.org/InStock",
       },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "What is PapayaClaw?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "PapayaClaw is an AI employees platform powered by OpenClaw. Browse ready-made agent templates and deploy AI employees that work 24/7 — no technical knowledge required.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "What is included in each plan?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Both Basic and Pro plans include a dedicated server where your AI employee runs 24/7, Telegram and SSH channels, a secure web dashboard, and bring-your-own API key support. Pro includes higher specs (4 vCPU, 8 GB RAM, 80 GB SSD), priority support, and exclusive templates.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Can I cancel my subscription anytime?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Yes, there are no hidden fees or setup costs. You can cancel your PapayaClaw subscription at any time through the Customer Portal.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Do I need technical knowledge to use PapayaClaw?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "No. PapayaClaw handles all the technical complexity. You just pick a template, choose a channel, and your AI employee is live in minutes.",
+          },
+        },
+      ],
     },
   ];
 
@@ -63,9 +103,9 @@ export default async function Home({
       <Header />
       <main>
         <Hero />
-        <Configurator />
-        <Comparison />
-        <UseCases />
+        <HowItWorks />
+        <Pricing />
+        <Enterprise />
       </main>
       <Footer />
     </div>

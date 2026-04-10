@@ -27,7 +27,7 @@ export function Configurator() {
   };
 
   return (
-    <section className="animate-slide-up-fade-delay-2 mx-auto max-w-3xl px-6 pb-16 pt-16 relative z-10">
+    <section id="configurator" className="animate-slide-up-fade-delay-2 mx-auto max-w-3xl px-6 pb-16 pt-16 relative z-10 scroll-mt-24">
       <div className="neo-card border-2 border-border bg-card p-8 neo-shadow">
         {/* Provider Selection */}
         <div className="mb-8">
