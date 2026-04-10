@@ -4,7 +4,8 @@
     "pricing": "Precios",
     "dashboard": "Panel",
     "logout": "Cerrar sesión",
-    "contact": "Contacto"
+    "contact": "Contacto",
+    "login": "Iniciar sesión"
   },
   "Hero": {
     "badge": "Plataforma de Empleados IA",
@@ -286,5 +287,11 @@
     "ogTitle": "PapayaClaw — Empleados IA con OpenClaw",
     "ogDescription": "Explora plantillas de agentes y contrata empleados IA con OpenClaw. Online 24/7, configurados en minutos.",
     "twitterDescription": "Explora plantillas de agentes y contrata empleados IA con OpenClaw. Online 24/7, configurados en minutos."
+  },
+  "LoginPage": {
+    "title": "Bienvenido a PapayaClaw",
+    "subtitle": "Inicia sesión para gestionar tus agentes de IA",
+    "signInWithGoogle": "Iniciar sesión con Google",
+    "securePrivateFree": "Seguro · Privado · Gratis"
   }
 }

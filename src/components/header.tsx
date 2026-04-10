@@ -91,10 +91,10 @@ export function Header() {
             </Button>
           ) : (
             <Link
-              href="mailto:support@papayaclaw.com"
+              href="/login"
               className="rounded-full bg-primary px-5 py-2 text-sm font-bold uppercase tracking-wide text-black transition-all hover:bg-white neo-shadow-sm hover:neo-shadow"
             >
-              {t("contact")}
+              {t("login")}
             </Link>
           )}
         </div>
