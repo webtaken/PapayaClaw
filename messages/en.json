@@ -4,7 +4,8 @@
     "pricing": "Pricing",
     "dashboard": "Dashboard",
     "logout": "Logout",
-    "contact": "Contact"
+    "contact": "Contact",
+    "login": "Login"
   },
   "Hero": {
     "badge": "AI Employees Platform",
@@ -286,5 +287,11 @@
     "ogTitle": "PapayaClaw — AI Employees Powered by OpenClaw",
     "ogDescription": "Browse agent templates and deploy AI employees powered by OpenClaw. Online 24/7, set up in minutes.",
     "twitterDescription": "Browse agent templates and hire AI employees powered by OpenClaw. Online 24/7, set up in minutes."
+  },
+  "LoginPage": {
+    "title": "Welcome to PapayaClaw",
+    "subtitle": "Sign in to manage your AI agents",
+    "signInWithGoogle": "Sign in with Google",
+    "securePrivateFree": "Secure · Private · Free"
   }
 }
