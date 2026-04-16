@@ -320,7 +320,54 @@
   "InstanceDetail": {
     "allowedNumbers": "Allowed Numbers",
     "noNumbers": "No numbers configured",
-    "allowedNumbersInfo": "Only messages from numbers listed here will be forwarded to your agent. Add numbers in international format including the country code."
+    "allowedNumbersInfo": "Only messages from numbers listed here will be forwarded to your agent. Add numbers in international format including the country code.",
+    "tabs": {
+      "general": "General",
+      "channels": "Channels",
+      "ssh": "SSH",
+      "integrations": "Integrations",
+      "agents": "Agents",
+      "channelsAttentionAria": "{count, plural, one {# pending action} other {# pending actions}}"
+    },
+    "general": {
+      "telemetryLabel": "Telemetry",
+      "gatewayTitle": "Gateway Console",
+      "gatewayDescription": "Access the OpenClaw securely-tunneled web interface to interact with your agent, view internal logs, manage skills, and monitor inference metrics.",
+      "gatewayWarning": "Do not share this web interface with anyone — this is your secret control panel.",
+      "gatewayLaunch": "Launch Interface",
+      "gatewayPending": "Gateway tunnel is being provisioned"
+    },
+    "channels": {
+      "notReady": "Channel management becomes available once provisioning completes.",
+      "pendingBadge": "{count} pending"
+    },
+    "ssh": {
+      "notReady": "SSH access becomes available once provisioning completes.",
+      "title": "Root Terminal",
+      "description": "Secure WebRTC shell protocol. Direct root access to standard input/output.",
+      "connect": "Connect",
+      "disconnect": "Disconnect",
+      "idleLabel": "Idle",
+      "reconnectNotice": "Session will reconnect when you return to this tab."
+    },
+    "integrations": {
+      "title": "Integrations",
+      "comingSoon": "Not yet available",
+      "description": "Connect this agent to other apps and services. This section is under active development and will be available in a future release."
+    },
+    "agents": {
+      "title": "Custom Agents",
+      "comingSoon": "Not yet available",
+      "description": "Define custom agent behaviors and personas for this instance. This section is under active development and will be available in a future release."
+    },
+    "provisioning": {
+      "bannerTitle": "System Boot Sequence",
+      "stepCreating": "Creating server allocation",
+      "stepInitializing": "Running boot sequence",
+      "stepStarting": "Starting system services",
+      "stepRunning": "System online",
+      "awaitingTelemetry": "Awaiting telemetry broadcast..."
+    }
   },
   "Metadata": {
     "title": "PapayaClaw — Deploy AI Employees Powered by OpenClaw",
