@@ -4,40 +4,27 @@ import { toast } from "sonner";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import useSWR from "swr";
-import dynamic from "next/dynamic";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   ArrowLeft,
   Server,
-  Loader2,
-  ExternalLink,
-  RefreshCw,
-  Check,
-  MessageCircle,
-  ShieldAlert,
-  Plus,
   Radio,
-  X,
-  Info,
+  LayoutDashboard,
+  Plug,
+  Bot,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { formatModelInfo, formatChannelInfo, getChannelIcon, getProviderIcon } from "@/lib/ai-config-ui";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { GeneralTab } from "./tabs/general-tab";
+import { ChannelsTab, type PairingRequest } from "./tabs/channels-tab";
+import { SshTab } from "./tabs/ssh-tab";
+import { IntegrationsTab } from "./tabs/integrations-tab";
+import { AgentsTab } from "./tabs/agents-tab";
 
-const SshTerminal = dynamic(
-  () => import("./ssh-terminal").then((mod) => mod.SshTerminal),
-  { ssr: false },
-);
 
-const ModelProviderModule = dynamic(
-  () =>
-    import("./model-provider-module").then((mod) => mod.ModelProviderModule),
-  { ssr: false },
-);
-
-interface InstanceData {
+export interface InstanceData {
   id: string;
   name: string;
   model: string;
@@ -49,12 +36,16 @@ interface InstanceData {
   createdAt: string | Date;
 }
 
-interface PairingRequest {
-  code: string;
-  senderId: string;
-  senderName: string | null;
-  timestamp: string;
-}
+type TabKey = "general" | "channels" | "ssh" | "integrations" | "agents";
+
+const TABS: readonly { key: TabKey; labelKey: string; icon: LucideIcon }[] = [
+  { key: "general", labelKey: "tabs.general", icon: LayoutDashboard },
+  { key: "channels", labelKey: "tabs.channels", icon: Radio },
+  { key: "ssh", labelKey: "tabs.ssh", icon: Server },
+  { key: "integrations", labelKey: "tabs.integrations", icon: Plug },
+  { key: "agents", labelKey: "tabs.agents", icon: Bot },
+] as const;
+
 
 interface StatusData {
   instanceStatus: string;
@@ -102,26 +93,6 @@ const statusConfig: Record<
   },
 };
 
-const provisioningSteps = [
-  { key: "creating", label: "Creating server allocation", minTime: 0 },
-  { key: "initializing", label: "Running boot sequence", minTime: 3 },
-  { key: "starting", label: "Starting system services", minTime: 8 },
-  { key: "running", label: "System online", minTime: 15 },
-];
-
-function getActiveStep(hetznerStatus: string | null): number {
-  if (!hetznerStatus) return 0;
-  switch (hetznerStatus) {
-    case "initializing":
-      return 1;
-    case "starting":
-      return 2;
-    case "running":
-      return 3;
-    default:
-      return 0;
-  }
-}
 
 export function InstanceDetail({
   initialInstance,
@@ -137,8 +108,8 @@ export function InstanceDetail({
   const [isPairingLoading, setIsPairingLoading] = useState(false);
   const [approvingCode, setApprovingCode] = useState<string | null>(null);
   const [pairingError, setPairingError] = useState<string | null>(null);
-  const [activeChannelTab, setActiveChannelTab] = useState<string>(
-    instance.channel.split("|")[0] || "telegram",
+  const [activeChannelTab, setActiveChannelTab] = useState<"telegram" | "whatsapp">(
+    (instance.channel.split("|")[0] as "telegram" | "whatsapp") || "telegram",
   );
 
   const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -177,7 +148,6 @@ export function InstanceDetail({
 
   const channelSet = useMemo(() => new Set(channels), [channels]);
   const hasTelegram = channelSet.has("telegram");
-  const hasWhatsApp = channelSet.has("whatsapp");
 
   // WhatsApp number management state
   const [newPhone, setNewPhone] = useState("");
@@ -311,13 +281,13 @@ export function InstanceDetail({
     }
   }, [hasTelegram, isProvisioning, currentIp, fetchPairingRequests]);
 
-  const model = formatModelInfo(instance.model);
   const status = statusConfig[effectiveStatus] || statusConfig.deploying;
-  const activeStep = getActiveStep(statusData?.hetznerStatus ?? null);
+
+  const pendingPairingCount = pairingRequests.length;
 
   return (
     <div className="animate-fade-in-up flex flex-col gap-6 font-sans">
-      {/* Top Command Bar */}
+      {/* Persistent Header — outside Tabs, always visible */}
       <div className="flex items-center justify-between border-b border-border pb-4">
         <Link
           href="/dashboard"
@@ -339,606 +309,106 @@ export function InstanceDetail({
         </div>
       </div>
 
-      {/* Telemetry Databand */}
-      <div className="rounded-xl border border-border bg-card p-5 shadow-2xl">
-        <div className="flex flex-col gap-6">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-xl font-medium tracking-tight text-foreground mb-1">
-                {instance.name}
-              </h1>
-              <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
-                <span>ID: {instance.id}</span>
-                <span className="text-border">|</span>
-                <span>
-                  CREATED{" "}
-                  {new Date(instance.createdAt).toISOString().split("T")[0]}
-                </span>
-              </div>
-            </div>
-            {/* Quick action buttons can go here if needed */}
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-muted/50 border border-border/50 rounded-lg overflow-hidden">
-            <div className="bg-card p-4 flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
-                IP Address
-              </span>
-              <span className="font-mono text-sm text-foreground/90">
-                {currentIp || "AWAITING ALLOCATION"}
-              </span>
-            </div>
-            <div className="bg-card p-4 flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
-                Model
-              </span>
-              <span className="flex items-center gap-2 text-sm text-foreground/90">
-                <span className="text-xs text-muted-foreground">{model.icon}</span>
-                {model.name}
-              </span>
-            </div>
-            <div className="bg-card p-4 flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
-                {channels.length === 1 ? "Channel" : "Channels"}
-              </span>
-              <span className="flex items-center gap-2 text-sm text-foreground/90 flex-wrap">
-                {channels.map((ch) => {
-                  const info = formatChannelInfo(ch);
-                  return (
-                    <span key={ch} className="flex items-center gap-1.5" title={info.name}>
-                      <span className="text-xs text-muted-foreground">{info.icon}</span>
-                      <span>{info.name}</span>
-                    </span>
-                  );
-                })}
-              </span>
-            </div>
-            <div className="bg-card p-4 flex flex-col gap-1.5">
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
-                Gateway
-              </span>
-              <span
-                className="font-mono text-sm text-foreground/90 truncate"
-                title={instance.cfTunnelHostname || "PENDING TUNNEL"}
-              >
-                {instance.cfTunnelHostname || "PENDING TUNNEL"}
-              </span>
-            </div>
+      {/* Instance identity block */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-medium tracking-tight text-foreground mb-1">
+            {instance.name}
+          </h1>
+          <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
+            <span>ID: {instance.id}</span>
+            <span className="text-border">|</span>
+            <span>
+              CREATED{" "}
+              {new Date(instance.createdAt).toISOString().split("T")[0]}
+            </span>
           </div>
         </div>
       </div>
 
-      {isProvisioning ? (
-        /* The Mono-log (Provisioning Sequence) */
-        <div className="rounded-xl border border-border bg-card shadow-2xl overflow-hidden flex flex-col">
-          <div className="flex items-center gap-2 border-b border-border bg-muted/50 px-4 py-2.5">
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-            <span className="text-xs font-mono font-medium tracking-wide text-foreground/80">
-              SYSTEM BOOT SEQUENCE
-            </span>
-          </div>
-          <div className="p-6 font-mono text-sm space-y-3">
-            {provisioningSteps.map((step, i) => {
-              const isActive = i === activeStep;
-              const isComplete = i < activeStep;
-              const isPending = i > activeStep;
-
-              let linePrefix = "[PENDING]";
-              let lineClass = "text-muted-foreground/60";
-              let animationClass = "";
-
-              if (isComplete) {
-                linePrefix = "[   OK  ]";
-                lineClass = "text-muted-foreground";
-              } else if (isActive) {
-                linePrefix = "[WORKING]";
-                lineClass = "text-violet-400";
-                animationClass = "animate-pulse";
-              }
-
-              return (
-                <div
-                  key={step.key}
-                  className={`flex items-start gap-4 ${lineClass}`}
-                >
-                  <span className={`shrink-0 ${animationClass}`}>
-                    {linePrefix}
-                  </span>
-                  <span className={`${isActive ? "text-violet-300" : ""}`}>
-                    {step.label}...
-                  </span>
-                </div>
-              );
-            })}
-
-            <div className="mt-8 flex items-center gap-2 text-xs text-muted-foreground/60">
-              <span className="inline-block h-2 w-1.5 animate-pulse bg-violet-500/50" />
-              <span>Awaiting telemetry broadcast...</span>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* Modules Section */
-        <div className="flex flex-col gap-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Dashboard Control Panel Module */}
-            {instance.cfTunnelHostname ? (
-              <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xl h-full">
-                <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                    <h3 className="text-xs font-mono font-semibold tracking-wide text-foreground/80 uppercase">
-                      Gateway Console
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                    <span className="text-[10px] font-mono text-emerald-400 font-medium uppercase tracking-widest">
-                      TLS Active
-                    </span>
-                  </div>
-                </div>
-                <div className="p-6 flex flex-col justify-between gap-6 flex-1">
-                  <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl border-l-[3px] border-emerald-500/30 pl-4 py-1">
-                    Access the OpenClaw securely-tunneled web interface to
-                    interact with your agent, view internal logs, manage skills,
-                    and monitor inference metrics.
-                  </p>
-                  <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-                    <ShieldAlert className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
-                    <p className="text-xs text-amber-400/90 leading-relaxed font-mono">
-                      Do not share this web interface with anyone — this is your
-                      secret control panel.
-                    </p>
-                  </div>
-                  <div className="shrink-0 mt-auto">
-                    <a
-                      href={`https://${instance.cfTunnelHostname}/?token=${encodeURIComponent(instance.botToken)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group"
-                    >
-                      <Button className="w-full sm:w-auto px-6 bg-foreground text-background hover:bg-foreground/90 font-medium shadow-none h-11 border border-transparent transition-all group-hover:border-border gap-2 font-mono text-xs uppercase tracking-wider">
-                        <ExternalLink className="h-4 w-4" />
-                        Launch Interface
-                      </Button>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            {/* Channels Module */}
-            {currentIp ? (
-              <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xl h-full">
-                {/* Header with channel tabs */}
-                <div className="border-b border-border bg-muted/50">
-                  <div className="flex items-center justify-between px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Radio className="h-4 w-4 text-muted-foreground" />
-                      <h3 className="text-xs font-mono font-semibold tracking-wide text-foreground/80 uppercase">
-                        Channels
-                      </h3>
-                    </div>
-                    {activeChannelTab === "telegram" &&
-                    pairingRequests.length > 0 ? (
-                      <Badge
-                        variant="outline"
-                        className="rounded-md px-2 py-0.5 text-[10px] font-mono border-amber-500/30 bg-amber-500/10 text-amber-400"
-                      >
-                        {pairingRequests.length} PENDING
-                      </Badge>
-                    ) : null}
-                  </div>
-
-                  {/* Channel tabs */}
-                  <div className="flex px-4 gap-1 -mb-px">
-                    {/* Telegram tab */}
-                    <button
-                      onClick={() => setActiveChannelTab("telegram")}
-                      className={`group relative flex items-center gap-2 px-3 py-2 text-[11px] font-mono font-medium uppercase tracking-wider transition-all ${
-                        activeChannelTab === "telegram"
-                          ? "text-foreground"
-                          : "text-muted-foreground hover:text-foreground/80"
-                      }`}
-                    >
-                      {getChannelIcon("telegram", "h-3.5 w-3.5")}
-                      <span>Telegram</span>
-                      {hasTelegram ? (
-                        <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
-                      ) : (
-                        <Plus className="h-3 w-3 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
-                      )}
-                      {activeChannelTab === "telegram" && (
-                        <span className="absolute bottom-0 left-0 right-0 h-px bg-foreground" />
-                      )}
-                    </button>
-
-                    <div className="w-px bg-border my-1.5" />
-
-                    {/* WhatsApp tab */}
-                    <button
-                      onClick={() => setActiveChannelTab("whatsapp")}
-                      className={`group relative flex items-center gap-2 px-3 py-2 text-[11px] font-mono font-medium uppercase tracking-wider transition-all ${
-                        activeChannelTab === "whatsapp"
-                          ? "text-foreground"
-                          : "text-muted-foreground hover:text-foreground/80"
-                      }`}
-                    >
-                      {getChannelIcon("whatsapp", "h-3.5 w-3.5")}
-                      <span>WhatsApp</span>
-                      {hasWhatsApp ? (
-                        <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
-                      ) : (
-                        <Plus className="h-3 w-3 text-muted-foreground/60 group-hover:text-muted-foreground transition-colors" />
-                      )}
-                      {activeChannelTab === "whatsapp" && (
-                        <span className="absolute bottom-0 left-0 right-0 h-px bg-foreground" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Tab content */}
-                <div className="p-6 flex-1 flex flex-col">
-                  {/* ── Telegram tab ── */}
-                  {activeChannelTab === "telegram" && (
-                    <>
-                      {hasTelegram ? (
-                        /* Primary Telegram — pairing flow */
-                        <>
-                          <div className="flex justify-end mb-4">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={fetchPairingRequests}
-                              disabled={isPairingLoading}
-                              className="h-6 px-2 text-[10px] font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded gap-1"
-                            >
-                              <RefreshCw
-                                className={`h-3 w-3 ${
-                                  isPairingLoading ? "animate-spin" : ""
-                                }`}
-                              />
-                              REFRESH
-                            </Button>
-                          </div>
-
-                          <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-                            <ShieldAlert className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
-                            <p className="text-xs text-amber-400/90 leading-relaxed font-mono">
-                              If you see pairing codes you don&apos;t recognize,
-                              ignore them — do not approve anything. This is the
-                              door to your agent.
-                            </p>
-                          </div>
-
-                          {pairingError ? (
-                            <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-xs font-mono text-red-400">
-                              {pairingError}
-                            </div>
-                          ) : null}
-
-                          {isPairingLoading &&
-                          pairingRequests.length === 0 ? (
-                            <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              <span className="text-xs font-mono">
-                                Loading pairing requests...
-                              </span>
-                            </div>
-                          ) : pairingRequests.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-8 text-center flex-1">
-                              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-muted/50 border border-border/80">
-                                <MessageCircle className="h-6 w-6 text-muted-foreground/60" />
-                              </div>
-                              <p className="text-sm text-muted-foreground font-mono">
-                                No pending pairing requests
-                              </p>
-                              <p className="mt-1 text-xs text-muted-foreground/60 font-mono max-w-xs">
-                                Send a message to your Telegram bot to initiate
-                                a pairing request
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              {pairingRequests.map((req) => (
-                                <div
-                                  key={req.code}
-                                  className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3 transition-colors hover:border-border"
-                                >
-                                  <div className="flex flex-col gap-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm font-mono font-medium text-foreground/90 truncate">
-                                        {req.senderName ||
-                                          `User ${req.senderId}`}
-                                      </span>
-                                      <span className="text-[10px] font-mono text-muted-foreground/60">
-                                        ID: {req.senderId}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <code className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-mono text-amber-400">
-                                        {req.code}
-                                      </code>
-                                      <span className="text-[10px] font-mono text-muted-foreground/60">
-                                        {new Date(
-                                          req.timestamp,
-                                        ).toLocaleString()}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => approvePairing(req.code)}
-                                    disabled={approvingCode === req.code}
-                                    className="ml-4 shrink-0 h-8 px-3 bg-emerald-600/80 text-white hover:bg-emerald-500 border border-emerald-500/30 font-mono text-[10px] uppercase tracking-wider gap-1.5 shadow-none"
-                                  >
-                                    {approvingCode === req.code ? (
-                                      <Loader2 className="h-3 w-3 animate-spin" />
-                                    ) : (
-                                      <Check className="h-3 w-3" />
-                                    )}
-                                    Approve
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        /* Secondary Telegram — add channel */
-                        <div className="flex flex-col items-center justify-center py-6 text-center flex-1">
-                          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-muted/80 border border-border/80">
-                            {getChannelIcon("telegram", "h-7 w-7 text-muted-foreground")}
-                          </div>
-                          <p className="text-sm font-medium text-foreground/80 mb-1">
-                            Add Telegram
-                          </p>
-                          <p className="text-xs text-muted-foreground font-mono max-w-xs mb-5 leading-relaxed">
-                            Connect a Telegram bot to this instance via the Root
-                            Terminal. Run the command below to start linking.
-                          </p>
-                          <code className="rounded-lg bg-muted border border-border px-4 py-2.5 text-[11px] font-mono text-foreground/80 mb-5 select-all">
-                            openclaw channels add --channel telegram
-                          </code>
-                          <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 max-w-sm">
-                            <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-muted-foreground mt-0.5" />
-                            <p className="text-[10px] text-muted-foreground leading-relaxed font-mono text-left">
-                              After adding the channel, pairing requests will
-                              appear here for you to approve.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  {/* ── WhatsApp tab ── */}
-                  {activeChannelTab === "whatsapp" && (
-                    <>
-                      {hasWhatsApp ? (
-                        /* Primary WhatsApp — allowlist status */
-                        <div className="flex flex-col gap-4">
-                          <div className="flex items-start gap-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
-                            <Check className="h-4 w-4 shrink-0 text-emerald-400 mt-0.5" />
-                            <div className="text-xs leading-relaxed font-mono">
-                              <p className="text-emerald-400">
-                                WhatsApp channel is active with{" "}
-                                <span className="font-semibold">
-                                  allowlist
-                                </span>{" "}
-                                policy.
-                              </p>
-                              <p className="mt-1 text-muted-foreground">
-                                Only messages from pre-authorized numbers are
-                                accepted — no pairing codes needed.
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Allowlist details */}
-                          <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
-                            <div className="flex items-center justify-between px-3 py-2 border-b border-border/60 bg-muted/50">
-                              <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-muted-foreground">
-                                {t("allowedNumbers")}
-                              </span>
-                              <span className="text-[10px] font-mono text-muted-foreground/60">
-                                {(statusData?.whatsappNumbers ?? []).length}
-                              </span>
-                            </div>
-                            <div className="px-3 py-2.5 space-y-2">
-                              {(statusData?.whatsappNumbers ?? []).length > 0 ? (
-                                <div className="flex flex-wrap gap-1.5">
-                                  {statusData!.whatsappNumbers!.map((num) => (
-                                    <div
-                                      key={num}
-                                      className="inline-flex items-center gap-1.5 rounded-md bg-muted/60 border border-border/40 pl-2.5 pr-1 py-1 group"
-                                    >
-                                      <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.4)]" />
-                                      <span className="text-xs font-mono text-foreground/80 leading-none">
-                                        {num}
-                                      </span>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon-xs"
-                                        onClick={() => removeWhatsAppNumber(num)}
-                                        disabled={removingPhone === num}
-                                        className="ml-0.5 h-5 w-5 text-muted-foreground/60 hover:text-red-400 hover:bg-red-500/10"
-                                      >
-                                        {removingPhone === num ? (
-                                          <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                                        ) : (
-                                          <X className="h-2.5 w-2.5" />
-                                        )}
-                                      </Button>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <p className="text-xs font-mono text-muted-foreground/60">
-                                  {t("noNumbers")}
-                                </p>
-                              )}
-                              <form
-                                onSubmit={(e) => {
-                                  e.preventDefault();
-                                  const trimmed = newPhone.trim();
-                                  if (/^\+\d+$/.test(trimmed)) {
-                                    addWhatsAppNumber(trimmed);
-                                  }
-                                }}
-                                className="flex items-center gap-1.5"
-                              >
-                                <Input
-                                  type="tel"
-                                  placeholder="+1234567890"
-                                  value={newPhone}
-                                  onChange={(e) => setNewPhone(e.target.value)}
-                                  className="h-7 flex-1 bg-card border-border text-xs font-mono text-foreground/90 placeholder:text-muted-foreground/60 focus-visible:ring-emerald-500/30"
-                                />
-                                <Button
-                                  type="submit"
-                                  size="sm"
-                                  disabled={isAddingPhone || !/^\+\d+$/.test(newPhone.trim())}
-                                  className="h-7 px-2.5 bg-emerald-600/80 text-white hover:bg-emerald-500 border border-emerald-500/30 font-mono text-[10px] uppercase tracking-wider gap-1 shadow-none"
-                                >
-                                  {isAddingPhone ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                  ) : (
-                                    <Plus className="h-3 w-3" />
-                                  )}
-                                </Button>
-                              </form>
-                              <div className="flex items-start gap-2 pt-1">
-                                <Info className="h-3 w-3 shrink-0 text-muted-foreground mt-0.5" />
-                                <p className="text-[11px] text-muted-foreground leading-relaxed font-mono">
-                                  {t("allowedNumbersInfo")}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Link WhatsApp instructions */}
-                          <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
-                            <div className="px-4 py-2.5 border-b border-border/60 bg-muted/50">
-                              <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-muted-foreground">
-                                Link Device
-                              </span>
-                            </div>
-                            <div className="px-4 py-3 space-y-2">
-                              <p className="text-xs text-muted-foreground leading-relaxed font-mono">
-                                Link your dedicated WhatsApp number via the Root
-                                Terminal:
-                              </p>
-                              <code className="block rounded-lg bg-card border border-border px-3 py-2 text-[11px] font-mono text-foreground/80 select-all">
-                                openclaw channels login --channel whatsapp
-                              </code>
-                              <p className="text-[10px] text-muted-foreground/60 leading-relaxed font-mono">
-                                Scan the QR code with WhatsApp on your dedicated
-                                phone. Once linked, messages from your allowed
-                                number will reach your agent automatically.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        /* Secondary WhatsApp — add channel */
-                        <div className="flex flex-col items-center justify-center py-6 text-center flex-1">
-                          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-muted/80 border border-border/80">
-                            {getChannelIcon("whatsapp", "h-7 w-7 text-muted-foreground")}
-                          </div>
-                          <p className="text-sm font-medium text-foreground/80 mb-1">
-                            Add WhatsApp
-                          </p>
-                          <p className="text-xs text-muted-foreground font-mono max-w-xs mb-5 leading-relaxed">
-                            Connect a dedicated WhatsApp number using allowlist
-                            mode. Messages from your authorized number are
-                            accepted automatically — no pairing codes needed.
-                          </p>
-                          <code className="rounded-lg bg-muted border border-border px-4 py-2.5 text-[11px] font-mono text-foreground/80 mb-5 select-all">
-                            openclaw channels add --channel whatsapp
-                          </code>
-                          <div className="flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 max-w-sm">
-                            <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400 mt-0.5" />
-                            <p className="text-[10px] text-emerald-400/80 leading-relaxed font-mono text-left">
-                              WhatsApp uses allowlist policy — pre-authorize
-                              phone numbers, no approval codes required.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          {/* AI Provider Module */}
-          {currentIp ? (
-            <ModelProviderModule
-              instanceId={instance.id}
-              currentModel={instance.model}
-              onModelChanged={(newModel) =>
-                setInstance((prev) => ({ ...prev, model: newModel }))
-              }
-            />
-          ) : null}
-
-          {/* SSH Terminal Module */}
-          {currentIp ? (
-            <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xl">
-              <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <Server className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="text-xs font-mono font-semibold tracking-wide text-foreground/80 uppercase">
-                    Root Terminal
-                  </h3>
-                </div>
-                {isTerminalOpen ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsTerminalOpen(false)}
-                    className="h-6 px-2 text-[10px] font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded"
+      {/* Tab shell */}
+      <Tabs defaultValue="general" className="w-full">
+        <div className="overflow-x-auto">
+          <TabsList className="h-auto gap-1 rounded-none border-b border-border bg-transparent p-0 w-full justify-start">
+            {TABS.map(({ key, labelKey, icon: Icon }) => (
+              <TabsTrigger
+                key={key}
+                value={key}
+                className="relative gap-2 rounded-none border-b-2 border-transparent px-4 py-2.5 text-xs font-mono uppercase tracking-wider text-muted-foreground transition-none data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+              >
+                <Icon className="h-3.5 w-3.5" aria-hidden />
+                <span>{t(labelKey)}</span>
+                {key === "channels" && pendingPairingCount > 0 ? (
+                  <Badge
+                    variant="outline"
+                    className="ml-1 rounded-full border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[10px] font-mono text-amber-400"
+                    aria-label={t("tabs.channelsAttentionAria", { count: pendingPairingCount })}
                   >
-                    DISCONNECT
-                  </Button>
-                ) : (
-                  <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-                    Idle
-                  </span>
-                )}
-              </div>
-
-              <div className="p-0 flex flex-col h-[550px] sm:h-[650px]">
-                {!isTerminalOpen ? (
-                  <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-card/50">
-                    <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-muted/50 border border-border/80">
-                      {getProviderIcon("opencode", "h-8 w-8 text-muted-foreground")}
-                    </div>
-                    <p className="mb-6 max-w-[260px] text-sm text-muted-foreground leading-relaxed font-mono">
-                      Secure WebRTC shell protocol. Direct root access to
-                      standard input/output.
-                    </p>
-                    <Button
-                      onClick={() => setIsTerminalOpen(true)}
-                      className="bg-muted text-foreground/90 hover:bg-muted border border-border hover:text-foreground font-medium shadow-none gap-2 font-mono text-xs uppercase tracking-wider"
-                    >
-                      <span className="text-emerald-400">root@</span> Connect
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex-1 overflow-hidden bg-black w-full h-full p-2">
-                    <SshTerminal instanceId={instance.id} />
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : null}
+                    {pendingPairingCount}
+                  </Badge>
+                ) : null}
+              </TabsTrigger>
+            ))}
+          </TabsList>
         </div>
-      )}
+
+        <TabsContent value="general" className="mt-6">
+          <GeneralTab
+            instance={instance}
+            currentIp={currentIp}
+            currentStatus={currentStatus}
+            isProvisioning={!!isProvisioning}
+            effectiveStatus={effectiveStatus}
+            channels={channels}
+            hetznerStatus={statusData?.hetznerStatus ?? null}
+            onModelChanged={(newModel) =>
+              setInstance((prev) => ({ ...prev, model: newModel }))
+            }
+          />
+        </TabsContent>
+
+        <TabsContent value="channels" className="mt-6">
+          <ChannelsTab
+            instanceId={instance.id}
+            currentIp={currentIp}
+            isProvisioning={!!isProvisioning}
+            channelSet={channelSet}
+            activeChannelTab={activeChannelTab}
+            setActiveChannelTab={setActiveChannelTab}
+            pairingRequests={pairingRequests}
+            isPairingLoading={isPairingLoading}
+            pairingError={pairingError}
+            approvingCode={approvingCode}
+            onRefreshPairing={fetchPairingRequests}
+            onApprovePairing={approvePairing}
+            whatsappNumbers={statusData?.whatsappNumbers ?? []}
+            newPhone={newPhone}
+            setNewPhone={setNewPhone}
+            isAddingPhone={isAddingPhone}
+            removingPhone={removingPhone}
+            onAddWhatsAppNumber={addWhatsAppNumber}
+            onRemoveWhatsAppNumber={removeWhatsAppNumber}
+          />
+        </TabsContent>
+
+        <TabsContent value="ssh" className="mt-6">
+          <SshTab
+            instanceId={instance.id}
+            currentIp={currentIp}
+            isProvisioning={!!isProvisioning}
+            isTerminalOpen={isTerminalOpen}
+            setIsTerminalOpen={setIsTerminalOpen}
+          />
+        </TabsContent>
+
+        <TabsContent value="integrations" className="mt-6">
+          <IntegrationsTab />
+        </TabsContent>
+
+        <TabsContent value="agents" className="mt-6">
+          <AgentsTab />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

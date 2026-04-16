@@ -320,7 +320,54 @@
   "InstanceDetail": {
     "allowedNumbers": "Números Permitidos",
     "noNumbers": "No hay números configurados",
-    "allowedNumbersInfo": "Solo los mensajes de los números listados aquí serán reenviados a tu agente. Añade los números en formato internacional incluyendo el código de país."
+    "allowedNumbersInfo": "Solo los mensajes de los números listados aquí serán reenviados a tu agente. Añade los números en formato internacional incluyendo el código de país.",
+    "tabs": {
+      "general": "General",
+      "channels": "Canales",
+      "ssh": "SSH",
+      "integrations": "Integraciones",
+      "agents": "Agentes",
+      "channelsAttentionAria": "{count, plural, one {# acción pendiente} other {# acciones pendientes}}"
+    },
+    "general": {
+      "telemetryLabel": "Telemetría",
+      "gatewayTitle": "Consola de Acceso",
+      "gatewayDescription": "Accede a la interfaz web segura de OpenClaw para interactuar con tu agente, ver registros internos, gestionar habilidades y monitorizar métricas.",
+      "gatewayWarning": "No compartas esta interfaz con nadie — este es tu panel de control secreto.",
+      "gatewayLaunch": "Abrir Interfaz",
+      "gatewayPending": "El túnel de acceso está siendo aprovisionado"
+    },
+    "channels": {
+      "notReady": "La gestión de canales estará disponible una vez finalice el aprovisionamiento.",
+      "pendingBadge": "{count} pendiente(s)"
+    },
+    "ssh": {
+      "notReady": "El acceso SSH estará disponible una vez finalice el aprovisionamiento.",
+      "title": "Terminal Raíz",
+      "description": "Protocolo de shell seguro WebRTC. Acceso root directo a entrada/salida estándar.",
+      "connect": "Conectar",
+      "disconnect": "Desconectar",
+      "idleLabel": "Inactivo",
+      "reconnectNotice": "La sesión se reconectará cuando vuelvas a esta pestaña."
+    },
+    "integrations": {
+      "title": "Integraciones",
+      "comingSoon": "Aún no disponible",
+      "description": "Conecta este agente a otras aplicaciones y servicios. Esta sección está en desarrollo activo y estará disponible en una versión futura."
+    },
+    "agents": {
+      "title": "Agentes Personalizados",
+      "comingSoon": "Aún no disponible",
+      "description": "Define comportamientos y personalidades de agente personalizados para esta instancia. Esta sección está en desarrollo activo y estará disponible en una versión futura."
+    },
+    "provisioning": {
+      "bannerTitle": "Secuencia de Arranque",
+      "stepCreating": "Creando asignación de servidor",
+      "stepInitializing": "Ejecutando secuencia de arranque",
+      "stepStarting": "Iniciando servicios del sistema",
+      "stepRunning": "Sistema en línea",
+      "awaitingTelemetry": "Esperando transmisión de telemetría..."
+    }
   },
   "Metadata": {
     "title": "PapayaClaw — Contrata Empleados IA con OpenClaw",
