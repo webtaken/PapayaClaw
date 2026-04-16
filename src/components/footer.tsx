@@ -13,7 +13,7 @@ export async function Footer() {
             href="https://x.com/node_srojas1"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-white underline decoration-primary decoration-4 underline-offset-4 transition-colors hover:text-secondary hover:decoration-secondary"
+            className="underline decoration-primary decoration-4 underline-offset-4 transition-colors hover:text-secondary hover:decoration-secondary"
           >
             Saul Rojas
           </a>

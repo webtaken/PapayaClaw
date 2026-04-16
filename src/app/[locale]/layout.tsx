@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Syne, DM_Sans } from "next/font/google";
+import { Space_Grotesk, DM_Sans } from "next/font/google";
 import "../globals.css";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
@@ -7,7 +7,11 @@ import { routing } from "@/i18n/routing";
 import { notFound } from "next/navigation";
 import { Providers } from "@/components/providers";
 
-const syne = Syne({
+// Heading display font. Variable name kept as `--font-syne` for backward
+// compatibility with globals.css token mapping; the actual face is
+// Space Grotesk, chosen for shallower descenders that don't clip under
+// tight `leading-*` values used across the design system.
+const syne = Space_Grotesk({
   variable: "--font-syne",
   subsets: ["latin"],
 });

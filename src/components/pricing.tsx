@@ -84,7 +84,10 @@ export function Pricing() {
   ];
 
   return (
-    <section id="pricing" className="relative overflow-hidden border-b-2 border-border scroll-mt-24">
+    <section
+      id="pricing"
+      className="relative overflow-hidden border-b-2 border-border scroll-mt-24"
+    >
       {/* Background effects — matching hero */}
       <div className="cyber-grid absolute inset-0 opacity-20 pointer-events-none" />
       <div className="gradient-mesh absolute inset-0 opacity-20 pointer-events-none mix-blend-screen" />
@@ -95,7 +98,7 @@ export function Pricing() {
           <Badge className="mb-8 rounded-full border-2 border-primary bg-primary/10 px-4 py-1.5 text-sm font-bold leading-none tracking-wider text-primary uppercase">
             {t("badge")}
           </Badge>
-          <h2 className="text-4xl font-extrabold uppercase leading-[0.95] tracking-tighter text-foreground sm:text-5xl md:text-6xl">
+          <h2 className="text-4xl font-extrabold uppercase leading-[0.95] tracking-tighter text-foreground">
             {t("title")}{" "}
             <span className="text-primary [-webkit-text-stroke:2px_#000] drop-shadow-[4px_4px_0_rgba(205,220,57,1)]">
               {t("titleHighlight")}
@@ -149,7 +152,9 @@ export function Pricing() {
 
                   {/* Price */}
                   <div className="flex items-baseline gap-1 mb-8">
-                    <span className="text-sm font-bold text-muted-foreground">$</span>
+                    <span className="text-sm font-bold text-muted-foreground">
+                      $
+                    </span>
                     <span
                       className={`text-6xl font-black tracking-tighter ${
                         plan.accentColor === "secondary"
@@ -224,7 +229,10 @@ export function Pricing() {
                       {t(plan.ctaKey)}
                     </Button>
                   ) : (
-                    <Button asChild className={`w-full rounded-none px-6 py-4 text-sm h-auto ${plan.ctaStyle}`}>
+                    <Button
+                      asChild
+                      className={`w-full rounded-none px-6 py-4 text-sm h-auto ${plan.ctaStyle}`}
+                    >
                       <Link
                         href={
                           plan.productId
@@ -253,7 +261,10 @@ export function Pricing() {
           </p>
           <p className="mt-2 text-xs text-muted-foreground/60">
             {t("portalNote")}{" "}
-            <span className="text-primary font-semibold">{t("portalLink")}</span>.
+            <span className="text-primary font-semibold">
+              {t("portalLink")}
+            </span>
+            .
           </p>
         </div>
       </div>

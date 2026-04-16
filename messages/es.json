@@ -32,6 +32,47 @@
     "step4Title": "Explora",
     "step4Description": "Navega por el marketplace de plantillas y asigna habilidades especializadas a tu empleado IA."
   },
+  "ConnectTools": {
+    "title": "Conéctalo con las herramientas que ya",
+    "titleHighlight": "usas",
+    "description": "Habla con tu empleado de IA desde Telegram, Slack o WhatsApp, y deja que actúe en Gmail, Notion, Drive, Calendar, etc.",
+    "centerLabel": "OpenClaw",
+    "diagramAriaLabel": "Diagrama que muestra los canales de mensajería Telegram, Slack y WhatsApp conectándose a OpenClaw, que a su vez se conecta con Gmail, Notion, Google Drive y Google Calendar."
+  },
+  "AgentTemplates": {
+    "title": "Elige los",
+    "titleHighlight": "Empleados",
+    "titleEnd": "que necesitas.",
+    "description": "Escoge entre plantillas de agentes listas para usar, con las herramientas ya instaladas. Personalízalas o empieza desde cero.",
+    "useTemplate": "Usar Plantilla",
+    "ctaAriaLabel": "Usar la plantilla {name}",
+    "templates": {
+      "researchAnalyst": {
+        "name": "Analista de Investigación",
+        "description": "Recopila datos, monitorea a la competencia y descubre insights — entregados cada mañana."
+      },
+      "contentWriter": {
+        "name": "Redactor de Contenido",
+        "description": "Redacta posts de blog, correos, copys para redes y documentación según tu agenda."
+      },
+      "dataAnalyst": {
+        "name": "Analista de Datos",
+        "description": "Limpia datasets, genera reportes y detecta tendencias en tus hojas de cálculo y bases de datos."
+      },
+      "operationsAssistant": {
+        "name": "Asistente de Operaciones",
+        "description": "Gestiona tu agenda, recordatorios, reportes y tareas rutinarias sin que tengas que pedirlo."
+      },
+      "inboxManager": {
+        "name": "Gestor de Bandeja",
+        "description": "Clasifica tus correos, redacta respuestas, marca lo urgente y archiva el ruido."
+      },
+      "socialMediaMonitor": {
+        "name": "Monitor de Redes Sociales",
+        "description": "Rastrea menciones, monitorea líderes de opinión y redacta respuestas en todas las plataformas."
+      }
+    }
+  },
   "Configurator": {
     "providerQuestion": "Elige el cerebro de tu empleado IA",
     "channelQuestion": "¿Dónde debería trabajar tu empleado IA?",

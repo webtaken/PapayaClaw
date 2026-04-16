@@ -32,6 +32,47 @@
     "step4Title": "Explore",
     "step4Description": "Browse the template marketplace and assign specialized skills to your AI employee."
   },
+  "ConnectTools": {
+    "title": "Connect to the tools you already",
+    "titleHighlight": "use",
+    "description": "Chat with your AI employee from Telegram, Slack, or WhatsApp — and let it act on Gmail, Notion, Drive, Calendar, etc.",
+    "centerLabel": "OpenClaw",
+    "diagramAriaLabel": "Diagram showing messaging channels Telegram, Slack, and WhatsApp connecting to OpenClaw, which in turn connects to Gmail, Notion, Google Drive, and Google Calendar."
+  },
+  "AgentTemplates": {
+    "title": "Pick the",
+    "titleHighlight": "Employees",
+    "titleEnd": "you need.",
+    "description": "Choose from ready-to-use agent templates with the right tools already installed. Customize them or start from scratch.",
+    "useTemplate": "Use Template",
+    "ctaAriaLabel": "Use the {name} template",
+    "templates": {
+      "researchAnalyst": {
+        "name": "Research Analyst",
+        "description": "Gathers data, tracks competitors, and surfaces insights — delivered to you every morning."
+      },
+      "contentWriter": {
+        "name": "Content Writer",
+        "description": "Drafts blog posts, emails, social copy, and documentation on your schedule."
+      },
+      "dataAnalyst": {
+        "name": "Data Analyst",
+        "description": "Cleans datasets, generates reports, and surfaces trends from your spreadsheets and databases."
+      },
+      "operationsAssistant": {
+        "name": "Operations Assistant",
+        "description": "Handles scheduling, reminders, reporting, and routine tasks without being asked."
+      },
+      "inboxManager": {
+        "name": "Inbox Manager",
+        "description": "Triages your email, drafts replies, flags what's urgent, and archives the noise."
+      },
+      "socialMediaMonitor": {
+        "name": "Social Media Monitor",
+        "description": "Tracks mentions, monitors KOLs, and drafts responses across platforms."
+      }
+    }
+  },
   "Configurator": {
     "providerQuestion": "Choose the brain for your AI employee",
     "channelQuestion": "Where should your AI employee work?",
