@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { HowItWorksStepper, type StepData } from "@/components/how-it-works-stepper";
+import { HowItWorksStepper, type StepData } from "@/components/landing/how-it-works-stepper";
 
 export async function HowItWorks() {
   const t = await getTranslations("HowItWorks");

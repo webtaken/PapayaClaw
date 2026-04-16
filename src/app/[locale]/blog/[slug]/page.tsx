@@ -1,8 +1,8 @@
 import { Children } from "react";
 import { notFound } from "next/navigation";
 import { getBlogPost, getBlogPosts } from "@/lib/mdx";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
+import { Header } from "@/components/landing/header";
+import { Footer } from "@/components/landing/footer";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import Image from "next/image";

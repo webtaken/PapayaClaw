@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { HeroCTAs } from "@/components/hero-ctas";
+import { HeroCTAs } from "@/components/landing/hero-ctas";
 
 export async function Hero() {
   const t = await getTranslations("Hero");

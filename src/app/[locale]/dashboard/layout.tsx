@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Toaster } from "@/components/ui/sonner";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle } from "@/components/landing/theme-toggle";
 
 export default async function DashboardLayout({
   children,

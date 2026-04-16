@@ -3,10 +3,10 @@
 import type React from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
-import { StepGoogleLogin } from "@/components/previews/step-google-login";
-import { StepConfigure } from "@/components/previews/step-configure";
-import { StepDeploy } from "@/components/previews/step-deploy";
-import { StepMarketplace } from "@/components/previews/step-marketplace";
+import { StepGoogleLogin } from "@/components/landing/previews/step-google-login";
+import { StepConfigure } from "@/components/landing/previews/step-configure";
+import { StepDeploy } from "@/components/landing/previews/step-deploy";
+import { StepMarketplace } from "@/components/landing/previews/step-marketplace";
 
 export interface StepData {
   id: string;

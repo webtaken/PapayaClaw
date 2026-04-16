@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
-import { ToolsBeam } from "@/components/connect-tools-beam";
+import { ToolsBeam } from "@/components/landing/connect-tools-beam";
 
 export async function ConnectTools() {
   const t = await getTranslations("ConnectTools");

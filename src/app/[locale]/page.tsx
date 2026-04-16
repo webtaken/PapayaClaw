@@ -1,11 +1,11 @@
-import { AgentTemplates } from "@/components/agent-templates";
-import { ConnectTools } from "@/components/connect-tools";
-import { Header } from "@/components/header";
-import { Hero } from "@/components/hero";
-import { HowItWorks } from "@/components/how-it-works";
-import { Pricing } from "@/components/pricing";
-import { Enterprise } from "@/components/enterprise";
-import { Footer } from "@/components/footer";
+import { AgentTemplates } from "@/components/landing/agent-templates";
+import { ConnectTools } from "@/components/landing/connect-tools";
+import { Header } from "@/components/landing/header";
+import { Hero } from "@/components/landing/hero";
+import { HowItWorks } from "@/components/landing/how-it-works";
+import { Pricing } from "@/components/landing/pricing";
+import { Enterprise } from "@/components/landing/enterprise";
+import { Footer } from "@/components/landing/footer";
 import { setRequestLocale } from "next-intl/server";
 
 export default async function Home({

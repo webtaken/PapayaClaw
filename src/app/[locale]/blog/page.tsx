@@ -1,8 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getBlogPosts } from "@/lib/mdx";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
+import { Header } from "@/components/landing/header";
+import { Footer } from "@/components/landing/footer";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 
