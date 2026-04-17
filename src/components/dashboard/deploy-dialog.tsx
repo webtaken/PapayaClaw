@@ -12,6 +12,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ArrowRight, Rocket, Check } from "lucide-react";
+import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+} from "@/components/ui/combobox";
 import { toast } from "sonner";
 import type { Instance } from "./dashboard-content";
 import { useTranslations } from "next-intl";
@@ -165,7 +173,9 @@ export function DeployDialog({
                   </div>
                   <span
                     className={`text-xs font-medium transition-colors ${
-                      step >= s.number ? "text-foreground" : "text-muted-foreground"
+                      step >= s.number
+                        ? "text-foreground"
+                        : "text-muted-foreground"
                     }`}
                   >
                     {s.label}
@@ -187,57 +197,75 @@ export function DeployDialog({
           {/* Step 1: Name & Model */}
           {step === 1 && (
             <div className="space-y-4 animate-fade-in-up">
-              <div>
-                <Label
-                  htmlFor="instance-name"
-                  className="mb-1.5 block text-xs font-medium text-foreground/80"
-                >
-                  {t("instanceName")}
-                </Label>
-                <Input
-                  id="instance-name"
-                  placeholder={t("instanceNamePlaceholder")}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="h-8 rounded-lg border-border bg-muted/50 text-sm text-foreground placeholder:text-muted-foreground focus:border-violet-500 focus:ring-violet-500/20"
-                />
-              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <Label
+                    htmlFor="instance-name"
+                    className="mb-1.5 block text-xs font-medium text-foreground/80"
+                  >
+                    {t("instanceName")}
+                  </Label>
+                  <Input
+                    id="instance-name"
+                    placeholder={t("instanceNamePlaceholder")}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="h-8 rounded-lg border-border bg-muted/50 text-sm text-foreground placeholder:text-muted-foreground focus:border-violet-500 focus:ring-violet-500/20"
+                  />
+                </div>
 
-              <div>
-                <Label className="mb-2 block text-xs font-medium text-foreground/80">
-                  {t("selectProvider")}
-                </Label>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-                  {PROVIDERS.map((provider) => (
-                    <button
-                      key={provider.id}
-                      onClick={() => {
-                        setSelectedProvider(provider.id);
-                        setSelectedModel(null);
-                        setCustomModelId("");
+                <div>
+                  <Label className="mb-1.5 block text-xs font-medium text-foreground/80">
+                    {t("selectProvider")}
+                  </Label>
+                  <Combobox
+                  items={PROVIDERS.map((p) => p.id)}
+                  value={selectedProvider ?? ""}
+                  onValueChange={(val) => {
+                    setSelectedProvider(val || null);
+                    setSelectedModel(null);
+                    setCustomModelId("");
+                  }}
+                  itemToStringLabel={(val) =>
+                    PROVIDERS.find((p) => p.id === val)?.name ?? val
+                  }
+                >
+                  <ComboboxInput
+                    placeholder="Search AI provider..."
+                    showClear={!!selectedProvider}
+                    className="w-full border-border bg-muted/50 focus-within:border-violet-500 focus-within:ring-violet-500/20"
+                  />
+                  <ComboboxContent
+                    align="start"
+                    className="pointer-events-auto"
+                    onWheel={(e) => e.stopPropagation()}
+                    onTouchMove={(e) => e.stopPropagation()}
+                  >
+                    <ComboboxEmpty>No provider found.</ComboboxEmpty>
+                    <ComboboxList className="max-h-56 overflow-y-auto">
+                      {(id: string) => {
+                        const provider = PROVIDERS.find((p) => p.id === id);
+                        if (!provider) return null;
+                        return (
+                          <ComboboxItem key={id} value={id}>
+                            <span className="flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">
+                              {getProviderIcon(provider.id)}
+                            </span>
+                            <span className="flex-1">{provider.name}</span>
+                            {provider.badge && (
+                              <Badge
+                                variant="secondary"
+                                className="ml-auto bg-violet-500 px-1.5 text-[9px] font-medium text-white border-none"
+                              >
+                                {t("recommended")}
+                              </Badge>
+                            )}
+                          </ComboboxItem>
+                        );
                       }}
-                      className={`relative flex flex-col items-center justify-center gap-1.5 rounded-lg border p-2 text-center transition-all duration-300 ${
-                        selectedProvider === provider.id
-                          ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
-                          : "border-border/50 bg-muted/50 text-foreground/80 hover:border-border hover:bg-muted hover:text-foreground"
-                      }`}
-                    >
-                      <div className="flex h-5 items-center justify-center scale-75">
-                        {getProviderIcon(provider.id)}
-                      </div>
-                      <span className="text-[10px] font-medium leading-none">
-                        {provider.name}
-                      </span>
-                      {provider.badge && (
-                        <Badge
-                          variant="secondary"
-                          className="absolute -top-1.5 -right-1.5 bg-violet-500 text-[8px] leading-none hover:bg-violet-600 text-white rounded px-1 py-0.5 border-none"
-                        >
-                          {t("recommended")}
-                        </Badge>
-                      )}
-                    </button>
-                  ))}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
                 </div>
               </div>
 
@@ -247,33 +275,35 @@ export function DeployDialog({
                     {t("selectModel")}
                   </Label>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                    {getModelsByProvider(selectedProvider as ProviderId).map((m) => {
-                      return (
-                        <button
-                          key={m.id}
-                          onClick={() => {
-                            setSelectedModel(m.id);
-                          }}
-                          className={`relative flex flex-col gap-0.5 rounded-lg border px-2.5 py-1.5 text-left transition-all duration-300 ${
-                            selectedModel === m.id
-                              ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
-                              : "border-border/50 bg-muted/50 text-foreground/80 hover:border-border hover:bg-muted hover:text-foreground"
-                          }`}
-                        >
-                          <span className="text-xs font-medium truncate w-full pr-4">
-                            {m.name}
-                          </span>
-                          <span className="text-[9px] text-muted-foreground font-mono truncate w-full flex-1">
-                            {m.id}
-                          </span>
-                          {m.badge && (
-                            <span className="absolute right-1.5 top-1.5 text-[8px] font-medium text-amber-400">
-                              ★
+                    {getModelsByProvider(selectedProvider as ProviderId).map(
+                      (m) => {
+                        return (
+                          <button
+                            key={m.id}
+                            onClick={() => {
+                              setSelectedModel(m.id);
+                            }}
+                            className={`relative flex flex-col gap-0.5 rounded-lg border px-2.5 py-1.5 text-left transition-all duration-300 ${
+                              selectedModel === m.id
+                                ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
+                                : "border-border/50 bg-muted/50 text-foreground/80 hover:border-border hover:bg-muted hover:text-foreground"
+                            }`}
+                          >
+                            <span className="text-xs font-medium truncate w-full pr-4">
+                              {m.name}
                             </span>
-                          )}
-                        </button>
-                      );
-                    })}
+                            <span className="text-[9px] text-muted-foreground font-mono truncate w-full flex-1">
+                              {m.id}
+                            </span>
+                            {m.badge && (
+                              <span className="absolute right-1.5 top-1.5 text-[8px] font-medium text-amber-400">
+                                ★
+                              </span>
+                            )}
+                          </button>
+                        );
+                      },
+                    )}
                   </div>
                 </div>
               )}
@@ -308,7 +338,9 @@ export function DeployDialog({
                     htmlFor="model-api-key"
                     className="mb-1.5 block text-xs font-medium text-foreground/80"
                   >
-                    {t("apiKeyFor", { provider: selectedProviderData?.name ?? "" })}
+                    {t("apiKeyFor", {
+                      provider: selectedProviderData?.name ?? "",
+                    })}
                   </Label>
                   <Input
                     id="model-api-key"
@@ -348,7 +380,9 @@ export function DeployDialog({
                               : "border-border/50 bg-muted/50 text-foreground/80 hover:border-border hover:bg-muted hover:text-foreground"
                         }`}
                       >
-                        <span className="text-sm">{getChannelIcon(channel.id)}</span>
+                        <span className="text-sm">
+                          {getChannelIcon(channel.id)}
+                        </span>
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs font-medium leading-none">
                             {channel.name}
@@ -440,27 +474,35 @@ export function DeployDialog({
                 </h4>
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">{t("name")}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {t("name")}
+                    </span>
                     <span className="text-xs font-medium text-foreground">
                       {name}
                     </span>
                   </div>
                   <div className="h-px bg-border/60" />
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">{t("selectModel")}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {t("selectModel")}
+                    </span>
                     <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                       <div className="scale-75 origin-right">
-                        {selectedProviderData && getProviderIcon(selectedProviderData.id)}
+                        {selectedProviderData &&
+                          getProviderIcon(selectedProviderData.id)}
                       </div>
                       {getModelName()}
                     </span>
                   </div>
                   <div className="h-px bg-border/60" />
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">{t("selectChannel")}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {t("selectChannel")}
+                    </span>
                     <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                       <span className="text-[10px]">
-                        {selectedChannelData && getChannelIcon(selectedChannelData.id)}
+                        {selectedChannelData &&
+                          getChannelIcon(selectedChannelData.id)}
                       </span>
                       {selectedChannelData?.name}
                     </span>
@@ -483,7 +525,9 @@ export function DeployDialog({
 
               <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 px-3 py-2.5">
                 <p className="text-[10px] leading-relaxed text-muted-foreground">
-                  <span className="font-medium text-violet-400">{t("deployNoteLabel")}</span>{" "}
+                  <span className="font-medium text-violet-400">
+                    {t("deployNoteLabel")}
+                  </span>{" "}
                   {t("deployNote")}
                 </p>
               </div>

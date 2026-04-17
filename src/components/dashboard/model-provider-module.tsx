@@ -8,16 +8,21 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Pencil, X, Check } from "lucide-react";
 import { toast } from "sonner";
 import {
+  Combobox,
+  ComboboxInput,
+  ComboboxContent,
+  ComboboxList,
+  ComboboxItem,
+  ComboboxEmpty,
+} from "@/components/ui/combobox";
+import {
   getDeployableProviders,
   getModelsByProvider,
   getProvider,
   detectProviderByModelId,
   type ProviderId,
 } from "@/lib/ai-config";
-import {
-  getProviderIcon,
-  formatModelInfo,
-} from "@/lib/ai-config-ui";
+import { getProviderIcon, formatModelInfo } from "@/lib/ai-config-ui";
 
 const PASS_THROUGH_PROVIDERS = new Set<string>([
   "openrouter",
@@ -81,10 +86,7 @@ export function ModelProviderModule({
     ? `${selectedProvider}/${customModelId}`
     : selectedModel;
 
-  const canSave =
-    selectedProvider &&
-    finalModelId &&
-    modelApiKey.trim();
+  const canSave = selectedProvider && finalModelId && modelApiKey.trim();
 
   const handleSave = useCallback(async () => {
     if (!canSave || !finalModelId) return;
@@ -104,7 +106,8 @@ export function ModelProviderModule({
         setIsEditing(false);
         resetForm();
         toast.success("Model updated", {
-          description: "Your instance is being reconfigured with the new model.",
+          description:
+            "Your instance is being reconfigured with the new model.",
         });
       } else {
         const err = await res.json().catch(() => ({}));
@@ -115,7 +118,14 @@ export function ModelProviderModule({
     } finally {
       setIsSaving(false);
     }
-  }, [canSave, finalModelId, modelApiKey, instanceId, onModelChanged, resetForm]);
+  }, [
+    canSave,
+    finalModelId,
+    modelApiKey,
+    instanceId,
+    onModelChanged,
+    resetForm,
+  ]);
 
   return (
     <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xl">
@@ -136,7 +146,7 @@ export function ModelProviderModule({
             variant="ghost"
             size="sm"
             onClick={startEditing}
-            className="h-6 px-2 text-[10px] font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded gap-1"
+            className="h-6 px-2 text-sm font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded gap-1"
           >
             <Pencil className="h-3 w-3" />
             CHANGE
@@ -147,7 +157,7 @@ export function ModelProviderModule({
             size="sm"
             onClick={cancelEditing}
             disabled={isSaving}
-            className="h-6 px-2 text-[10px] font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded gap-1"
+            className="h-6 px-2 text-sm font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded gap-1"
           >
             <X className="h-3 w-3" />
             CANCEL
@@ -170,8 +180,7 @@ export function ModelProviderModule({
                   {currentInfo.name}
                 </span>
                 <span className="text-[10px] font-mono text-muted-foreground truncate">
-                  {currentProvider?.name ?? "Unknown"} &middot;{" "}
-                  {currentModel}
+                  {currentProvider?.name ?? "Unknown"} &middot; {currentModel}
                 </span>
               </div>
             </div>
@@ -179,43 +188,56 @@ export function ModelProviderModule({
         ) : (
           /* ── Edit mode ── */
           <div className="flex flex-col gap-4">
-            {/* Provider grid */}
+            {/* Provider combobox */}
             <div>
               <Label className="mb-2 block text-xs font-medium text-foreground/80">
                 Select Provider
               </Label>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
-                {deployableProviders.map((provider) => (
-                  <button
-                    key={provider.id}
-                    onClick={() => {
-                      setSelectedProvider(provider.id);
-                      setSelectedModel(null);
-                      setCustomModelId("");
+              <Combobox
+                items={deployableProviders.map((p) => p.id)}
+                value={selectedProvider ?? ""}
+                onValueChange={(val) => {
+                  setSelectedProvider(val || null);
+                  setSelectedModel(null);
+                  setCustomModelId("");
+                }}
+                itemToStringLabel={(val) =>
+                  deployableProviders.find((p) => p.id === val)?.name ?? val
+                }
+              >
+                <ComboboxInput
+                  placeholder="Search AI provider..."
+                  showClear={!!selectedProvider}
+                  className="w-full border-border bg-muted/50 focus-within:border-violet-500 focus-within:ring-violet-500/20"
+                />
+                <ComboboxContent align="start" className="pointer-events-auto">
+                  <ComboboxEmpty>No provider found.</ComboboxEmpty>
+                  <ComboboxList className="max-h-56 overflow-y-auto">
+                    {(id: string) => {
+                      const provider = deployableProviders.find(
+                        (p) => p.id === id,
+                      );
+                      if (!provider) return null;
+                      return (
+                        <ComboboxItem key={id} value={id}>
+                          <span className="flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">
+                            {getProviderIcon(provider.id)}
+                          </span>
+                          <span className="flex-1">{provider.name}</span>
+                          {provider.badge === "recommended" && (
+                            <Badge
+                              variant="secondary"
+                              className="ml-auto bg-violet-500 px-1.5 text-[9px] font-medium text-white border-none"
+                            >
+                              ★
+                            </Badge>
+                          )}
+                        </ComboboxItem>
+                      );
                     }}
-                    className={`relative flex flex-col items-center justify-center gap-1.5 rounded-lg border p-2 text-center transition-all duration-300 ${
-                      selectedProvider === provider.id
-                        ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
-                        : "border-border/50 bg-muted/50 text-foreground/80 hover:border-border hover:bg-muted hover:text-foreground"
-                    }`}
-                  >
-                    <div className="flex h-5 items-center justify-center scale-75">
-                      {getProviderIcon(provider.id)}
-                    </div>
-                    <span className="text-[10px] font-medium leading-none">
-                      {provider.name}
-                    </span>
-                    {provider.badge === "recommended" && (
-                      <Badge
-                        variant="secondary"
-                        className="absolute -top-1.5 -right-1.5 bg-violet-500 text-[8px] leading-none hover:bg-violet-600 text-white rounded px-1 py-0.5 border-none"
-                      >
-                        ★
-                      </Badge>
-                    )}
-                  </button>
-                ))}
-              </div>
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
             </div>
 
             {/* Model selection — predefined models */}

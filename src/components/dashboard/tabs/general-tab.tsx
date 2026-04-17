@@ -126,7 +126,9 @@ export function GeneralTab({
               Model
             </span>
             <span className="flex items-center gap-2 text-sm text-foreground/90">
-              <span className="text-xs text-muted-foreground">{model.icon}</span>
+              <span className="text-xs text-muted-foreground">
+                {model.icon}
+              </span>
               {model.name}
             </span>
           </div>
@@ -139,8 +141,14 @@ export function GeneralTab({
               {channels.map((ch) => {
                 const info = formatChannelInfo(ch);
                 return (
-                  <span key={ch} className="flex items-center gap-1.5" title={info.name}>
-                    <span className="text-xs text-muted-foreground">{info.icon}</span>
+                  <span
+                    key={ch}
+                    className="flex items-center gap-1.5"
+                    title={info.name}
+                  >
+                    <span className="text-xs text-muted-foreground">
+                      {info.icon}
+                    </span>
                     <span>{info.name}</span>
                   </span>
                 );
@@ -162,63 +170,66 @@ export function GeneralTab({
         </div>
       </div>
 
-      {/* Gateway Console Card */}
-      {instance.cfTunnelHostname ? (
-        <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xl">
-          <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-3">
-            <div className="flex items-center gap-2">
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-              <h3 className="text-xs font-mono font-semibold tracking-wide text-foreground/80 uppercase">
-                {t("general.gatewayTitle")}
-              </h3>
+      {/* Gateway Console Card + AI Model / Provider Module — side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+        {/* Gateway Console Card */}
+        {instance.cfTunnelHostname ? (
+          <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xl">
+            <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                <h3 className="text-xs font-mono font-semibold tracking-wide text-foreground/80 uppercase">
+                  {t("general.gatewayTitle")}
+                </h3>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                <span className="text-xs font-mono text-emerald-400 font-medium uppercase tracking-widest">
+                  TLS Active
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-              <span className="text-[10px] font-mono text-emerald-400 font-medium uppercase tracking-widest">
-                TLS Active
-              </span>
-            </div>
-          </div>
-          <div className="p-6 flex flex-col gap-6">
-            <p className="text-sm text-muted-foreground leading-relaxed border-l-[3px] border-emerald-500/30 pl-4 py-1">
-              {t("general.gatewayDescription")}
-            </p>
-            <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-              <ShieldAlert className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
-              <p className="text-xs text-amber-400/90 leading-relaxed font-mono">
-                {t("general.gatewayWarning")}
+            <div className="p-6 flex flex-col gap-6">
+              <p className="text-sm text-muted-foreground leading-relaxed border-l-[3px] border-emerald-500/30 pl-4 py-1">
+                {t("general.gatewayDescription")}
               </p>
-            </div>
-            <div>
-              <a
-                href={`https://${instance.cfTunnelHostname}/?token=${encodeURIComponent(instance.botToken)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group"
-              >
-                <Button className="w-full sm:w-auto px-6 bg-foreground text-background hover:bg-foreground/90 font-medium shadow-none h-11 border border-transparent transition-all group-hover:border-border gap-2 font-mono text-xs uppercase tracking-wider">
-                  <ExternalLink className="h-4 w-4" />
-                  {t("general.gatewayLaunch")}
-                </Button>
-              </a>
+              <div className="flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+                <ShieldAlert className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+                <p className="text-xs text-amber-400/90 leading-relaxed font-mono">
+                  {t("general.gatewayWarning")}
+                </p>
+              </div>
+              <div>
+                <a
+                  href={`https://${instance.cfTunnelHostname}/?token=${encodeURIComponent(instance.botToken)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group"
+                >
+                  <Button className="w-full sm:w-auto px-6 bg-foreground text-background hover:bg-foreground/90 font-medium shadow-none h-11 border border-transparent transition-all group-hover:border-border gap-2 font-mono text-xs uppercase tracking-wider">
+                    <ExternalLink className="h-4 w-4" />
+                    {t("general.gatewayLaunch")}
+                  </Button>
+                </a>
+              </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-4 text-sm text-muted-foreground font-mono">
-          <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-          <span>{t("general.gatewayPending")}</span>
-        </div>
-      )}
+        ) : (
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-4 text-sm text-muted-foreground font-mono">
+            <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+            <span>{t("general.gatewayPending")}</span>
+          </div>
+        )}
 
-      {/* AI Model / Provider Module */}
-      {currentIp ? (
-        <ModelProviderModule
-          instanceId={instance.id}
-          currentModel={instance.model}
-          onModelChanged={onModelChanged}
-        />
-      ) : null}
+        {/* AI Model / Provider Module */}
+        {currentIp ? (
+          <ModelProviderModule
+            instanceId={instance.id}
+            currentModel={instance.model}
+            onModelChanged={onModelChanged}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }
