@@ -1,3 +1,7 @@
+import { ClaudeAI } from "@/components/icons/claudeai";
+import { Telegram } from "@/components/icons/telegram";
+import { WhatsApp } from "@/components/icons/whatsapp";
+
 export function StepConfigure() {
   return (
     <div
@@ -17,9 +21,7 @@ export function StepConfigure() {
           <label className="text-xs font-medium text-muted-foreground">AI Provider</label>
           <div className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2">
             <div className="flex items-center gap-2">
-              <div className="h-4 w-4 rounded-full bg-primary/20 flex items-center justify-center">
-                <div className="h-2 w-2 rounded-full bg-primary" />
-              </div>
+              <ClaudeAI className="h-4 w-4 shrink-0" />
               <span className="text-sm font-medium text-foreground">Anthropic Claude</span>
             </div>
             <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -33,11 +35,11 @@ export function StepConfigure() {
           <label className="text-xs font-medium text-muted-foreground">Channel</label>
           <div className="flex gap-2">
             <div className="flex-1 flex items-center gap-2 rounded-md border-2 border-primary bg-primary/5 px-3 py-2">
-              <div className="h-3 w-3 rounded-full border-2 border-primary bg-primary" />
+              <Telegram className="h-4 w-4 shrink-0" />
               <span className="text-xs font-medium text-foreground">Telegram</span>
             </div>
             <div className="flex-1 flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2">
-              <div className="h-3 w-3 rounded-full border-2 border-border" />
+              <WhatsApp className="h-4 w-4 shrink-0" />
               <span className="text-xs font-medium text-muted-foreground">WhatsApp</span>
             </div>
           </div>
