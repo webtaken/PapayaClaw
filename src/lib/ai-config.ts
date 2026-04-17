@@ -59,6 +59,10 @@ export interface ProviderDef {
   setup: ProviderSetup;
   /** Human-readable note shown in UI when not "simple" */
   setupNote?: string;
+  /** Link to provider-specific setup docs */
+  docsUrl?: string;
+  /** Hide from provider pickers; entry kept so existing instances still resolve */
+  deprecated?: boolean;
 }
 
 export interface ModelDef {
@@ -238,7 +242,10 @@ export const PROVIDERS: ProviderDef[] = [
     modelPrefixes: ["litellm/"],
     authChoice: "litellm-api-key",
     apiKeyFlag: "--litellm-api-key",
-    setup: "simple",
+    setup: "complex",
+    setupNote:
+      "Self-hosted proxy gateway — requires a running LiteLLM instance with configured base URL and models",
+    docsUrl: "https://docs.openclaw.ai/providers/litellm",
   },
   {
     // Groq has its own native provider in OpenClaw with GROQ_API_KEY env var.
@@ -358,6 +365,7 @@ export const PROVIDERS: ProviderDef[] = [
     apiKeyFlag: "",
     setup: "cli-auth",
     setupNote: "Configure via SSH after deployment",
+    deprecated: true,
   },
   {
     id: "codex-cli",
@@ -589,11 +597,192 @@ export const MODELS: ModelDef[] = [
     badge: "Auto-routes",
   },
 
+  // Qianfan (Baidu Cloud — bundled catalog)
+  {
+    id: "qianfan/deepseek-v3.2",
+    name: "DeepSeek V3.2",
+    providerId: "qianfan",
+    badge: "Reasoning",
+  },
+  {
+    id: "qianfan/ernie-5.0-thinking-preview",
+    name: "ERNIE 5.0 Thinking Preview",
+    providerId: "qianfan",
+    badge: "Multimodal",
+  },
+
+  // Hugging Face (Hub-style pass-through — representative models)
+  {
+    id: "huggingface/moonshotai/Kimi-K2.5",
+    name: "Kimi K2.5",
+    providerId: "huggingface",
+  },
+  {
+    id: "huggingface/deepseek-ai/DeepSeek-R1",
+    name: "DeepSeek R1",
+    providerId: "huggingface",
+    badge: "Reasoning",
+  },
+  {
+    id: "huggingface/deepseek-ai/DeepSeek-V3.2",
+    name: "DeepSeek V3.2",
+    providerId: "huggingface",
+  },
+  {
+    id: "huggingface/zai-org/GLM-4.7",
+    name: "GLM 4.7",
+    providerId: "huggingface",
+  },
+  {
+    id: "huggingface/Qwen/Qwen3-32B",
+    name: "Qwen3 32B",
+    providerId: "huggingface",
+  },
+  {
+    id: "huggingface/Qwen/Qwen3-8B",
+    name: "Qwen3 8B",
+    providerId: "huggingface",
+  },
+  {
+    id: "huggingface/Qwen/Qwen2.5-7B-Instruct",
+    name: "Qwen2.5 7B Instruct",
+    providerId: "huggingface",
+  },
+  {
+    id: "huggingface/meta-llama/Llama-3.3-70B-Instruct",
+    name: "Llama 3.3 70B Instruct",
+    providerId: "huggingface",
+  },
+  {
+    id: "huggingface/meta-llama/Llama-3.1-8B-Instruct",
+    name: "Llama 3.1 8B Instruct",
+    providerId: "huggingface",
+  },
+  {
+    id: "huggingface/openai/gpt-oss-120b",
+    name: "GPT-OSS 120B",
+    providerId: "huggingface",
+  },
+
   // Venice (pass-through — representative models)
   {
     id: "venice/kimi-k2-5",
     name: "Kimi K2.5 (Venice)",
     providerId: "venice",
+  },
+
+  // Synthetic (Hugging Face-hosted, zero-cost)
+  {
+    id: "synthetic/hf:moonshotai/Kimi-K2.5",
+    name: "Kimi K2.5",
+    providerId: "synthetic",
+    badge: "Multimodal",
+  },
+  {
+    id: "synthetic/hf:moonshotai/Kimi-K2-Thinking",
+    name: "Kimi K2 Thinking",
+    providerId: "synthetic",
+    badge: "Reasoning",
+  },
+  {
+    id: "synthetic/hf:moonshotai/Kimi-K2-Instruct-0905",
+    name: "Kimi K2 Instruct",
+    providerId: "synthetic",
+  },
+  {
+    id: "synthetic/hf:zai-org/GLM-5",
+    name: "GLM 5",
+    providerId: "synthetic",
+    badge: "Multimodal",
+  },
+  {
+    id: "synthetic/hf:zai-org/GLM-4.7",
+    name: "GLM 4.7",
+    providerId: "synthetic",
+  },
+  {
+    id: "synthetic/hf:zai-org/GLM-4.6",
+    name: "GLM 4.6",
+    providerId: "synthetic",
+  },
+  {
+    id: "synthetic/hf:zai-org/GLM-4.5",
+    name: "GLM 4.5",
+    providerId: "synthetic",
+  },
+  {
+    id: "synthetic/hf:MiniMaxAI/MiniMax-M2.5",
+    name: "MiniMax M2.5",
+    providerId: "synthetic",
+  },
+  {
+    id: "synthetic/hf:deepseek-ai/DeepSeek-V3.2",
+    name: "DeepSeek V3.2",
+    providerId: "synthetic",
+  },
+  {
+    id: "synthetic/hf:deepseek-ai/DeepSeek-V3.1-Terminus",
+    name: "DeepSeek V3.1 Terminus",
+    providerId: "synthetic",
+  },
+  {
+    id: "synthetic/hf:deepseek-ai/DeepSeek-V3.1",
+    name: "DeepSeek V3.1",
+    providerId: "synthetic",
+  },
+  {
+    id: "synthetic/hf:deepseek-ai/DeepSeek-V3-0324",
+    name: "DeepSeek V3 (0324)",
+    providerId: "synthetic",
+  },
+  {
+    id: "synthetic/hf:deepseek-ai/DeepSeek-V3",
+    name: "DeepSeek V3",
+    providerId: "synthetic",
+  },
+  {
+    id: "synthetic/hf:deepseek-ai/DeepSeek-R1-0528",
+    name: "DeepSeek R1",
+    providerId: "synthetic",
+    badge: "Reasoning",
+  },
+  {
+    id: "synthetic/hf:Qwen/Qwen3-235B-A22B-Thinking-2507",
+    name: "Qwen3 235B Thinking",
+    providerId: "synthetic",
+    badge: "Reasoning",
+  },
+  {
+    id: "synthetic/hf:Qwen/Qwen3-235B-A22B-Instruct-2507",
+    name: "Qwen3 235B Instruct",
+    providerId: "synthetic",
+  },
+  {
+    id: "synthetic/hf:Qwen/Qwen3-VL-235B-A22B-Instruct",
+    name: "Qwen3 VL 235B",
+    providerId: "synthetic",
+    badge: "Multimodal",
+  },
+  {
+    id: "synthetic/hf:Qwen/Qwen3-Coder-480B-A35B-Instruct",
+    name: "Qwen3 Coder 480B",
+    providerId: "synthetic",
+    badge: "Coding",
+  },
+  {
+    id: "synthetic/hf:meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+    name: "Llama 4 Maverick (FP8)",
+    providerId: "synthetic",
+  },
+  {
+    id: "synthetic/hf:meta-llama/Llama-3.3-70B-Instruct",
+    name: "Llama 3.3 70B",
+    providerId: "synthetic",
+  },
+  {
+    id: "synthetic/hf:openai/gpt-oss-120b",
+    name: "GPT-OSS 120B",
+    providerId: "synthetic",
   },
 ];
 
@@ -631,7 +820,7 @@ export function detectProviderByModelId(
   );
 }
 
-/** Get only providers available for the deploy wizard (simple setup) */
+/** Get only providers available for the deploy wizard (simple setup, not deprecated) */
 export function getDeployableProviders(): ProviderDef[] {
-  return PROVIDERS.filter((p) => p.setup === "simple");
+  return PROVIDERS.filter((p) => p.setup === "simple" && !p.deprecated);
 }

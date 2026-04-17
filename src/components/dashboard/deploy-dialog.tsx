@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, Rocket, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Rocket, Check, Info, ExternalLink } from "lucide-react";
 import {
   Combobox,
   ComboboxInput,
@@ -83,7 +83,10 @@ export function DeployDialog({
   };
 
   const isCustomProvider =
-    selectedProvider === "openrouter" || selectedProvider === "opencode";
+    selectedProvider === "openrouter" ||
+    selectedProvider === "opencode" ||
+    selectedProvider === "huggingface" ||
+    selectedProvider === "litellm";
 
   const finalModelId = isCustomProvider
     ? `${selectedProvider}/${customModelId}`
@@ -219,7 +222,7 @@ export function DeployDialog({
                     {t("selectProvider")}
                   </Label>
                   <Combobox
-                  items={PROVIDERS.map((p) => p.id)}
+                  items={PROVIDERS.filter((p) => !p.deprecated).map((p) => p.id)}
                   value={selectedProvider ?? ""}
                   onValueChange={(val) => {
                     setSelectedProvider(val || null);
@@ -268,6 +271,34 @@ export function DeployDialog({
                 </Combobox>
                 </div>
               </div>
+
+              {selectedProvider &&
+                (selectedProviderData?.setupNote ||
+                  selectedProviderData?.docsUrl) && (
+                  <div className="animate-fade-in-up rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
+                    <div className="flex items-start gap-2">
+                      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
+                      <div className="flex-1 space-y-1">
+                        {selectedProviderData?.setupNote && (
+                          <p className="text-[11px] leading-relaxed text-foreground/80">
+                            {selectedProviderData.setupNote}
+                          </p>
+                        )}
+                        {selectedProviderData?.docsUrl && (
+                          <a
+                            href={selectedProviderData.docsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-400 hover:text-amber-300"
+                          >
+                            View setup documentation
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
               {selectedProvider && !isCustomProvider && (
                 <div className="animate-fade-in-up">
