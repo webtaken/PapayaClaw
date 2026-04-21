@@ -79,6 +79,7 @@ export function TableOfContents({ items, variant, labels }: TableOfContentsProps
     <ul className="space-y-1 text-sm">
       {entries.map((entry) => {
         const isActive = activeId === entry.id;
+        const displayText = entry.text.replace(/^\d+(\.\d+)*\s+/, "");
         return (
           <li key={entry.id}>
             <div className="group flex items-start gap-1">
@@ -91,7 +92,7 @@ export function TableOfContents({ items, variant, labels }: TableOfContentsProps
                     : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
                 )}
               >
-                {entry.text}
+                {displayText}
               </a>
               <button
                 type="button"

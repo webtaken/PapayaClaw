@@ -196,7 +196,9 @@
   "Footer": {
     "builtWith": "Hecho con ❤️ por",
     "blog": "Blog",
-    "support": "Soporte"
+    "support": "Soporte",
+    "privacy": "Privacidad",
+    "terms": "Términos"
   },
   "Blog": {
     "title": "Blog de PapayaClaw",
@@ -386,5 +388,118 @@
     "subtitle": "Inicia sesión para gestionar tus agentes de IA",
     "signInWithGoogle": "Iniciar sesión con Google",
     "securePrivateFree": "Seguro · Privado · Gratis"
+  },
+  "Legal": {
+    "lastUpdated": "Última actualización",
+    "lastUpdatedDate": "21 de abril de 2026",
+    "contactEmail": "support@papayaclaw.com",
+    "Privacy": {
+      "metaTitle": "Política de Privacidad",
+      "metaDescription": "Conoce cómo PapayaClaw recopila, usa y protege tus datos personales al desplegar instancias de agentes IA OpenClaw.",
+      "title": "Política de Privacidad",
+      "intro": "Esta Política de Privacidad explica cómo PapayaClaw (\"nosotros\") recopila, usa, divulga y protege tu información cuando utilizas nuestra plataforma para desplegar y gestionar instancias de agentes IA OpenClaw (el \"Servicio\"). Al usar el Servicio, aceptas las prácticas descritas aquí.",
+      "sections": {
+        "dataWeCollect": {
+          "title": "1. Datos que recopilamos",
+          "body": "Recopilamos las siguientes categorías de información: (a) Datos de cuenta — nombre, correo electrónico e imagen de perfil proporcionados por tu proveedor de autenticación (por ejemplo, Google) al iniciar sesión; (b) Datos de uso — las instancias de agentes IA que creas, configuraciones, plan de suscripción y actividad de despliegue; (c) Datos de pago — procesados por nuestro proveedor de pagos (Stripe); no almacenamos los datos completos de tarjeta en nuestros servidores; (d) Datos técnicos — dirección IP, tipo de navegador, información del dispositivo y cookies necesarias para operar el Servicio."
+        },
+        "howWeUse": {
+          "title": "2. Cómo usamos tus datos",
+          "body": "Usamos tus datos para: (a) crear y gestionar tu cuenta; (b) desplegar, ejecutar y facturar tus instancias de agentes IA; (c) comunicarnos sobre tu suscripción, avisos de seguridad y actualizaciones del producto; (d) prevenir abusos y fraudes; (e) mejorar el Servicio mediante analíticas agregadas. No vendemos tus datos personales a terceros."
+        },
+        "sharing": {
+          "title": "3. Compartir datos y terceros",
+          "body": "Compartimos datos limitados con proveedores de servicios estrictamente necesarios para operar el Servicio: autenticación (Google OAuth), pagos (Stripe), infraestructura en la nube y monitoreo de errores. Cada proveedor maneja los datos bajo sus propios términos. También podemos divulgar datos si lo exige la ley o para proteger nuestros derechos y usuarios."
+        },
+        "retention": {
+          "title": "4. Retención de datos",
+          "body": "Conservamos los datos de tu cuenta mientras esté activa. Cuando eliminas tu cuenta, removemos los datos personales dentro de 30 días, excepto cuando la retención es requerida por ley (por ejemplo, registros fiscales y de facturación conservados hasta 7 años) o necesaria para resolver disputas."
+        },
+        "yourRights": {
+          "title": "5. Tus derechos",
+          "body": "Según tu jurisdicción (incluyendo regiones GDPR y CCPA), puedes tener derecho a acceder, corregir, exportar o eliminar tus datos personales, y a objetar o restringir ciertos procesamientos. Para ejercer estos derechos, escríbenos a support@papayaclaw.com."
+        },
+        "security": {
+          "title": "6. Seguridad",
+          "body": "Usamos medidas estándar de la industria, incluyendo cifrado TLS en tránsito, almacenamiento cifrado en reposo, controles de acceso con alcance restringido y registro de auditoría. Ningún sistema es 100% seguro, pero trabajamos continuamente para proteger tus datos y notificaremos a los usuarios afectados ante cualquier brecha según lo exija la ley."
+        },
+        "cookies": {
+          "title": "7. Cookies",
+          "body": "Usamos cookies estrictamente necesarias para autenticación y gestión de sesión, y cookies opcionales para analíticas. Puedes controlar las cookies mediante la configuración de tu navegador. Deshabilitar las cookies necesarias puede impedirte iniciar sesión."
+        },
+        "children": {
+          "title": "8. Menores",
+          "body": "El Servicio no está dirigido a personas menores de 16 años. No recopilamos datos de menores de manera consciente. Si crees que un menor nos ha proporcionado datos, contáctanos y los eliminaremos."
+        },
+        "changes": {
+          "title": "9. Cambios a esta política",
+          "body": "Podemos actualizar esta Política de Privacidad de vez en cuando. Los cambios materiales se anunciarán por correo o aviso dentro del producto al menos 14 días antes de entrar en vigor. El uso continuado del Servicio después de la fecha de vigencia constituye aceptación."
+        },
+        "contact": {
+          "title": "10. Contáctanos",
+          "body": "¿Preguntas sobre esta política o tus datos? Escríbenos a support@papayaclaw.com."
+        }
+      }
+    },
+    "Terms": {
+      "metaTitle": "Términos y Condiciones",
+      "metaDescription": "Lee los términos y condiciones que rigen el uso de la plataforma PapayaClaw y las instancias de agentes IA OpenClaw.",
+      "title": "Términos y Condiciones",
+      "intro": "Estos Términos y Condiciones (los \"Términos\") rigen tu acceso y uso de PapayaClaw (el \"Servicio\"). Al crear una cuenta o usar el Servicio, aceptas quedar obligado por estos Términos. Si no estás de acuerdo, no uses el Servicio.",
+      "sections": {
+        "accounts": {
+          "title": "1. Cuentas",
+          "body": "Debes proporcionar información precisa y mantener tus credenciales seguras. Eres responsable de toda actividad bajo tu cuenta. Debes tener al menos 16 años y capacidad legal para celebrar un contrato. Una cuenta por persona o entidad legal, salvo que aprobemos lo contrario."
+        },
+        "service": {
+          "title": "2. El Servicio",
+          "body": "PapayaClaw te permite desplegar y gestionar instancias de agentes IA impulsados por OpenClaw. Podemos evolucionar, añadir o remover funcionalidades en cualquier momento. No garantizamos disponibilidad ininterrumpida; el Servicio se provee bajo mejor esfuerzo con objetivos de tiempo activo comercialmente razonables."
+        },
+        "subscriptions": {
+          "title": "3. Suscripciones y facturación",
+          "body": "Los planes de pago se facturan por adelantado de forma recurrente (mensual o anual) a través de nuestro proveedor de pagos. Las tarifas no son reembolsables salvo que lo exija la ley o se indique explícitamente. Puedes cancelar en cualquier momento; la cancelación surte efecto al final del período de facturación actual. Podemos cambiar los precios con al menos 30 días de aviso antes de la renovación."
+        },
+        "acceptableUse": {
+          "title": "4. Uso aceptable",
+          "body": "Aceptas no: (a) usar el Servicio para violar leyes o derechos de terceros; (b) desplegar agentes que generen contenido ilegal, dañino, difamatorio o infractor; (c) enviar spam, malware o realizar abuso de red; (d) intentar hacer ingeniería inversa, evadir límites de tasa o investigar vulnerabilidades sin autorización; (e) revender el Servicio sin un acuerdo por escrito. Las violaciones pueden resultar en suspensión o terminación."
+        },
+        "userContent": {
+          "title": "5. Tu contenido",
+          "body": "Conservas la propiedad de los prompts, configuraciones y datos que envías (\"Tu Contenido\"). Nos otorgas una licencia limitada para alojar, procesar y transmitir Tu Contenido únicamente para operar el Servicio. Eres responsable de asegurarte de tener los derechos para usar Tu Contenido."
+        },
+        "intellectualProperty": {
+          "title": "6. Propiedad intelectual",
+          "body": "El Servicio, incluyendo su software, marca y documentación, es propiedad de PapayaClaw y sus licenciantes. Salvo los derechos limitados expresamente otorgados en estos Términos, no se transfieren derechos."
+        },
+        "thirdParty": {
+          "title": "7. Servicios de terceros",
+          "body": "El Servicio se integra con proveedores externos (por ejemplo, proveedores de modelos IA, procesadores de pago). Sus términos aplican a tu uso de sus ofertas. No somos responsables de los actos u omisiones de proveedores externos."
+        },
+        "disclaimer": {
+          "title": "8. Exenciones de responsabilidad",
+          "body": "El Servicio se provee \"tal cual\" y \"según disponibilidad\" sin garantías de ningún tipo, expresas o implícitas, incluyendo comerciabilidad, aptitud para un propósito particular y no infracción. Las salidas de IA pueden ser imprecisas, sesgadas o inadecuadas para tu caso de uso; eres responsable de revisar las salidas antes de basarte en ellas."
+        },
+        "liability": {
+          "title": "9. Limitación de responsabilidad",
+          "body": "En la máxima medida permitida por la ley, la responsabilidad agregada de PapayaClaw por cualquier reclamación derivada o relacionada con el Servicio no excederá el mayor de (a) el monto que nos pagaste en los 12 meses anteriores a la reclamación, o (b) USD $100. No somos responsables por daños indirectos, incidentales, consecuentes o punitivos."
+        },
+        "termination": {
+          "title": "10. Terminación",
+          "body": "Puedes terminar tu cuenta en cualquier momento. Podemos suspender o terminar tu acceso inmediatamente si incumples estos Términos o si es requerido por razones legales o de seguridad. Al terminar, cesa tu derecho a usar el Servicio; las disposiciones que por su naturaleza deban sobrevivir (por ejemplo, PI, responsabilidad, disputas) sobrevivirán."
+        },
+        "governingLaw": {
+          "title": "11. Ley aplicable y disputas",
+          "body": "Estos Términos se rigen por las leyes de la jurisdicción donde PapayaClaw está establecida, excluyendo reglas de conflicto de leyes. Las disputas se resolverán en los tribunales competentes de dicha jurisdicción, salvo que una ley imperativa de protección al consumidor te otorgue derecho a un foro distinto."
+        },
+        "changes": {
+          "title": "12. Cambios a estos Términos",
+          "body": "Podemos actualizar estos Términos de vez en cuando. Los cambios materiales se anunciarán al menos 14 días antes de entrar en vigor. El uso continuado del Servicio después de la fecha de vigencia constituye aceptación de los Términos actualizados."
+        },
+        "contact": {
+          "title": "13. Contacto",
+          "body": "¿Preguntas sobre estos Términos? Escríbenos a support@papayaclaw.com."
+        }
+      }
+    }
   }
 }

@@ -18,12 +18,24 @@ export async function Footer() {
             Saul Rojas
           </a>
         </p>
-        <div className="flex items-center gap-8">
+        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
           <Link
             href="/blog"
             className="text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
           >
             {t("blog")}
+          </Link>
+          <Link
+            href="/privacy"
+            className="text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t("privacy")}
+          </Link>
+          <Link
+            href="/terms"
+            className="text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {t("terms")}
           </Link>
           <a
             href="https://x.com/node_srojas1"

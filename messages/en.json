@@ -196,7 +196,9 @@
   "Footer": {
     "builtWith": "Built with ❤️ by",
     "blog": "Blog",
-    "support": "Support"
+    "support": "Support",
+    "privacy": "Privacy",
+    "terms": "Terms"
   },
   "Blog": {
     "title": "PapayaClaw Blog",
@@ -386,5 +388,118 @@
     "subtitle": "Sign in to manage your AI agents",
     "signInWithGoogle": "Sign in with Google",
     "securePrivateFree": "Secure · Private · Free"
+  },
+  "Legal": {
+    "lastUpdated": "Last updated",
+    "lastUpdatedDate": "April 21, 2026",
+    "contactEmail": "support@papayaclaw.com",
+    "Privacy": {
+      "metaTitle": "Privacy Policy",
+      "metaDescription": "Learn how PapayaClaw collects, uses, and protects your personal data when you deploy OpenClaw AI agent instances.",
+      "title": "Privacy Policy",
+      "intro": "This Privacy Policy explains how PapayaClaw (\"we\", \"us\", or \"our\") collects, uses, discloses, and protects your information when you use our platform to deploy and manage OpenClaw AI agent instances (the \"Service\"). By using the Service, you agree to the practices described here.",
+      "sections": {
+        "dataWeCollect": {
+          "title": "1. Data we collect",
+          "body": "We collect the following categories of information: (a) Account data — your name, email address, and profile image provided by your authentication provider (e.g., Google) when you sign in; (b) Usage data — the AI agent instances you create, configurations, subscription plan, and deployment activity; (c) Payment data — processed by our payment provider (Stripe); we do not store full card details on our servers; (d) Technical data — IP address, browser type, device information, and cookies required to operate the Service."
+        },
+        "howWeUse": {
+          "title": "2. How we use your data",
+          "body": "We use your data to: (a) create and manage your account; (b) deploy, run, and bill your AI agent instances; (c) communicate about your subscription, security notices, and product updates; (d) prevent abuse and fraud; (e) improve the Service through aggregated analytics. We do not sell your personal data to third parties."
+        },
+        "sharing": {
+          "title": "3. Sharing and third parties",
+          "body": "We share limited data with service providers strictly necessary to operate the Service: authentication (Google OAuth), payments (Stripe), cloud infrastructure, and error monitoring. Each provider handles data under their own terms. We may also disclose data if required by law or to protect our rights and users."
+        },
+        "retention": {
+          "title": "4. Data retention",
+          "body": "We retain your account data while your account is active. When you delete your account, we remove personal data within 30 days, except where retention is required by law (e.g., tax and billing records kept for up to 7 years) or needed to resolve disputes."
+        },
+        "yourRights": {
+          "title": "5. Your rights",
+          "body": "Depending on your jurisdiction (including GDPR and CCPA regions), you may have the right to access, correct, export, or delete your personal data, and to object to or restrict certain processing. To exercise these rights, email us at support@papayaclaw.com."
+        },
+        "security": {
+          "title": "6. Security",
+          "body": "We use industry-standard measures including TLS encryption in transit, encrypted storage at rest, scoped access controls, and audit logging. No system is 100% secure, but we work continuously to protect your data and will notify affected users of any breach as required by law."
+        },
+        "cookies": {
+          "title": "7. Cookies",
+          "body": "We use strictly necessary cookies for authentication and session management, and optional cookies for analytics. You can control cookies through your browser settings. Disabling necessary cookies may prevent you from signing in."
+        },
+        "children": {
+          "title": "8. Children",
+          "body": "The Service is not directed to individuals under 16. We do not knowingly collect data from children. If you believe a child has provided us data, contact us and we will delete it."
+        },
+        "changes": {
+          "title": "9. Changes to this policy",
+          "body": "We may update this Privacy Policy from time to time. Material changes will be announced via email or in-product notice at least 14 days before taking effect. Continued use of the Service after the effective date constitutes acceptance."
+        },
+        "contact": {
+          "title": "10. Contact us",
+          "body": "Questions about this policy or your data? Email us at support@papayaclaw.com."
+        }
+      }
+    },
+    "Terms": {
+      "metaTitle": "Terms and Conditions",
+      "metaDescription": "Read the terms and conditions that govern your use of the PapayaClaw platform and OpenClaw AI agent instances.",
+      "title": "Terms and Conditions",
+      "intro": "These Terms and Conditions (\"Terms\") govern your access to and use of PapayaClaw (the \"Service\"). By creating an account or using the Service, you agree to be bound by these Terms. If you do not agree, do not use the Service.",
+      "sections": {
+        "accounts": {
+          "title": "1. Accounts",
+          "body": "You must provide accurate information and keep your credentials secure. You are responsible for all activity under your account. You must be at least 16 years old and have the legal capacity to enter a contract. One account per person or legal entity unless we approve otherwise."
+        },
+        "service": {
+          "title": "2. The Service",
+          "body": "PapayaClaw lets you deploy and manage AI agent instances powered by OpenClaw. We may evolve, add, or remove features at any time. We do not guarantee uninterrupted availability; the Service is provided on a best-effort basis with commercially reasonable uptime targets."
+        },
+        "subscriptions": {
+          "title": "3. Subscriptions and billing",
+          "body": "Paid plans are billed in advance on a recurring basis (monthly or annual) via our payment provider. Fees are non-refundable except as required by law or explicitly stated. You can cancel at any time; cancellation takes effect at the end of the current billing period. We may change pricing with at least 30 days' notice before renewal."
+        },
+        "acceptableUse": {
+          "title": "4. Acceptable use",
+          "body": "You agree not to: (a) use the Service to violate laws or third-party rights; (b) deploy agents that generate illegal, harmful, defamatory, or infringing content; (c) send spam, malware, or perform network abuse; (d) attempt to reverse engineer, bypass rate limits, or probe the Service for vulnerabilities without authorization; (e) resell the Service without a written agreement. Violations may result in suspension or termination."
+        },
+        "userContent": {
+          "title": "5. Your content",
+          "body": "You retain ownership of prompts, configurations, and data you submit (\"Your Content\"). You grant us a limited license to host, process, and transmit Your Content solely to operate the Service. You are responsible for ensuring you have the rights to use Your Content."
+        },
+        "intellectualProperty": {
+          "title": "6. Intellectual property",
+          "body": "The Service, including its software, branding, and documentation, is owned by PapayaClaw and its licensors. Except for the limited rights expressly granted to you in these Terms, no rights are transferred."
+        },
+        "thirdParty": {
+          "title": "7. Third-party services",
+          "body": "The Service integrates with third-party providers (e.g., AI model providers, payment processors). Their terms apply to your use of their offerings. We are not responsible for the acts or omissions of third-party providers."
+        },
+        "disclaimer": {
+          "title": "8. Disclaimers",
+          "body": "The Service is provided \"as is\" and \"as available\" without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose, and non-infringement. AI outputs may be inaccurate, biased, or unsuitable for your use case; you are responsible for reviewing outputs before relying on them."
+        },
+        "liability": {
+          "title": "9. Limitation of liability",
+          "body": "To the maximum extent permitted by law, PapayaClaw's aggregate liability for any claim arising out of or relating to the Service shall not exceed the greater of (a) the amount you paid us in the 12 months preceding the claim, or (b) USD $100. We are not liable for indirect, incidental, consequential, or punitive damages."
+        },
+        "termination": {
+          "title": "10. Termination",
+          "body": "You may terminate your account at any time. We may suspend or terminate your access immediately if you breach these Terms or if required for legal or security reasons. Upon termination, your right to use the Service ceases; provisions that by their nature should survive (e.g., IP, liability, disputes) will survive."
+        },
+        "governingLaw": {
+          "title": "11. Governing law and disputes",
+          "body": "These Terms are governed by the laws of the jurisdiction where PapayaClaw is established, excluding conflict-of-law rules. Disputes shall be resolved in the competent courts of that jurisdiction, unless a mandatory consumer protection law grants you the right to a different forum."
+        },
+        "changes": {
+          "title": "12. Changes to these Terms",
+          "body": "We may update these Terms from time to time. Material changes will be announced at least 14 days before taking effect. Continued use of the Service after the effective date constitutes acceptance of the updated Terms."
+        },
+        "contact": {
+          "title": "13. Contact",
+          "body": "Questions about these Terms? Email us at support@papayaclaw.com."
+        }
+      }
+    }
   }
 }

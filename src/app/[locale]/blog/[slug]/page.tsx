@@ -5,6 +5,7 @@ import { Header } from "@/components/landing/header";
 import { Footer } from "@/components/landing/footer";
 import { TableOfContents } from "@/components/blog/table-of-contents";
 import { CodeBlock } from "@/components/blog/code-block";
+import { ScrollToHash } from "@/components/blog/scroll-to-hash";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import rehypeSlug from "rehype-slug";
@@ -105,15 +106,14 @@ function buildComponents(labels: { copyCode: string; codeCopied: string }) {
   td: (props: any) => <td className="px-4 py-3 border border-border" {...props} />,
   img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
     <figure className="my-8">
-      <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-border bg-muted/50">
-        <Image
-          src={(props.src as string) || ""}
-          alt={props.alt || ""}
-          fill
-          sizes="(max-width: 768px) 100vw, 720px"
-          className="object-contain"
-        />
-      </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={(props.src as string) || ""}
+        alt={props.alt || ""}
+        loading="lazy"
+        decoding="async"
+        className="w-full h-auto rounded-xl border border-border bg-muted/50"
+      />
       {props.title && (
         <figcaption className="mt-2 text-center text-sm text-muted-foreground italic">
           {props.title}
@@ -216,6 +216,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <ScrollToHash />
       <Header />
       <main className="flex-1 w-full px-6 py-20">
         <div className="mx-auto w-full max-w-3xl xl:max-w-6xl xl:grid xl:grid-cols-[minmax(0,1fr)_240px] xl:gap-12">
