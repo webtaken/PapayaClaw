@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { getBlogPosts } from '@/lib/mdx';
+import { getBlogPosts, getBlogSlugs } from '@/lib/mdx';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -43,17 +43,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  const blogPosts = await getBlogPosts();
+  const slugs = await getBlogSlugs();
+  const enPosts = await getBlogPosts('en');
+  const dateBySlug = new Map(enPosts.map((p) => [p.slug, p.date]));
+  const esPosts = await getBlogPosts('es');
+  for (const p of esPosts) if (!dateBySlug.has(p.slug)) dateBySlug.set(p.slug, p.date);
 
-  const dynamicRoutes: MetadataRoute.Sitemap = blogPosts.map((post) => ({
-    url: `${baseUrl}/blog/${post.slug}`,
-    lastModified: new Date(post.date),
+  const dynamicRoutes: MetadataRoute.Sitemap = slugs.map((slug) => ({
+    url: `${baseUrl}/blog/${slug}`,
+    lastModified: new Date(dateBySlug.get(slug) || new Date()),
     changeFrequency: 'monthly',
     priority: 0.6,
     alternates: {
       languages: {
-        en: `${baseUrl}/blog/${post.slug}`,
-        es: `${baseUrl}/es/blog/${post.slug}`,
+        en: `${baseUrl}/blog/${slug}`,
+        es: `${baseUrl}/es/blog/${slug}`,
       },
     },
   }));

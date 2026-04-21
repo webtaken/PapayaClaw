@@ -266,3 +266,25 @@
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #3f3f46;
 }
+
+/* Blog heading anchors */
+.mdx-content :is(h1, h2, h3, h4, h5, h6) {
+  scroll-margin-top: 7rem;
+}
+.mdx-content .heading-anchor {
+  margin-left: 0.5rem;
+  opacity: 0;
+  color: var(--muted-foreground);
+  text-decoration: none;
+  transition: opacity 150ms ease;
+}
+.mdx-content :is(h2, h3, h4, h5, h6):hover .heading-anchor,
+.mdx-content .heading-anchor:focus-visible {
+  opacity: 1;
+}
+.mdx-content .heading-anchor-icon {
+  font-weight: 400;
+}
+html {
+  scroll-behavior: smooth;
+}

@@ -39,7 +39,7 @@ export default async function BlogIndex({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const posts = await getBlogPosts();
+  const posts = await getBlogPosts(locale as "en" | "es");
   const t = await getTranslations("Blog");
 
   return (

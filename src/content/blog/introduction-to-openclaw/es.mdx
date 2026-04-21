@@ -1,0 +1,347 @@
+---
+title: "Introducción a OpenClaw"
+date: "2026-04-17"
+summary: "¿Nunca has usado OpenClaw? Esta guía paso a paso te lleva desde cero: crea tu bot de Telegram, recibe tu token de IA y deja OpenClaw instalado en tu computadora."
+---
+
+# Introducción a OpenClaw
+
+Bienvenido al taller. Si llegaste hasta aquí, estás a punto de instalar tu propio asistente de inteligencia artificial personal. No te preocupes si nunca has hecho algo así antes — cada paso está explicado de forma sencilla.
+
+Al terminar esta guía habrás:
+
+- Creado tu propio bot de Telegram.
+- Recibido tu token de proveedor de IA.
+- Instalado OpenClaw en tu computadora.
+
+¿Todo listo? Empecemos.
+
+---
+
+## Crea tu bot de Telegram
+
+OpenClaw se comunica contigo a través de Telegram. Para eso necesitas crear un "bot", que es básicamente una cuenta de Telegram que va a hablar contigo en nombre de tu asistente.
+
+No necesitas saber programar. Solo sigue estos pasos:
+
+### 1.1 Abre Telegram y busca a BotFather
+
+BotFather es el asistente oficial de Telegram para crear bots. Puedes abrirlo directamente desde la app.
+
+1. Abre Telegram en tu teléfono o computadora.
+2. En el buscador, escribe **@BotFather** y selecciona el resultado con la palomita azul de verificación.
+3. Pulsa el botón **INICIAR** (o escribe `/start`).
+
+### 1.2 Crea tu bot
+
+1. Escribe el comando `/newbot` y envíalo.
+2. BotFather te preguntará: *"¿Cómo se va a llamar tu bot?"* — escribe cualquier nombre, por ejemplo: `Mi Asistente`.
+3. Luego te pedirá un **nombre de usuario** para el bot. Este debe terminar en `bot`, por ejemplo: `miasistente_bot` o `asistente2026_bot`.
+4. Si el nombre ya está tomado, prueba con otro. Una vez aceptado, BotFather te enviará un mensaje de confirmación.
+
+### 1.3 Guarda tu token
+
+Al finalizar, BotFather te mostrará un mensaje como este:
+
+```
+¡Hecho! Aquí está el token de acceso a la API HTTP para tu bot:
+
+  1234567890:ABCdefGHIjklMNOpqrSTUvwxYZ
+
+Puedes usar este token para acceder a la API HTTP.
+```
+
+**Copia ese token y guárdalo en un lugar seguro** (como un bloc de notas). Lo vas a necesitar más adelante. No lo compartas con nadie.
+
+---
+
+## Tu token de proveedor de IA
+
+Para que OpenClaw sea inteligente necesita conectarse a un modelo de inteligencia artificial. Estos modelos requieren una "llave de acceso", que se llama **token** o **API key**.
+
+En este taller, el facilitador te entregará tu token personalmente. Cuando lo recibas:
+
+1. Guárdalo junto al token de Telegram que ya anotaste.
+2. No lo compartas públicamente — es tuyo y te identifica.
+
+> **Tip:** Puedes anotar ambos tokens en el mismo bloc de notas o en tu aplicación de notas favorita.
+
+---
+
+## Instala OpenClaw
+
+Ahora instalamos el programa. El proceso es diferente según tu sistema operativo. Elige el que corresponda a tu computadora.
+
+> **¿No sabes qué sistema operativo tienes?**
+> - Si ves el logo de la manzana ( ) en tu computadora: es **macOS**.
+> - Si tu computadora dice "Windows" al encenderse: es **Windows**.
+> - Si usas Ubuntu u otra distribución: es **Linux**.
+
+---
+
+### Opción A — macOS
+
+1. Abre la aplicación **Terminal**. Puedes encontrarla buscando "Terminal" en Spotlight (la lupa en la barra superior).
+2. Copia y pega el siguiente comando, luego presiona **Enter**:
+
+```bash
+curl -fsSL https://openclaw.ai/install.sh | bash
+```
+
+3. El instalador se encargará de todo. Cuando termine, verás un mensaje de bienvenida de OpenClaw.
+
+---
+
+### Opción B — Linux
+
+1. Abre una **Terminal** (en Ubuntu puedes presionar `Ctrl + Alt + T`).
+2. Copia y pega este comando y presiona **Enter**:
+
+```bash
+curl -fsSL https://openclaw.ai/install.sh | bash
+```
+
+3. Espera a que termine la instalación. El proceso es automático.
+
+---
+
+### Opción C — Windows con PowerShell (más rápido)
+
+PowerShell ya viene instalado en Windows. Es la forma más rápida de empezar.
+
+1. Presiona la tecla **Windows** en tu teclado.
+2. Escribe **PowerShell** en el buscador.
+3. Haz clic derecho sobre el resultado y selecciona **"Ejecutar como administrador"**.
+4. Copia y pega el siguiente comando y presiona **Enter**:
+
+```powershell
+iwr -useb https://openclaw.ai/install.ps1 | iex
+```
+
+5. Si Windows te pregunta si deseas permitir la ejecución, elige **"Sí"**.
+6. Espera a que el instalador termine.
+
+> **Nota:** Si ves un mensaje de error sobre la política de ejecución, escribe primero `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` y presiona Enter, luego repite el comando de instalación.
+
+---
+
+### Opción D — Windows con WSL (más estable)
+
+WSL significa *Windows Subsystem for Linux* — es una forma de usar Linux dentro de Windows sin reemplazar tu sistema. Esta opción es más estable para uso frecuente.
+
+#### Primero instala WSL
+
+1. Presiona la tecla **Windows**, escribe **PowerShell** y selecciona **"Ejecutar como administrador"**.
+2. Escribe este comando y presiona **Enter**:
+
+```powershell
+wsl --install
+```
+
+3. Cuando termine, **reinicia tu computadora**.
+4. Al reiniciar, Windows abrirá Ubuntu automáticamente. Te pedirá crear un nombre de usuario y contraseña — elige algo sencillo que recuerdes.
+
+#### Luego instala OpenClaw dentro de WSL
+
+1. Abre **Ubuntu** desde el menú de inicio (aparece como una app nueva tras instalar WSL).
+2. Dentro de la ventana de Ubuntu, copia y pega este comando y presiona **Enter**:
+
+```bash
+curl -fsSL https://openclaw.ai/install.sh | bash
+```
+
+3. Espera a que termine. El proceso es idéntico al de macOS y Linux.
+
+> **¿Cuál elegir?** Si solo quieres probarlo hoy, usa **PowerShell (Opción C)**. Si vas a usarlo seguido, **WSL (Opción D)** es más confiable.
+
+---
+
+## Configura el prompt inicial de tu asistente
+
+Cuando abras OpenClaw en Telegram por primera vez, tu asistente te dará la bienvenida con un mensaje como **"¡Bienvenido!"** y luego te hará dos preguntas:
+
+1. *"Cuéntame un poco sobre ti"* — quién eres, en qué trabajas, qué esperas del asistente.
+2. *"¿Cómo te gustaría que te llame?"* — el nombre o apodo con el que quieres que se dirija a ti.
+
+Antes de responder esas preguntas, OpenClaw también te pedirá un **prompt de sistema** — las instrucciones base que definen cómo se va a comportar tu asistente. Es como el primer día de trabajo de un empleado nuevo: aquí le dices las reglas más importantes.
+
+### 4.1 Tu prompt de sistema para el taller
+
+Copia el siguiente texto **tal como está** y pégalo cuando OpenClaw te lo solicite:
+
+```
+Tu nombre es [AGENT NAME]. Eres mi asistente personal inteligente. Tu misión es ayudarme a ser más productivo en el trabajo y en mi vida diaria.
+
+Reglas generales:
+- Respóndeme siempre en español, a menos que yo te escriba en otro idioma.
+- Sé conciso y directo, pero amable. Si necesito más detalle, yo te lo pido.
+- Cuando no entiendas algo, pregúntame antes de asumir.
+
+Zona horaria:
+- Mi zona horaria es America/Lima (UTC-5).
+- Todas las fechas y horas que menciones deben estar en esta zona horaria.
+- Palabras como "hoy", "mañana" o "esta semana" siempre se refieren a la hora local de Lima.
+
+```
+
+> **¿Por qué incluir la zona horaria?** Sin esta instrucción, tu asistente podría interpretar "mañana a las 10 AM" usando la zona horaria del servidor, que puede estar en otro país. Con `America/Lima` siempre usará la hora de Perú.
+
+### 4.2 Responde las preguntas de bienvenida
+
+Una vez pegado el prompt, responde las dos preguntas de OpenClaw con tus datos reales:
+
+- **¿Quién eres?** — Por ejemplo: *"Soy estudiante de administración de empresas. Quiero usar IA para organizar mi correo y mi agenda."*
+- **¿Cómo te llamo?** — Escribe tu nombre o apodo: *"Llámame María."*
+
+Con eso, tu asistente ya tiene todo lo que necesita para empezar a trabajar contigo.
+
+---
+
+## ¡Todo listo!
+
+Si llegaste hasta aquí sin errores, ¡felicidades! Ya tienes:
+
+- Un bot de Telegram creado y su token guardado.
+- Tu token de proveedor de IA recibido y anotado.
+- OpenClaw instalado en tu computadora.
+- Tu asistente configurado con instrucciones claras y tu zona horaria.
+
+En la siguiente parte del taller vamos a conectar todo esto y harás tu primera conversación con tu asistente de IA.
+
+Si algo no funcionó como esperabas, no te preocupes. Levanta la mano y el facilitador te ayuda.
+
+---
+
+*¿Tienes dudas sobre OpenClaw? Consulta la [documentación oficial](https://docs.openclaw.ai) o pide ayuda durante el taller.*
+
+---
+
+## Integrando OpenClaw a tus apps favoritas
+
+Ya tienes OpenClaw instalado. Ahora vamos a conectarlo a herramientas que usas todos los días: tu correo de Gmail y tu Google Calendar.
+
+Para hacer esto usaremos **Composio** — una plataforma que actúa como puente entre tu asistente de IA y tus aplicaciones. No necesitas saber programar para usarla.
+
+Al terminar esta sección tu asistente podrá:
+
+- Leer y clasificar tus últimos correos.
+- Ver tus reuniones de la semana.
+- Crear eventos en tu calendario por ti.
+
+---
+
+### Crea tu cuenta en Composio
+
+1. Abre tu navegador y ve a [connect.composio.dev/login](https://connect.composio.dev/login).
+2. Haz clic en **Sign Up** (Registrarse) si todavía no tienes cuenta.
+3. Puedes registrarte con tu cuenta de Google — es la forma más rápida.
+4. Una vez dentro, Composio te mostrará su panel de bienvenida.
+
+> **Tip:** Usa el mismo correo de Google que quieres conectar a tu asistente. Así el proceso de autorización será más rápido.
+
+---
+
+### Conecta Gmail y Google Calendar
+
+Composio te guiará con un proceso de configuración inicial. Sigue los pasos que aparecen en pantalla:
+
+#### 5.1 Conecta Gmail
+
+1. En el panel de Composio, busca la opción **Gmail** y haz clic en **Connect** (Conectar).
+2. Se abrirá una ventana de Google pidiendo tu permiso. Inicia sesión con tu cuenta de Google si es necesario.
+3. Lee los permisos que solicita y haz clic en **Permitir**.
+4. Verás un mensaje de confirmación: Gmail está conectado. ✓
+
+#### 5.2 Conecta Google Calendar
+
+1. Regresa al panel de Composio y busca **Google Calendar**.
+2. Haz clic en **Connect** (Conectar).
+3. Igual que antes, Google te pedirá permiso. Haz clic en **Permitir**.
+4. Confirma que Google Calendar también aparece como conectado. ✓
+
+> **¿Para qué sirven estos permisos?** Le estás dando a tu asistente acceso de lectura y escritura a tu correo y calendario. Composio solo usa esos permisos cuando tú se lo pides a través de OpenClaw.
+
+---
+
+### Conecta OpenClaw a tu agente
+
+Ahora vamos a decirle a Composio que tu asistente es OpenClaw.
+
+1. En el panel de Composio, busca la sección **Agents** o **Connect your agent**.
+2. Selecciona **OpenClaw** de la lista de agentes disponibles.
+3. Composio generará automáticamente un **prompt de sistema** — un texto especial que le explica a tu asistente cómo usar Gmail y Google Calendar.
+4. Copia ese texto completo.
+5. Abre OpenClaw en tu computadora y pega ese texto como instrucción de sistema en la configuración de tu agente.
+
+> **¿Qué es un prompt de sistema?** Es como un manual de instrucciones que le damos a nuestro asistente antes de empezar a hablar con él. Le dice qué herramientas tiene disponibles y cómo usarlas.
+
+Una vez pegado, tu asistente ya conoce Gmail y Google Calendar. ¡Es hora de probarlo!
+
+---
+
+### Actividad 1 — Resumen y clasificación de correos
+
+Vamos a pedirle a tu asistente que revise tu bandeja de entrada y te dé un resumen claro.
+
+Escribe este mensaje en tu chat de OpenClaw (en Telegram):
+
+```
+Revisa mis últimos correos de Gmail, dame un resumen general de qué hay en mi bandeja de entrada y clasifícalos por categorías (trabajo, personal, promociones, etc.).
+```
+
+Tu asistente accederá a tu Gmail, leerá los mensajes más recientes y te presentará:
+
+- Un resumen breve de cada correo importante.
+- Una clasificación por categorías para que sepas de un vistazo qué tienes pendiente.
+
+> **¿No ves resultados?** Asegúrate de que Gmail aparece como "Connected" en tu panel de Composio y de que pegaste bien el prompt de sistema en OpenClaw.
+
+---
+
+### Actividad 2 — Gestiona tu Google Calendar
+
+Ahora trabajaremos con tu calendario. Haremos dos cosas: revisar lo que tienes esta semana y crear un evento nuevo.
+
+#### 2.1 Ve tus reuniones de la semana
+
+Escribe este mensaje a tu asistente:
+
+```
+¿Qué reuniones o eventos tengo pendientes esta semana en mi Google Calendar?
+```
+
+Tu asistente consultará tu calendario y te listará todos los eventos de la semana con su fecha y hora.
+
+#### 2.2 Crea un evento nuevo
+
+Ahora vamos a crear un evento. Escribe esto:
+
+```
+Crea un evento en mi Google Calendar con los siguientes datos:
+- Nombre: Intro a OpenClaw - Arequipa - Certus
+- Fecha: hoy
+- Hora de inicio: 9:30 AM
+- Hora de fin: 12:30 PM
+```
+
+Tu asistente creará el evento directamente en tu Google Calendar. Puedes abrir tu calendario para confirmar que el evento **"Intro a OpenClaw - Arequipa - Certus"** aparece de 9:30 AM a 12:30 PM.
+
+> **¡Felicidades!** Acabas de usar inteligencia artificial para gestionar tu agenda. A partir de hoy puedes pedirle a OpenClaw que cree reuniones, te recuerde compromisos o revise tu correo — todo desde Telegram, con un simple mensaje.
+
+---
+
+## ¿Y ahora qué?
+
+Has completado el taller. Tu asistente ya puede:
+
+- Leer y clasificar tu Gmail.
+- Ver y crear eventos en Google Calendar.
+- Responder tus preguntas desde Telegram.
+
+Composio conecta OpenClaw con decenas de aplicaciones más: Notion, Slack, LinkedIn, WhatsApp y muchas otras. Explora el panel de Composio para seguir ampliando las capacidades de tu asistente.
+
+Si tienes dudas, levanta la mano — el facilitador está aquí para ayudarte.
+
+---
+
+*¿Tienes dudas sobre OpenClaw? Consulta la [documentación oficial](https://docs.openclaw.ai) o pide ayuda durante el taller.*

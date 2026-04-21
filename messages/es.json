@@ -202,7 +202,12 @@
     "title": "Blog de PapayaClaw",
     "description": "Historias, actualizaciones y artículos a fondo del equipo detrás de PapayaClaw. Lee sobre nuestras últimas funcionalidades y conocimientos de ingeniería.",
     "noPosts": "Aún no hay publicaciones. ¡Vuelve pronto!",
-    "readArticle": "Leer artículo"
+    "readArticle": "Leer artículo",
+    "onThisPage": "En esta página",
+    "copyLink": "Copiar enlace",
+    "linkCopied": "Enlace copiado",
+    "copyCode": "Copiar código",
+    "codeCopied": "¡Copiado!"
   },
   "PricingPage": {
     "title": "Precios — PapayaClaw",

@@ -202,7 +202,12 @@
     "title": "PapayaClaw Blog",
     "description": "Stories, updates, and deep dives from the team behind PapayaClaw. Read about our latest features and engineering insights.",
     "noPosts": "No posts published yet. Check back soon!",
-    "readArticle": "Read article"
+    "readArticle": "Read article",
+    "onThisPage": "On this page",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "copyCode": "Copy code",
+    "codeCopied": "Copied!"
   },
   "PricingPage": {
     "title": "Pricing — PapayaClaw",
