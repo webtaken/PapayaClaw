@@ -72,12 +72,7 @@ En este taller, el facilitador te entregará tu token personalmente. Cuando lo r
 
 Ahora instalamos el programa. El proceso es diferente según tu sistema operativo. Elige el que corresponda a tu computadora.
 
-> **Antes de empezar — instala Node.js:** OpenClaw necesita Node.js versión 22 o superior. Abre tu Terminal y ejecuta `node --version`. Si ves algo como `v22.x` o `v24.x`, estás listo. Si el comando no existe o ves un número menor, sigue las instrucciones oficiales de OpenClaw para instalar Node: [docs.openclaw.ai/install/node](https://docs.openclaw.ai/install/node).
-
-> **¿No sabes qué sistema operativo tienes?**
-> - Si ves el logo de la manzana ( ) en tu computadora: es **macOS**.
-> - Si tu computadora dice "Windows" al encenderse: es **Windows**.
-> - Si usas Ubuntu u otra distribución: es **Linux**.
+> **Antes de empezar — instala Node.js:** OpenClaw necesita Node.js versión 24 (versión 22.14+ también es compatible). Abre tu Terminal y ejecuta `node --version`. Si ves algo como `v24.x` o `v22.x`, estás listo. Si el comando no existe o ves un número menor, sigue las instrucciones oficiales de OpenClaw para instalar Node: [docs.openclaw.ai/install/node](https://docs.openclaw.ai/install/node).
 
 ---
 
@@ -87,35 +82,75 @@ Ahora instalamos el programa. El proceso es diferente según tu sistema operativ
 2. Copia y pega el siguiente comando, luego presiona **Enter**:
 
 ```bash
-curl -fsSL https://openclaw.ai/install.sh | bash
+curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
 ```
 
-3. El instalador se encargará de todo. Cuando termine, verás un mensaje de bienvenida de OpenClaw.
+3. El instalador descarga OpenClaw. Cuando termine, continúa al siguiente paso.
 
-> **Problema conocido — Mac con chip Apple Silicon (M1/M2/M3/M4):** Si el instalador muestra un error que menciona `sharp` o `node-gyp`, ejecuta primero `npm install -g node-gyp` en la Terminal y luego repite el comando de instalación.
+#### Instala las dependencias faltantes
+
+Algunas versiones recientes de OpenClaw vienen con paquetes incompletos. Este comando los instala todos de una vez:
+
+```bash
+npm install \
+  @buape/carbon@0.14.0 \
+  @grammyjs/runner \
+  @grammyjs/transformer-throttler \
+  @jimp/utils \
+  @larksuiteoapi/node-sdk \
+  @slack/bolt \
+  @slack/web-api \
+  @whiskeysockets/baileys \
+  grammy jimp \
+  --prefix $(npm root -g)/openclaw \
+  --legacy-peer-deps
+```
+
+> **Problema conocido — Mac con chip Apple Silicon (M1/M2/M3/M4):** Si ves un error que menciona `sharp` o `node-gyp`, ejecuta primero `npm install -g node-gyp` y luego repite el comando anterior.
 
 ---
 
 ### Opción B — Linux
 
+#### Paso previo — habilita el daemon de usuario
+
+Antes de instalar, ejecuta este comando. Le permite a OpenClaw iniciarse automáticamente como tu usuario:
+
+```bash
+loginctl enable-linger $USER
+```
+
+#### Instala OpenClaw
+
 1. Abre una **Terminal** (en Ubuntu puedes presionar `Ctrl + Alt + T`).
 2. Copia y pega este comando y presiona **Enter**:
 
 ```bash
-curl -fsSL https://openclaw.ai/install.sh | bash
+curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
 ```
 
 3. Espera a que termine la instalación. El proceso es automático.
 
-> **Problema conocido — Linux recién instalado:** Si durante la configuración aparece un error con la palabra `systemctl` o `Failed to connect to bus`, ejecuta `loginctl enable-linger $USER` en la Terminal, ciérrala, ábrela de nuevo y repite el comando de configuración.
+#### Instala las dependencias faltantes
 
-> **Problema conocido — dependencia faltante `nostr-tools`:** Si después de instalar ves un error que dice `ERR_MODULE_NOT_FOUND` o `Cannot find package 'nostr-tools'`, es un bug conocido en el instalador. Ejecuta este comando para solucionarlo:
->
-> ```bash
-> npm install -g nostr-tools
-> ```
->
-> Si no usas funciones de Nostr (una red social descentralizada), también puedes ignorar el error — OpenClaw seguirá funcionando normalmente para Telegram y otros canales.
+```bash
+npm install \
+  @buape/carbon@0.14.0 \
+  @grammyjs/runner \
+  @grammyjs/transformer-throttler \
+  @jimp/utils \
+  @larksuiteoapi/node-sdk \
+  @slack/bolt \
+  @slack/web-api \
+  @whiskeysockets/baileys \
+  grammy jimp \
+  --prefix $(npm root -g)/openclaw \
+  --legacy-peer-deps
+```
+
+> **Problema conocido — `nostr-tools`:** Si ves `ERR_MODULE_NOT_FOUND` o `Cannot find package 'nostr-tools'`, ejecuta `npm install -g nostr-tools`. Si no usas Nostr, puedes ignorarlo — OpenClaw sigue funcionando para Telegram.
+
+> **Problema conocido — error `systemctl` en Linux recién instalado:** Si aparece `Failed to connect to bus`, cierra la Terminal, ábrela de nuevo y repite desde el paso previo.
 
 ---
 
@@ -145,7 +180,9 @@ iwr -useb https://openclaw.ai/install.ps1 | iex
 
 WSL significa *Windows Subsystem for Linux* — es una forma de usar Linux dentro de Windows sin reemplazar tu sistema. Esta opción es más estable para uso frecuente.
 
-#### Primero instala WSL
+#### Instala WSL (si no lo tienes)
+
+> **Guía oficial completa:** [learn.microsoft.com/windows/wsl/install](https://learn.microsoft.com/en-us/windows/wsl/install) — documentación de Microsoft, siempre actualizada.
 
 1. Presiona la tecla **Windows**, escribe **PowerShell** y selecciona **"Ejecutar como administrador"**.
 2. Escribe este comando y presiona **Enter**:
@@ -157,18 +194,74 @@ wsl --install
 3. Cuando termine, **reinicia tu computadora**.
 4. Al reiniciar, Windows abrirá Ubuntu automáticamente. Te pedirá crear un nombre de usuario y contraseña — elige algo sencillo que recuerdes.
 
-#### Luego instala OpenClaw dentro de WSL
+> **¿El comando no instala nada y muestra texto de ayuda?** WSL ya está presente pero sin distribución. Ejecuta: `wsl --install -d Ubuntu`
+>
+> **¿La instalación falla con un error de virtualización?** Ve a la configuración de tu BIOS/UEFI y activa "Intel Virtualization Technology" o "AMD-V". En Windows 11 puedes verificarlo en: Administrador de tareas → Rendimiento → CPU → "Virtualización: Habilitada".
 
-1. Abre **Ubuntu** desde el menú de inicio (aparece como una app nueva tras instalar WSL).
-2. Dentro de la ventana de Ubuntu, copia y pega este comando y presiona **Enter**:
+#### Habilita systemd en WSL2
+
+Abre **Ubuntu** y ejecuta este comando:
 
 ```bash
-curl -fsSL https://openclaw.ai/install.sh | bash
+echo -e "[boot]\nsystemd=true" | sudo tee /etc/wsl.conf
 ```
 
-3. Espera a que termine. El proceso es idéntico al de macOS y Linux.
+Ingresa tu contraseña de Ubuntu si te la pide. Luego abre **PowerShell** (no Ubuntu) y ejecuta:
+
+```powershell
+wsl --shutdown
+```
+
+Vuelve a abrir **Ubuntu** antes de continuar.
+
+#### Habilita el daemon de usuario
+
+Dentro de Ubuntu, ejecuta:
+
+```bash
+loginctl enable-linger $USER
+```
+
+#### Instala OpenClaw
+
+Dentro de Ubuntu, copia y pega este comando y presiona **Enter**:
+
+```bash
+curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
+```
+
+Espera a que termine. El proceso es automático.
+
+#### Instala las dependencias faltantes
+
+```bash
+npm install \
+  @buape/carbon@0.14.0 \
+  @grammyjs/runner \
+  @grammyjs/transformer-throttler \
+  @jimp/utils \
+  @larksuiteoapi/node-sdk \
+  @slack/bolt \
+  @slack/web-api \
+  @whiskeysockets/baileys \
+  grammy jimp \
+  --prefix $(npm root -g)/openclaw \
+  --legacy-peer-deps
+```
 
 > **¿Cuál elegir?** Si solo quieres probarlo hoy, usa **PowerShell (Opción C)**. Si vas a usarlo seguido, **WSL (Opción D)** es más confiable.
+
+---
+
+### Resumen por plataforma
+
+| Paso | Linux (Ubuntu) | Windows con WSL | macOS |
+|---|:---:|:---:|:---:|
+| Habilitar systemd en WSL2 | ❌ | ✅ | ❌ |
+| `loginctl enable-linger` | ✅ | ✅ | ❌ |
+| Instalar OpenClaw | ✅ | ✅ | ✅ |
+| Instalar dependencias faltantes | ✅ | ✅ | ✅ |
+| Onboarding | ✅ | ✅ | ✅ |
 
 ---
 
@@ -179,7 +272,7 @@ Ya tienes OpenClaw instalado. Ahora lo configuramos con un asistente interactivo
 Abre la misma Terminal (o Ubuntu si usaste WSL) y ejecuta:
 
 ```bash
-openclaw onboard --install-daemon
+openclaw onboard --install-daemon --mode local
 ```
 
 El `--install-daemon` hace que OpenClaw se inicie solo cada vez que enciendas tu computadora, sin que tengas que hacer nada extra.
@@ -224,7 +317,19 @@ Si el asistente confirma la instalación del daemon (servicio automático), acep
 
 Cuando el asistente termine, ejecuta estos comandos para confirmar que OpenClaw está corriendo.
 
-Verifica el gateway:
+Primero, confirma que OpenClaw está instalado:
+
+```bash
+openclaw --version
+```
+
+Luego revisa que no haya problemas de configuración:
+
+```bash
+openclaw doctor
+```
+
+Verifica que el gateway esté activo:
 
 ```bash
 openclaw gateway status
@@ -238,7 +343,17 @@ Luego abre el panel de control en tu navegador:
 openclaw dashboard
 ```
 
-Si el navegador abre la página de OpenClaw, ¡todo está funcionando!
+Si el navegador abre la página de OpenClaw y te pide un token, obtén el tuyo con:
+
+```bash
+openclaw config get gateway.auth.token
+```
+
+Si el token no existe aún, genera uno:
+
+```bash
+openclaw doctor --generate-gateway-token
+```
 
 > **¿Ves algún error?** Ejecuta `openclaw doctor --fix` — este comando detecta y repara los problemas más comunes de forma automática. Si el problema persiste, levanta la mano para que el facilitador te ayude.
 
