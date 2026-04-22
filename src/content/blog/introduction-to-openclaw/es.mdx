@@ -72,6 +72,8 @@ En este taller, el facilitador te entregará tu token personalmente. Cuando lo r
 
 Ahora instalamos el programa. El proceso es diferente según tu sistema operativo. Elige el que corresponda a tu computadora.
 
+> **Antes de empezar — instala Node.js:** OpenClaw necesita Node.js versión 22 o superior. Abre tu Terminal y ejecuta `node --version`. Si ves algo como `v22.x` o `v24.x`, estás listo. Si el comando no existe o ves un número menor, sigue las instrucciones oficiales de OpenClaw para instalar Node: [docs.openclaw.ai/install/node](https://docs.openclaw.ai/install/node).
+
 > **¿No sabes qué sistema operativo tienes?**
 > - Si ves el logo de la manzana ( ) en tu computadora: es **macOS**.
 > - Si tu computadora dice "Windows" al encenderse: es **Windows**.
@@ -90,6 +92,8 @@ curl -fsSL https://openclaw.ai/install.sh | bash
 
 3. El instalador se encargará de todo. Cuando termine, verás un mensaje de bienvenida de OpenClaw.
 
+> **Problema conocido — Mac con chip Apple Silicon (M1/M2/M3/M4):** Si el instalador muestra un error que menciona `sharp` o `node-gyp`, ejecuta primero `npm install -g node-gyp` en la Terminal y luego repite el comando de instalación.
+
 ---
 
 ### Opción B — Linux
@@ -102,6 +106,16 @@ curl -fsSL https://openclaw.ai/install.sh | bash
 ```
 
 3. Espera a que termine la instalación. El proceso es automático.
+
+> **Problema conocido — Linux recién instalado:** Si durante la configuración aparece un error con la palabra `systemctl` o `Failed to connect to bus`, ejecuta `loginctl enable-linger $USER` en la Terminal, ciérrala, ábrela de nuevo y repite el comando de configuración.
+
+> **Problema conocido — dependencia faltante `nostr-tools`:** Si después de instalar ves un error que dice `ERR_MODULE_NOT_FOUND` o `Cannot find package 'nostr-tools'`, es un bug conocido en el instalador. Ejecuta este comando para solucionarlo:
+>
+> ```bash
+> npm install -g nostr-tools
+> ```
+>
+> Si no usas funciones de Nostr (una red social descentralizada), también puedes ignorar el error — OpenClaw seguirá funcionando normalmente para Telegram y otros canales.
 
 ---
 
@@ -122,6 +136,8 @@ iwr -useb https://openclaw.ai/install.ps1 | iex
 6. Espera a que el instalador termine.
 
 > **Nota:** Si ves un mensaje de error sobre la política de ejecución, escribe primero `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` y presiona Enter, luego repite el comando de instalación.
+
+> **Problema conocido — Windows 11:** Si la instalación falla con un mensaje que menciona `WinGet` o una carpeta `Temp`, elimina manualmente la carpeta `C:\Users\TuUsuario\AppData\Local\Temp\openclaw-install.ps1\` (reemplaza `TuUsuario` con tu nombre de usuario), cierra PowerShell, ábrelo de nuevo como administrador y repite el comando.
 
 ---
 
@@ -156,18 +172,83 @@ curl -fsSL https://openclaw.ai/install.sh | bash
 
 ---
 
-## Configura el prompt inicial de tu asistente
+## Ejecuta el asistente de configuración
 
-Cuando abras OpenClaw en Telegram por primera vez, tu asistente te dará la bienvenida con un mensaje como **"¡Bienvenido!"** y luego te hará dos preguntas:
+Ya tienes OpenClaw instalado. Ahora lo configuramos con un asistente interactivo que te hace preguntas sencillas — como rellenar un formulario. El proceso toma unos **2 minutos**.
 
-1. *"Cuéntame un poco sobre ti"* — quién eres, en qué trabajas, qué esperas del asistente.
-2. *"¿Cómo te gustaría que te llame?"* — el nombre o apodo con el que quieres que se dirija a ti.
+Abre la misma Terminal (o Ubuntu si usaste WSL) y ejecuta:
 
-Antes de responder esas preguntas, OpenClaw también te pedirá un **prompt de sistema** — las instrucciones base que definen cómo se va a comportar tu asistente. Es como el primer día de trabajo de un empleado nuevo: aquí le dices las reglas más importantes.
+```bash
+openclaw onboard --install-daemon
+```
 
-### 4.1 Tu prompt de sistema para el taller
+El `--install-daemon` hace que OpenClaw se inicie solo cada vez que enciendas tu computadora, sin que tengas que hacer nada extra.
 
-Copia el siguiente texto **tal como está** y pégalo cuando OpenClaw te lo solicite:
+---
+
+### 4.1 Responde las preguntas del asistente
+
+El asistente te irá haciendo preguntas una por una. Aquí te explicamos qué responder en cada paso:
+
+#### Modo de inicio: QuickStart o Advanced
+
+Elige **QuickStart**. Es la opción recomendada — configura todo con ajustes inteligentes para que puedas empezar rápido.
+
+#### Proveedor de IA
+
+Cuando veas la lista de proveedores, busca y selecciona **Z.AI**.
+
+#### Tu clave de Z.AI (API key)
+
+Escribe o pega la clave que te entregó el facilitador. Es el código largo que anotaste antes.
+
+> **Tip:** Al escribir o pegar tu clave, los caracteres no aparecerán en pantalla — eso es completamente normal. Es una medida de seguridad para proteger tu clave. Confía en que se está registrando correctamente y presiona **Enter**.
+
+#### Configuración del Gateway y puerto
+
+Acepta los valores predeterminados presionando **Enter**. El puerto que se usa es el **18789** y no necesitas cambiarlo.
+
+#### Canales de comunicación
+
+Cuando el asistente te pregunte qué canales quieres configurar, selecciona **Telegram**. Luego te pedirá:
+
+- **Token de tu bot de Telegram** — pega el token que guardaste en la sección 1 (el código largo que te dio BotFather, con el formato `1234567890:ABCdef...`).
+
+#### Instalar como servicio automático
+
+Si el asistente confirma la instalación del daemon (servicio automático), acepta. Esto ya está indicado en el comando con `--install-daemon`.
+
+---
+
+### 4.2 Verifica que todo funciona
+
+Cuando el asistente termine, ejecuta estos comandos para confirmar que OpenClaw está corriendo.
+
+Verifica el gateway:
+
+```bash
+openclaw gateway status
+```
+
+Deberías ver algo como: `Gateway is running on port 18789`.
+
+Luego abre el panel de control en tu navegador:
+
+```bash
+openclaw dashboard
+```
+
+Si el navegador abre la página de OpenClaw, ¡todo está funcionando!
+
+> **¿Ves algún error?** Ejecuta `openclaw doctor --fix` — este comando detecta y repara los problemas más comunes de forma automática. Si el problema persiste, levanta la mano para que el facilitador te ayude.
+
+---
+
+### 4.3 Envía tu prompt de sistema
+
+Abre Telegram, busca tu bot (el que creaste con BotFather) y ábrelo. Envíale el siguiente texto como tu **primer mensaje** — este es el **prompt de sistema**: las instrucciones base que definen cómo tu asistente debe comportarse contigo. Es como el primer día de trabajo de un empleado nuevo: aquí le das las reglas más importantes.
+
+Copia el siguiente texto **tal como está** y pégalo en el chat de tu bot:
 
 ```
 Tu nombre es [AGENT NAME]. Eres mi asistente personal inteligente. Tu misión es ayudarme a ser más productivo en el trabajo y en mi vida diaria.
@@ -181,17 +262,11 @@ Zona horaria:
 - Mi zona horaria es America/Lima (UTC-5).
 - Todas las fechas y horas que menciones deben estar en esta zona horaria.
 - Palabras como "hoy", "mañana" o "esta semana" siempre se refieren a la hora local de Lima.
-
 ```
 
 > **¿Por qué incluir la zona horaria?** Sin esta instrucción, tu asistente podría interpretar "mañana a las 10 AM" usando la zona horaria del servidor, que puede estar en otro país. Con `America/Lima` siempre usará la hora de Perú.
 
-### 4.2 Responde las preguntas de bienvenida
-
-Una vez pegado el prompt, responde las dos preguntas de OpenClaw con tus datos reales:
-
-- **¿Quién eres?** — Por ejemplo: *"Soy estudiante de administración de empresas. Quiero usar IA para organizar mi correo y mi agenda."*
-- **¿Cómo te llamo?** — Escribe tu nombre o apodo: *"Llámame María."*
+Después de pegar el prompt, escribe un segundo mensaje de prueba: `Hola, ¿estás listo para ayudarme?`. Si recibes una respuesta, ¡tu asistente está funcionando!
 
 Con eso, tu asistente ya tiene todo lo que necesita para empezar a trabajar contigo.
 
