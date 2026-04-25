@@ -402,7 +402,7 @@ export function InstanceDetail({
         </TabsContent>
 
         <TabsContent value="integrations" className="mt-6">
-          <IntegrationsTab />
+          <IntegrationsTab instanceId={instance.id} />
         </TabsContent>
 
         <TabsContent value="agents" className="mt-6">

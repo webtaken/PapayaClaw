@@ -501,5 +501,77 @@
         }
       }
     }
+  },
+  "Integrations": {
+    "title": "Integraciones",
+    "description": "Conecta servicios de terceros a tu bot",
+    "catalogTitle": "Servicios disponibles",
+    "togglesTitle": "Habilitado para este bot",
+    "activityTitle": "Actividad de herramientas reciente",
+    "noActivity": "Aún no se ha utilizado ninguna herramienta",
+    "noConnections": "Conecta un servicio arriba para verlo aquí",
+    "status": {
+      "connected": "Conectado",
+      "pending": "Pendiente",
+      "reconnectRequired": "Reconexión requerida",
+      "expired": "Expirado",
+      "revoked": "Revocado"
+    },
+    "actions": {
+      "connect": "Conectar",
+      "manage": "Gestionar",
+      "disconnect": "Desconectar",
+      "reconnect": "Reconectar",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "enable": "Habilitar",
+      "disable": "Deshabilitar"
+    },
+    "dialog": {
+      "disconnectTitle": "¿Desconectar servicio?",
+      "disconnectDescription": "Esto revocará la conexión. Los bots que usen esta conexión perderán acceso.",
+      "affectedInstances": "Bots afectados",
+      "reconnectTitle": "Reconectar servicio",
+      "reconnectDescription": "Serás redirigido para volver a autorizar este servicio."
+    },
+    "connectSuccess": "Conectado con éxito",
+    "connectError": "Error al conectar. Por favor, inténtalo de nuevo.",
+    "disconnectSuccess": "Servicio desconectado",
+    "usedBy": "Usado por",
+    "services": {
+      "gmail": {
+        "label": "Gmail",
+        "description": "Envía y gestiona correos desde tu cuenta de Gmail"
+      },
+      "googlecalendar": {
+        "label": "Google Calendar",
+        "description": "Crea y gestiona eventos de calendario"
+      },
+      "googledrive": {
+        "label": "Google Drive",
+        "description": "Lee y organiza archivos en tu Drive"
+      },
+      "googlesheets": {
+        "label": "Google Sheets",
+        "description": "Lee y escribe datos en hojas de cálculo"
+      },
+      "notion": {
+        "label": "Notion",
+        "description": "Crea y busca páginas y bases de datos en Notion"
+      },
+      "linear": {
+        "label": "Linear",
+        "description": "Crea y actualiza incidencias en tu espacio de Linear"
+      },
+      "slack": {
+        "label": "Slack",
+        "description": "Envía mensajes e interactúa con canales de Slack"
+      },
+      "github": {
+        "label": "GitHub",
+        "description": "Gestiona repositorios, incidencias y pull requests"
+      }
+    }
   }
 }

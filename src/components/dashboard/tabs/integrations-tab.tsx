@@ -1,46 +1,40 @@
 "use client";
 
-import { Plug } from "lucide-react";
+import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
+import { mutate as globalMutate } from "swr";
+import { ServiceCatalogGrid } from "@/components/dashboard/integrations/service-catalog-grid";
+import { InstanceToggles } from "@/components/dashboard/integrations/instance-toggles";
+import { ConnectionList } from "@/components/dashboard/integrations/connection-list";
+import { ActivityPanel } from "@/components/dashboard/integrations/activity-panel";
 
-export function IntegrationsTab() {
-  const t = useTranslations("InstanceDetail");
+interface IntegrationsTabProps {
+  instanceId: string;
+}
+
+export function IntegrationsTab({ instanceId }: IntegrationsTabProps) {
+  const t = useTranslations("Integrations");
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const connected = searchParams.get("connected");
+    const error = searchParams.get("integrationError");
+    if (connected) {
+      toast.success(t("connectSuccess"));
+      void globalMutate("/api/integrations/connections");
+    } else if (error) {
+      toast.error(t("connectError"));
+    }
+  }, [searchParams, t]);
 
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card shadow-2xl px-8 py-16 text-center">
-      {/* Icon tile */}
-      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-xl border border-border bg-muted/60">
-        <Plug className="h-8 w-8 text-muted-foreground/60" />
-      </div>
-
-      {/* Title + badge row */}
-      <div className="flex items-center gap-2 mb-3">
-        <h2 className="text-base font-semibold text-foreground/80 font-mono uppercase tracking-wider">
-          {t("integrations.title")}
-        </h2>
-        <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-0.5 text-[10px] font-mono font-medium uppercase tracking-widest text-violet-400">
-          {t("integrations.comingSoon")}
-        </span>
-      </div>
-
-      {/* Description */}
-      <p className="max-w-sm text-sm text-muted-foreground leading-relaxed">
-        {t("integrations.description")}
-      </p>
-
-      {/* Decorative divider row of service icons */}
-      <div className="mt-8 flex items-center gap-3">
-        {["Gmail", "Slack", "Notion", "Drive"].map((name) => (
-          <div
-            key={name}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-muted/40 text-[10px] font-mono text-muted-foreground/50"
-            aria-hidden
-          >
-            {name[0]}
-          </div>
-        ))}
-        <span className="text-muted-foreground/40 text-xs font-mono">···</span>
-      </div>
+    <div className="flex flex-col gap-8">
+      <ServiceCatalogGrid />
+      <ConnectionList />
+      <InstanceToggles instanceId={instanceId} />
+      <ActivityPanel instanceId={instanceId} />
     </div>
   );
 }

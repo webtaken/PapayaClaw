@@ -1,8 +1,10 @@
 <!--
   SYNC IMPACT REPORT
   ====================
-  Version change: (new) -> 1.0.0
+  Version change: 1.0.0 -> 1.1.0
   Modified principles: N/A (initial constitution)
+  Stack additions (MINOR):
+    - @composio/core — upstream tool provider substrate for third-party integrations (feature 004-composio-integration)
   Added sections:
     - 8 Core Principles (I through VIII)
     - Technology Stack Constraints
@@ -148,6 +150,7 @@ code review and enable automated linting enforcement.
 | UI | shadcn/ui (new-york) + Tailwind CSS 4 + Lucide icons | CSS variables for theming |
 | i18n | next-intl | Locale-prefixed routing |
 | Payments | Polar.sh (`@polar-sh/nextjs`) | Subscription billing |
+| Tool provider | Composio (`@composio/core`) | Third-party SaaS tool integrations (OAuth + action execution) |
 | Infrastructure | Hetzner Cloud (VPS), Cloudflare (DNS/tunnels) | Automated provisioning |
 | Real-time | Socket.IO | SSH terminal via WebSocket |
 | Validation | Zod | All API boundaries |
@@ -193,4 +196,4 @@ PapayaClaw project. All contributors and AI agents MUST comply.
 - Use `CLAUDE.md` for runtime development guidance that supplements
   (but does not override) this constitution.
 
-**Version**: 1.0.0 | **Ratified**: 2026-04-09 | **Last Amended**: 2026-04-09
+**Version**: 1.1.0 | **Ratified**: 2026-04-09 | **Last Amended**: 2026-04-22

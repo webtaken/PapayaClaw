@@ -501,5 +501,77 @@
         }
       }
     }
+  },
+  "Integrations": {
+    "title": "Integrations",
+    "description": "Connect third-party services to your bot",
+    "catalogTitle": "Available services",
+    "togglesTitle": "Enabled for this bot",
+    "activityTitle": "Recent tool activity",
+    "noActivity": "No tool has been used yet",
+    "noConnections": "Connect a service above to see it here",
+    "status": {
+      "connected": "Connected",
+      "pending": "Pending",
+      "reconnectRequired": "Reconnect required",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "actions": {
+      "connect": "Connect",
+      "manage": "Manage",
+      "disconnect": "Disconnect",
+      "reconnect": "Reconnect",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "save": "Save",
+      "enable": "Enable",
+      "disable": "Disable"
+    },
+    "dialog": {
+      "disconnectTitle": "Disconnect service?",
+      "disconnectDescription": "This will revoke the connection. Any bot instances using this connection will lose access.",
+      "affectedInstances": "Affected bots",
+      "reconnectTitle": "Reconnect service",
+      "reconnectDescription": "You will be redirected to re-authorise this service."
+    },
+    "connectSuccess": "Connected successfully",
+    "connectError": "Failed to connect. Please try again.",
+    "disconnectSuccess": "Service disconnected",
+    "usedBy": "Used by",
+    "services": {
+      "gmail": {
+        "label": "Gmail",
+        "description": "Send and manage emails from your Gmail account"
+      },
+      "googlecalendar": {
+        "label": "Google Calendar",
+        "description": "Create and manage calendar events"
+      },
+      "googledrive": {
+        "label": "Google Drive",
+        "description": "Read and organise files in your Drive"
+      },
+      "googlesheets": {
+        "label": "Google Sheets",
+        "description": "Read and write spreadsheet data"
+      },
+      "notion": {
+        "label": "Notion",
+        "description": "Create and search Notion pages and databases"
+      },
+      "linear": {
+        "label": "Linear",
+        "description": "Create and update issues in your Linear workspace"
+      },
+      "slack": {
+        "label": "Slack",
+        "description": "Send messages and interact with Slack channels"
+      },
+      "github": {
+        "label": "GitHub",
+        "description": "Manage repositories, issues, and pull requests"
+      }
+    }
   }
 }

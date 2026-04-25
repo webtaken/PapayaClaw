@@ -4,8 +4,10 @@ import {
   integer,
   timestamp,
   boolean,
+  index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -107,3 +109,92 @@ export const instance = pgTable("instance", {
     .defaultNow()
     .$onUpdate(() => new Date()),
 });
+
+export const composioConnection = pgTable(
+  "composio_connection",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id),
+    toolkitSlug: text("toolkit_slug").notNull(),
+    composioConnectedAccountId: text("composio_connected_account_id")
+      .notNull()
+      .unique(),
+    initiationState: text("initiation_state").unique(),
+    accountLabel: text("account_label"),
+    status: text("status").notNull().default("pending"),
+    lastHealthCheckAt: timestamp("last_health_check_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [index("idx_composio_connection_user_toolkit").on(t.userId, t.toolkitSlug)],
+);
+
+export const instanceIntegration = pgTable(
+  "instance_integration",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    instanceId: text("instance_id")
+      .notNull()
+      .references(() => instance.id, { onDelete: "cascade" }),
+    toolkitSlug: text("toolkit_slug").notNull(),
+    enabled: boolean("enabled").notNull().default(false),
+    selectedConnectionId: text("selected_connection_id").references(
+      () => composioConnection.id,
+    ),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [uniqueIndex("idx_instance_integration_unique").on(t.instanceId, t.toolkitSlug)],
+);
+
+export const integrationInvocation = pgTable(
+  "integration_invocation",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    instanceId: text("instance_id")
+      .notNull()
+      .references(() => instance.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id),
+    toolkitSlug: text("toolkit_slug").notNull(),
+    actionSlug: text("action_slug").notNull(),
+    outcome: text("outcome").notNull(),
+    errorClass: text("error_class"),
+    latencyMs: integer("latency_ms"),
+    occurredAt: timestamp("occurred_at").notNull().defaultNow(),
+  },
+  (t) => [index("idx_invocation_instance_time").on(t.instanceId, t.occurredAt)],
+);
+
+export const integrationLifecycleEvent = pgTable(
+  "integration_lifecycle_event",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id),
+    connectionId: text("connection_id").notNull(),
+    toolkitSlug: text("toolkit_slug").notNull(),
+    eventType: text("event_type").notNull(),
+    errorClass: text("error_class"),
+    occurredAt: timestamp("occurred_at").notNull().defaultNow(),
+  },
+  (t) => [index("idx_lifecycle_user_time").on(t.userId, t.occurredAt)],
+);
