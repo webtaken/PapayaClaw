@@ -15,7 +15,7 @@ export function HeroCTAs({
   };
 
   return (
-    <div className="animate-slide-up-fade-delay-2 mt-10 flex flex-col items-center gap-3 sm:flex-row">
+    <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
       <Button
         onClick={() => scrollTo("how-it-works")}
         size="lg"

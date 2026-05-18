@@ -341,7 +341,7 @@ export function InstanceDetail({
                 {key === "channels" && pendingPairingCount > 0 ? (
                   <Badge
                     variant="outline"
-                    className="ml-1 rounded-full border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-[10px] font-mono text-amber-400"
+                    className="ml-1 rounded-full border-amber-500/40 bg-amber-500/10 px-1.5 py-0 text-xs font-mono text-amber-400"
                     aria-label={t("tabs.channelsAttentionAria", { count: pendingPairingCount })}
                   >
                     {pendingPairingCount}

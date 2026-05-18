@@ -75,13 +75,13 @@ export function InstanceCard({
           <h3 className="text-sm font-medium tracking-tight text-foreground mb-0.5 truncate">
             {instance.name}
           </h3>
-          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest truncate">
+          <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest truncate">
             {new Date(instance.createdAt).toISOString().split("T")[0]}
           </p>
         </div>
         <Badge
           variant="outline"
-          className={`shrink-0 gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-mono uppercase tracking-wider ${status.className}`}
+          className={`shrink-0 gap-1.5 rounded-md px-2 py-0.5 text-xs font-mono uppercase tracking-wider ${status.className}`}
         >
           <span className={`h-1 w-1 rounded-full ${status.dotClass}`} />
           {status.label}
@@ -92,18 +92,18 @@ export function InstanceCard({
         {/* Model + Channel */}
         <div className="grid grid-cols-2 gap-px bg-muted/50 border border-border/50 rounded-lg overflow-hidden shrink-0">
           <div className="bg-card/80 p-3 flex flex-col gap-1.5">
-            <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+            <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
               {t("model")}
             </span>
             <span className="flex items-center gap-1.5 text-xs text-foreground/80">
-              <span className="text-[10px] text-muted-foreground shrink-0">
+              <span className="text-xs text-muted-foreground shrink-0">
                 {model.icon}
               </span>
               <span className="truncate">{model.name}</span>
             </span>
           </div>
           <div className="bg-card/80 p-3 flex flex-col gap-1.5">
-            <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+            <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
               {channels.length === 1 ? t("channel") : t("channel")}
             </span>
             <span className="flex items-center gap-1.5 text-xs text-foreground/80 flex-wrap">
@@ -111,7 +111,7 @@ export function InstanceCard({
                 const info = formatChannelInfo(ch);
                 return (
                   <span key={ch} className="flex items-center gap-1" title={info.name}>
-                    <span className="text-[10px] text-muted-foreground shrink-0">
+                    <span className="text-xs text-muted-foreground shrink-0">
                       {info.icon}
                     </span>
                     <span className="truncate">{info.name}</span>
@@ -131,7 +131,7 @@ export function InstanceCard({
               onClick={() =>
                 onStatusChange(instance.id, isRunning ? "stopped" : "running")
               }
-              className="cursor-pointer gap-1.5 rounded-lg border-border bg-muted/50 text-[10px] font-mono uppercase tracking-wider text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground h-8 shadow-none"
+              className="cursor-pointer gap-1.5 rounded-lg border-border bg-muted/50 text-xs font-mono uppercase tracking-wider text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground h-8 shadow-none"
             >
               {isRunning ? (
                 <>
@@ -152,7 +152,7 @@ export function InstanceCard({
               variant="outline"
               size="sm"
               onClick={() => setPairingOpen(true)}
-              className="cursor-pointer gap-1.5 rounded-lg border-amber-500/20 bg-amber-500/5 text-[10px] font-mono uppercase tracking-wider text-amber-500/90 transition-all hover:border-amber-500/40 hover:bg-amber-500/10 hover:text-amber-400 h-8 shadow-none"
+              className="cursor-pointer gap-1.5 rounded-lg border-amber-500/20 bg-amber-500/5 text-xs font-mono uppercase tracking-wider text-amber-500/90 transition-all hover:border-amber-500/40 hover:bg-amber-500/10 hover:text-amber-400 h-8 shadow-none"
             >
               <Shield className="h-3 w-3" />
               {t("pairing")}
@@ -172,7 +172,7 @@ export function InstanceCard({
             <Button
               variant="outline"
               size="sm"
-              className="w-full cursor-pointer gap-1.5 rounded-lg border-border bg-muted/50 text-[10px] font-mono uppercase tracking-wider text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground h-8 shadow-none"
+              className="w-full cursor-pointer gap-1.5 rounded-lg border-border bg-muted/50 text-xs font-mono uppercase tracking-wider text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground h-8 shadow-none"
             >
               <Eye className="h-3 w-3" />
               {t("view")}
@@ -184,7 +184,7 @@ export function InstanceCard({
               <Button
                 variant="outline"
                 size="sm"
-                className="col-span-2 cursor-pointer gap-1.5 rounded-lg border-red-500/20 bg-red-500/5 text-[10px] font-mono uppercase tracking-wider text-red-400 transition-all hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-300 h-8 shadow-none mt-1"
+                className="col-span-2 cursor-pointer gap-1.5 rounded-lg border-red-500/20 bg-red-500/5 text-xs font-mono uppercase tracking-wider text-red-400 transition-all hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-300 h-8 shadow-none mt-1"
               >
                 <Trash2 className="h-3 w-3" />
                 {t("delete")}
@@ -202,12 +202,12 @@ export function InstanceCard({
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="mt-4">
-                <AlertDialogCancel className="bg-muted/50 text-foreground/80 border-border hover:bg-muted hover:text-foreground font-mono text-[10px] uppercase tracking-wider px-6 h-9 transition-colors">
+                <AlertDialogCancel className="bg-muted/50 text-foreground/80 border-border hover:bg-muted hover:text-foreground font-mono text-xs uppercase tracking-wider px-6 h-9 transition-colors">
                   {t("cancel")}
                 </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={() => onDelete(instance.id)}
-                  className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/40 font-mono text-[10px] uppercase tracking-wider px-6 h-9 transition-colors shadow-none"
+                  className="bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/40 font-mono text-xs uppercase tracking-wider px-6 h-9 transition-colors shadow-none"
                 >
                   {t("confirmDelete")}
                 </AlertDialogAction>

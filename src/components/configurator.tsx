@@ -27,8 +27,8 @@ export function Configurator() {
   };
 
   return (
-    <section id="configurator" className="animate-slide-up-fade-delay-2 mx-auto max-w-3xl px-6 pb-16 pt-16 relative z-10 scroll-mt-24">
-      <div className="neo-card border-2 border-border bg-card p-8 neo-shadow">
+    <section id="configurator" className="mx-auto max-w-3xl px-6 pb-16 pt-16 relative z-10 scroll-mt-24">
+      <div className="border-2 border-border bg-card p-8">
         {/* Provider Selection */}
         <div className="mb-8">
           <h2 className="mb-4 text-center text-lg font-semibold text-foreground">
@@ -39,10 +39,10 @@ export function Configurator() {
               <button
                 key={provider.id}
                 onClick={() => setSelectedProvider(provider.id)}
-                className={`neo-card flex flex-col items-center justify-center gap-2 border-2 p-4 text-center ${
+                className={`flex flex-col items-center justify-center gap-2 border-2 p-4 text-center ${
                   selectedProvider === provider.id
                     ? "option-selected bg-secondary text-black"
-                    : "border-border bg-background text-muted-foreground hover:border-primary hover:text-foreground neo-card-hover"
+                    : "border-border bg-background text-muted-foreground hover:border-primary hover:text-foreground"
                 }`}
               >
                 <div className="flex items-center justify-center scale-125 mb-1 transition-transform group-hover:scale-150">
@@ -64,10 +64,10 @@ export function Configurator() {
               <button
                 key={channel.id}
                 onClick={() => setSelectedChannel(channel.id)}
-                className={`neo-card flex items-center gap-4 border-2 px-5 py-4 text-left ${
+                className={`flex items-center gap-4 border-2 px-5 py-4 text-left ${
                   selectedChannel === channel.id
                     ? "option-selected bg-secondary text-black"
-                    : "border-border bg-background text-muted-foreground hover:border-primary hover:text-foreground neo-card-hover"
+                    : "border-border bg-background text-muted-foreground hover:border-primary hover:text-foreground"
                 }`}
               >
                 <span className="text-2xl scale-110">{getChannelIcon(channel.id)}</span>
@@ -83,7 +83,7 @@ export function Configurator() {
         <div className="flex flex-col items-center gap-4">
           <Button
             onClick={handleSignIn}
-            className="w-full max-w-md cursor-pointer border-2 border-foreground bg-foreground px-8 py-6 text-lg font-bold uppercase tracking-widest text-background transition-all hover:-translate-y-1 hover:bg-foreground/90 hover:neo-shadow sm:w-auto neo-shadow-sm"
+            className="w-full max-w-md cursor-pointer border-2 border-foreground bg-foreground px-8 py-6 text-lg font-bold uppercase tracking-widest text-background transition-all hover:-translate-y-1 hover:bg-foreground/90 sm:w-auto"
           >
             <svg className="mr-3 h-6 w-6" viewBox="0 0 24 24">
               <path

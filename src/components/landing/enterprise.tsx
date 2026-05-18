@@ -8,7 +8,7 @@ export async function Enterprise() {
   const t = await getTranslations("Enterprise");
 
   return (
-    <section className="border-b border-border/20 bg-zinc-950 dark:bg-zinc-900/80">
+    <section id="companies" className="border-b border-border/20 bg-zinc-950">
       <div className="mx-auto max-w-5xl px-6 py-20">
         <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
           {/* Text */}

@@ -2,10 +2,16 @@
   "Header": {
     "blog": "Blog",
     "pricing": "Pricing",
+    "companies": "Companies",
     "dashboard": "Dashboard",
     "logout": "Logout",
     "contact": "Contact",
     "login": "Login"
+  },
+  "Capacity": {
+    "remaining": "{count} of {limit} server slots left",
+    "full": "All server slots taken",
+    "title": "{used}/{limit} servers provisioned"
   },
   "Hero": {
     "badge": "AI Employees Platform",
@@ -188,8 +194,8 @@
     }
   },
   "Enterprise": {
-    "title": "Are you a company?",
-    "description": "We offer custom deployments, dedicated infrastructure, and priority support for teams. Let's build something together.",
+    "title": "Scale a team of AI agents for your business",
+    "description": "Deploy a fleet of OpenClaw agents tailored to your use cases — customer support, internal ops, research, sales workflows. Dedicated infrastructure, custom integrations, and priority support so your team focuses on outcomes, not orchestration.",
     "cta": "Book a call",
     "ctaAriaLabel": "Book a 30-minute call with our team (opens in new tab)"
   },
@@ -258,13 +264,17 @@
     "noInstancesDescription": "Hire your first AI employee to get started. Setup takes under 1 minute.",
     "initializeDeployment": "Hire AI Employee",
     "model": "Model",
-    "channel": "Channel"
+    "channel": "Channel",
+    "checkoutSuccessTitle": "Payment received",
+    "checkoutSuccessBody": "Your AI employee is being provisioned. This usually takes 1–2 minutes — the page will refresh automatically."
   },
   "DeployDialog": {
     "title": "Hire New AI Employee",
     "step1": "Name & Model",
     "step2": "Channel",
     "step3": "Deploy",
+    "step3Plan": "Plan",
+    "step4Review": "Review",
     "instanceName": "Instance Name",
     "instanceNamePlaceholder": "My Assistant",
     "selectProvider": "Select Provider",
@@ -293,7 +303,20 @@
     "deployInstance": "Hire Employee",
     "recommended": "Recommended",
     "deployError": "Failed to set up AI employee. Please try again.",
-    "networkError": "Network error — could not reach the server. Please try again."
+    "networkError": "Network error — could not reach the server. Please try again.",
+    "selectPlan": "Select a Plan",
+    "planBasic": "Basic",
+    "planPro": "Pro",
+    "planBasicTagline": "Solid performance for everyday workloads.",
+    "planProTagline": "Faster server, more memory, priority support.",
+    "perMonth": "month",
+    "popular": "POPULAR",
+    "promoCode": "Promo Code (optional)",
+    "promoCodePlaceholder": "ENTER CODE",
+    "promoCodeHint": "Have a discount code? Enter it here or apply it on the checkout page.",
+    "continueToCheckout": "Continue to Checkout",
+    "redirecting": "Redirecting...",
+    "checkoutNote": "You'll be redirected to a secure Polar checkout. Your AI employee will be provisioned automatically after payment."
   },
   "InstanceCard": {
     "running": "Running",
@@ -359,8 +382,31 @@
     },
     "integrations": {
       "title": "Integrations",
-      "comingSoon": "Not yet available",
-      "description": "Connect this agent to other apps and services. This section is under active development and will be available in a future release."
+      "badge": "Composio",
+      "subtitle": "Connect your OpenClaw agent to 1000+ apps via Composio in under 2 minutes.",
+      "step1": {
+        "title": "Create a Composio account",
+        "body": "Sign up free, then copy your API key from the dashboard.",
+        "cta": "Open Composio"
+      },
+      "step2": {
+        "title": "Install the CLI + OpenClaw skill",
+        "install": "curl -fsSL https://composio.dev/install | bash",
+        "loginHint": "Then log in — this auto-installs the OpenClaw skill:",
+        "loginCmd": "composio login --user-api-key \"'<COMPOSIO_API_KEY>'\" --org \"'<WORKSPACE>'\""
+      },
+      "step3": {
+        "title": "Connect your apps",
+        "body": "Run composio link '<app>' for each tool you want your agent to use. Pick one to preview the command:"
+      },
+      "step4": {
+        "title": "Verify it works",
+        "body": "Try this prompt in your OpenClaw agent:",
+        "prompt": "List my connected Composio apps and the tools I have available.",
+        "security": "Tools run inside Composio's sandbox with your scoped OAuth credentials."
+      },
+      "copy": "Copy",
+      "copied": "Copied"
     },
     "agents": {
       "title": "Custom Agents",

@@ -43,7 +43,7 @@ export async function AgentTemplates() {
     >
       <div className="mx-auto max-w-5xl px-6 py-20">
         {/* Section Header */}
-        <div className="mb-14 animate-slide-up-fade">
+        <div className="mb-14">
           <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
             {t("title")}{" "}
             <span className="text-primary">{t("titleHighlight")}</span>{" "}
@@ -55,7 +55,7 @@ export async function AgentTemplates() {
         </div>
 
         {/* Template Grid */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 animate-slide-up-fade-delay-1">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {templates.map((template, i) => {
             const Icon = template.icon;
             const isPrimary = template.accent === "primary";
@@ -67,10 +67,10 @@ export async function AgentTemplates() {
                 aria-label={t("ctaAriaLabel", {
                   name: t(`templates.${template.key}.name`),
                 })}
-                className={`group neo-card relative flex flex-col rounded-none border-2 border-border bg-card p-6 neo-shadow-sm transition-all hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+                className={`group relative flex flex-col rounded-none border-2 border-border bg-card p-6 transition-all hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
                   isPrimary
-                    ? "hover:border-primary hover:neo-shadow focus-visible:ring-primary"
-                    : "hover:border-secondary hover:neo-shadow-lime focus-visible:ring-secondary"
+                    ? "hover:border-primary focus-visible:ring-primary"
+                    : "hover:border-secondary focus-visible:ring-secondary"
                 }`}
                 style={{ animationDelay: `${i * 0.05}s` }}
               >
@@ -79,7 +79,7 @@ export async function AgentTemplates() {
                   className={`mb-5 flex h-11 w-11 items-center justify-center rounded-none border-2 ${
                     isPrimary
                       ? "border-primary bg-primary/10 text-primary"
-                      : "border-secondary bg-secondary/15 text-secondary-foreground dark:bg-secondary/20 dark:text-secondary"
+                      : "border-secondary bg-secondary/15 text-secondary-foreground"
                   }`}
                 >
                   <Icon
@@ -104,7 +104,7 @@ export async function AgentTemplates() {
                   className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest transition-colors ${
                     isPrimary
                       ? "text-primary group-hover:text-primary"
-                      : "text-foreground group-hover:text-secondary-foreground dark:group-hover:text-secondary"
+                      : "text-foreground group-hover:text-secondary-foreground"
                   }`}
                 >
                   {t("useTemplate")}

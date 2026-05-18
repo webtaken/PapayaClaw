@@ -32,8 +32,8 @@ export function LoginForm() {
   };
 
   return (
-    <div className="animate-slide-up-fade w-full max-w-sm">
-      <Card className="neo-card border-2 border-border bg-card neo-shadow overflow-hidden">
+    <div className="w-full max-w-sm">
+      <Card className="border-2 border-border bg-card overflow-hidden">
         {/* Top accent stripe */}
         <div className="h-1.5 w-full bg-primary" />
 

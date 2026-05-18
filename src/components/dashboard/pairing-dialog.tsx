@@ -186,7 +186,7 @@ export function PairingDialog({
 
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-border px-6 py-3">
-          <p className="text-[11px] text-muted-foreground">{t("codesExpire")}</p>
+          <p className="text-xs text-muted-foreground">{t("codesExpire")}</p>
           <Button
             variant="ghost"
             size="sm"

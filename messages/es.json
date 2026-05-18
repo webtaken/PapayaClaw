@@ -2,10 +2,16 @@
   "Header": {
     "blog": "Blog",
     "pricing": "Precios",
+    "companies": "Empresas",
     "dashboard": "Panel",
     "logout": "Cerrar sesión",
     "contact": "Contacto",
     "login": "Iniciar sesión"
+  },
+  "Capacity": {
+    "remaining": "Quedan {count} de {limit} servidores disponibles",
+    "full": "Sin servidores disponibles",
+    "title": "{used}/{limit} servidores aprovisionados"
   },
   "Hero": {
     "badge": "Plataforma de Empleados IA",
@@ -188,8 +194,8 @@
     }
   },
   "Enterprise": {
-    "title": "¿Eres una empresa?",
-    "description": "Ofrecemos despliegues personalizados, infraestructura dedicada y soporte prioritario para equipos. Construyamos algo juntos.",
+    "title": "Escala un equipo de agentes de IA para tu negocio",
+    "description": "Despliega una flota de agentes OpenClaw adaptados a tus casos de uso — atención al cliente, operaciones internas, investigación, flujos de ventas. Infraestructura dedicada, integraciones a medida y soporte prioritario para que tu equipo se enfoque en resultados, no en orquestación.",
     "cta": "Agenda una llamada",
     "ctaAriaLabel": "Agenda una llamada de 30 minutos con nuestro equipo (abre en nueva pestaña)"
   },
@@ -258,13 +264,17 @@
     "noInstancesDescription": "Contrata tu primer empleado IA para comenzar. La configuración toma menos de 1 minuto.",
     "initializeDeployment": "Contratar Empleado IA",
     "model": "Modelo",
-    "channel": "Canal"
+    "channel": "Canal",
+    "checkoutSuccessTitle": "Pago recibido",
+    "checkoutSuccessBody": "Tu empleado IA se está aprovisionando. Esto suele tardar 1–2 minutos — la página se actualizará automáticamente."
   },
   "DeployDialog": {
     "title": "Contratar Nuevo Empleado IA",
     "step1": "Nombre y Modelo",
     "step2": "Canal",
     "step3": "Desplegar",
+    "step3Plan": "Plan",
+    "step4Review": "Resumen",
     "instanceName": "Nombre de Instancia",
     "instanceNamePlaceholder": "Mi Asistente",
     "selectProvider": "Seleccionar Proveedor",
@@ -293,7 +303,20 @@
     "deployInstance": "Contratar Empleado",
     "recommended": "Recomendado",
     "deployError": "Error al configurar el empleado IA. Por favor intenta de nuevo.",
-    "networkError": "Error de red — no se pudo conectar al servidor. Por favor intenta de nuevo."
+    "networkError": "Error de red — no se pudo conectar al servidor. Por favor intenta de nuevo.",
+    "selectPlan": "Selecciona un Plan",
+    "planBasic": "Basic",
+    "planPro": "Pro",
+    "planBasicTagline": "Rendimiento sólido para cargas de trabajo diarias.",
+    "planProTagline": "Servidor más rápido, más memoria, soporte prioritario.",
+    "perMonth": "mes",
+    "popular": "POPULAR",
+    "promoCode": "Código Promocional (opcional)",
+    "promoCodePlaceholder": "INGRESA EL CÓDIGO",
+    "promoCodeHint": "¿Tienes un código de descuento? Ingrésalo aquí o aplícalo en la página de pago.",
+    "continueToCheckout": "Continuar al Pago",
+    "redirecting": "Redirigiendo...",
+    "checkoutNote": "Serás redirigido a un pago seguro de Polar. Tu empleado IA se aprovisionará automáticamente después del pago."
   },
   "InstanceCard": {
     "running": "En ejecución",
@@ -359,8 +382,31 @@
     },
     "integrations": {
       "title": "Integraciones",
-      "comingSoon": "Aún no disponible",
-      "description": "Conecta este agente a otras aplicaciones y servicios. Esta sección está en desarrollo activo y estará disponible en una versión futura."
+      "badge": "Composio",
+      "subtitle": "Conecta tu agente OpenClaw a más de 1000 apps con Composio en menos de 2 minutos.",
+      "step1": {
+        "title": "Crea una cuenta en Composio",
+        "body": "Regístrate gratis y copia tu API key desde el dashboard.",
+        "cta": "Abrir Composio"
+      },
+      "step2": {
+        "title": "Instala el CLI + skill de OpenClaw",
+        "install": "curl -fsSL https://composio.dev/install | bash",
+        "loginHint": "Después inicia sesión — esto instala automáticamente el skill de OpenClaw:",
+        "loginCmd": "composio login --user-api-key \"'<COMPOSIO_API_KEY>'\" --org \"'<WORKSPACE>'\""
+      },
+      "step3": {
+        "title": "Conecta tus apps",
+        "body": "Ejecuta composio link '<app>' por cada herramienta que quieras dar a tu agente. Elige una para ver el comando:"
+      },
+      "step4": {
+        "title": "Verifica que funciona",
+        "body": "Prueba este prompt en tu agente de OpenClaw:",
+        "prompt": "Lista mis apps conectadas en Composio y las herramientas que tengo disponibles.",
+        "security": "Las herramientas se ejecutan dentro del sandbox de Composio con tus credenciales OAuth limitadas."
+      },
+      "copy": "Copiar",
+      "copied": "Copiado"
     },
     "agents": {
       "title": "Agentes Personalizados",

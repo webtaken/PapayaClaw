@@ -5,7 +5,6 @@ import {
   timestamp,
   boolean,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -75,6 +74,23 @@ export const subscription = pgTable("subscription", {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
+});
+
+export const pendingInstanceConfig = pgTable("pending_instance_config", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id),
+  productId: text("product_id").notNull(),
+  planType: text("plan_type").notNull(),
+  payloadCiphertext: text("payload_ciphertext").notNull(),
+  payloadIv: text("payload_iv").notNull(),
+  payloadAuthTag: text("payload_auth_tag").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  consumedAt: timestamp("consumed_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const instance = pgTable("instance", {

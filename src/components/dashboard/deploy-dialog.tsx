@@ -11,7 +11,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ArrowRight, Rocket, Check, Info, ExternalLink } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Rocket,
+  Check,
+  Info,
+  ExternalLink,
+  Zap,
+  Crown,
+} from "lucide-react";
 import {
   Combobox,
   ComboboxInput,
@@ -28,13 +37,42 @@ import {
   PROVIDERS,
   CHANNELS,
   getModelsByProvider,
-  getProvider,
   type ProviderId,
   type ChannelId,
 } from "@/lib/ai-config";
 import { getProviderIcon, getChannelIcon } from "@/lib/ai-config-ui";
+import { createPendingCheckout } from "@/app/actions/create-pending-checkout";
 
 const AVAILABLE_CHANNELS = new Set<ChannelId>(["telegram", "whatsapp"]);
+
+type PlanId = "basic" | "pro";
+
+const PLANS: {
+  id: PlanId;
+  price: string;
+  icon: typeof Zap;
+  taglineKey: "planBasicTagline" | "planProTagline";
+  popular?: boolean;
+}[] = [
+  {
+    id: "basic",
+    price: "11.90",
+    icon: Zap,
+    taglineKey: "planBasicTagline",
+  },
+  {
+    id: "pro",
+    price: "17.90",
+    icon: Crown,
+    taglineKey: "planProTagline",
+    popular: true,
+  },
+];
+
+const PAID_MODE = Boolean(
+  process.env.NEXT_PUBLIC_POLAR_BASIC_PRODUCT_ID &&
+    process.env.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID,
+);
 
 export function DeployDialog({
   open,
@@ -56,13 +94,23 @@ export function DeployDialog({
   const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
   const [botToken, setBotToken] = useState("");
   const [whatsappPhone, setWhatsappPhone] = useState("");
-  const [isDeploying, setIsDeploying] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
+  const [promoCode, setPromoCode] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const steps = [
-    { number: 1, label: t("step1") },
-    { number: 2, label: t("step2") },
-    { number: 3, label: t("step3") },
-  ];
+  const totalSteps = PAID_MODE ? 4 : 3;
+  const steps = PAID_MODE
+    ? [
+        { number: 1, label: t("step1") },
+        { number: 2, label: t("step2") },
+        { number: 3, label: t("step3Plan") },
+        { number: 4, label: t("step4Review") },
+      ]
+    : [
+        { number: 1, label: t("step1") },
+        { number: 2, label: t("step2") },
+        { number: 3, label: t("step3") },
+      ];
 
   const resetForm = () => {
     setStep(1);
@@ -74,7 +122,9 @@ export function DeployDialog({
     setSelectedChannel(null);
     setBotToken("");
     setWhatsappPhone("");
-    setIsDeploying(false);
+    setSelectedPlan(null);
+    setPromoCode("");
+    setIsSubmitting(false);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -100,10 +150,33 @@ export function DeployDialog({
     selectedChannel &&
     ((selectedChannel === "telegram" && botToken.trim()) ||
       (selectedChannel === "whatsapp" && whatsappPhone.trim()));
+  const canProceedStep3Plan = !!selectedPlan;
+  const isReviewStep = step === totalSteps;
 
-  const handleDeploy = async () => {
-    setIsDeploying(true);
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
     try {
+      if (PAID_MODE) {
+        const res = await createPendingCheckout({
+          name: name.trim(),
+          model: finalModelId!,
+          modelApiKey: activeApiKey,
+          channel: selectedChannel as "telegram" | "whatsapp",
+          botToken: selectedChannel === "telegram" ? botToken.trim() : undefined,
+          channelPhone:
+            selectedChannel === "whatsapp" ? whatsappPhone.trim() : undefined,
+          planType: selectedPlan!,
+          promoCode: promoCode.trim() || undefined,
+        });
+        if ("error" in res) {
+          toast.error(res.error);
+          setIsSubmitting(false);
+          return;
+        }
+        window.location.href = res.url;
+        return;
+      }
+
       const res = await fetch("/api/instances", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -129,11 +202,11 @@ export function DeployDialog({
       } else {
         const data = await res.json().catch(() => null);
         toast.error(data?.error || t("deployError"));
-        setIsDeploying(false);
+        setIsSubmitting(false);
       }
     } catch {
       toast.error(t("networkError"));
-      setIsDeploying(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -147,6 +220,13 @@ export function DeployDialog({
     const modelObj = models.find((m) => m.id === selectedModel);
     return modelObj ? modelObj.name : selectedModel;
   };
+
+  const canProceed = (() => {
+    if (step === 1) return canProceedStep1;
+    if (step === 2) return canProceedStep2;
+    if (step === 3 && PAID_MODE) return canProceedStep3Plan;
+    return true;
+  })();
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -222,53 +302,55 @@ export function DeployDialog({
                     {t("selectProvider")}
                   </Label>
                   <Combobox
-                  items={PROVIDERS.filter((p) => !p.deprecated).map((p) => p.id)}
-                  value={selectedProvider ?? ""}
-                  onValueChange={(val) => {
-                    setSelectedProvider(val || null);
-                    setSelectedModel(null);
-                    setCustomModelId("");
-                  }}
-                  itemToStringLabel={(val) =>
-                    PROVIDERS.find((p) => p.id === val)?.name ?? val
-                  }
-                >
-                  <ComboboxInput
-                    placeholder="Search AI provider..."
-                    showClear={!!selectedProvider}
-                    className="w-full border-border bg-muted/50 focus-within:border-violet-500 focus-within:ring-violet-500/20"
-                  />
-                  <ComboboxContent
-                    align="start"
-                    className="pointer-events-auto"
-                    onWheel={(e) => e.stopPropagation()}
-                    onTouchMove={(e) => e.stopPropagation()}
+                    items={PROVIDERS.filter((p) => !p.deprecated).map(
+                      (p) => p.id,
+                    )}
+                    value={selectedProvider ?? ""}
+                    onValueChange={(val) => {
+                      setSelectedProvider(val || null);
+                      setSelectedModel(null);
+                      setCustomModelId("");
+                    }}
+                    itemToStringLabel={(val) =>
+                      PROVIDERS.find((p) => p.id === val)?.name ?? val
+                    }
                   >
-                    <ComboboxEmpty>No provider found.</ComboboxEmpty>
-                    <ComboboxList className="max-h-56 overflow-y-auto">
-                      {(id: string) => {
-                        const provider = PROVIDERS.find((p) => p.id === id);
-                        if (!provider) return null;
-                        return (
-                          <ComboboxItem key={id} value={id}>
-                            <span className="flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">
-                              {getProviderIcon(provider.id)}
-                            </span>
-                            <span className="flex-1">{provider.name}</span>
-                            {provider.badge && (
-                              <Badge
-                                variant="secondary"
-                                className="ml-auto bg-violet-500 px-1.5 text-[9px] font-medium text-white border-none"
-                              >
-                                {t("recommended")}
-                              </Badge>
-                            )}
-                          </ComboboxItem>
-                        );
-                      }}
-                    </ComboboxList>
-                  </ComboboxContent>
-                </Combobox>
+                    <ComboboxInput
+                      placeholder="Search AI provider..."
+                      showClear={!!selectedProvider}
+                      className="w-full border-border bg-muted/50 focus-within:border-violet-500 focus-within:ring-violet-500/20"
+                    />
+                    <ComboboxContent
+                      align="start"
+                      className="pointer-events-auto"
+                      onWheel={(e) => e.stopPropagation()}
+                      onTouchMove={(e) => e.stopPropagation()}
+                    >
+                      <ComboboxEmpty>No provider found.</ComboboxEmpty>
+                      <ComboboxList className="max-h-56 overflow-y-auto">
+                        {(id: string) => {
+                          const provider = PROVIDERS.find((p) => p.id === id);
+                          if (!provider) return null;
+                          return (
+                            <ComboboxItem key={id} value={id}>
+                              <span className="flex size-4 shrink-0 items-center justify-center [&_svg]:size-4">
+                                {getProviderIcon(provider.id)}
+                              </span>
+                              <span className="flex-1">{provider.name}</span>
+                              {provider.badge && (
+                                <Badge
+                                  variant="secondary"
+                                  className="ml-auto bg-violet-500 px-1.5 text-xs font-medium text-white border-none"
+                                >
+                                  {t("recommended")}
+                                </Badge>
+                              )}
+                            </ComboboxItem>
+                          );
+                        }}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
                 </div>
               </div>
 
@@ -280,7 +362,7 @@ export function DeployDialog({
                       <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
                       <div className="flex-1 space-y-1">
                         {selectedProviderData?.setupNote && (
-                          <p className="text-[11px] leading-relaxed text-foreground/80">
+                          <p className="text-xs leading-relaxed text-foreground/80">
                             {selectedProviderData.setupNote}
                           </p>
                         )}
@@ -289,7 +371,7 @@ export function DeployDialog({
                             href={selectedProviderData.docsUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-400 hover:text-amber-300"
+                            className="inline-flex items-center gap-1 text-xs font-medium text-amber-400 hover:text-amber-300"
                           >
                             View setup documentation
                             <ExternalLink className="h-3 w-3" />
@@ -307,33 +389,29 @@ export function DeployDialog({
                   </Label>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                     {getModelsByProvider(selectedProvider as ProviderId).map(
-                      (m) => {
-                        return (
-                          <button
-                            key={m.id}
-                            onClick={() => {
-                              setSelectedModel(m.id);
-                            }}
-                            className={`relative flex flex-col gap-0.5 rounded-lg border px-2.5 py-1.5 text-left transition-all duration-300 ${
-                              selectedModel === m.id
-                                ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
-                                : "border-border/50 bg-muted/50 text-foreground/80 hover:border-border hover:bg-muted hover:text-foreground"
-                            }`}
-                          >
-                            <span className="text-xs font-medium truncate w-full pr-4">
-                              {m.name}
+                      (m) => (
+                        <button
+                          key={m.id}
+                          onClick={() => setSelectedModel(m.id)}
+                          className={`relative flex flex-col gap-0.5 rounded-lg border px-2.5 py-1.5 text-left transition-all duration-300 ${
+                            selectedModel === m.id
+                              ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
+                              : "border-border/50 bg-muted/50 text-foreground/80 hover:border-border hover:bg-muted hover:text-foreground"
+                          }`}
+                        >
+                          <span className="text-xs font-medium truncate w-full pr-4">
+                            {m.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground font-mono truncate w-full flex-1">
+                            {m.id}
+                          </span>
+                          {m.badge && (
+                            <span className="absolute right-1.5 top-1.5 text-xs font-medium text-amber-400">
+                              ★
                             </span>
-                            <span className="text-[9px] text-muted-foreground font-mono truncate w-full flex-1">
-                              {m.id}
-                            </span>
-                            {m.badge && (
-                              <span className="absolute right-1.5 top-1.5 text-[8px] font-medium text-amber-400">
-                                ★
-                              </span>
-                            )}
-                          </button>
-                        );
-                      },
+                          )}
+                        </button>
+                      ),
                     )}
                   </div>
                 </div>
@@ -421,7 +499,7 @@ export function DeployDialog({
                           {!available && (
                             <Badge
                               variant="secondary"
-                              className="rounded bg-border/50 px-1 py-0 text-[8px] tracking-wide text-muted-foreground"
+                              className="rounded bg-border/50 px-1 py-0 text-xs tracking-wide text-muted-foreground"
                             >
                               {t("soon")}
                             </Badge>
@@ -449,7 +527,7 @@ export function DeployDialog({
                     onChange={(e) => setBotToken(e.target.value)}
                     className="h-8 rounded-lg border-border bg-muted/50 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:border-violet-500 focus:ring-violet-500/20"
                   />
-                  <p className="text-[10px] leading-relaxed text-muted-foreground">
+                  <p className="text-xs leading-relaxed text-muted-foreground">
                     {t("telegramTokenHelp")}{" "}
                     <a
                       href="https://t.me/BotFather"
@@ -480,11 +558,11 @@ export function DeployDialog({
                     onChange={(e) => setWhatsappPhone(e.target.value)}
                     className="h-8 rounded-lg border-border bg-muted/50 font-mono text-xs text-foreground placeholder:text-muted-foreground focus:border-violet-500 focus:ring-violet-500/20"
                   />
-                  <p className="text-[10px] leading-relaxed text-muted-foreground">
+                  <p className="text-xs leading-relaxed text-muted-foreground">
                     {t("whatsappPhoneHelp")}
                   </p>
                   <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2">
-                    <p className="text-[10px] leading-relaxed text-muted-foreground">
+                    <p className="text-xs leading-relaxed text-muted-foreground">
                       <span className="font-medium text-emerald-400">
                         {t("whatsappDedicatedLabel")}
                       </span>{" "}
@@ -496,8 +574,90 @@ export function DeployDialog({
             </div>
           )}
 
-          {/* Step 3: Review & Deploy */}
-          {step === 3 && (
+          {/* Step 3 (paid mode only): Plan + Promo */}
+          {PAID_MODE && step === 3 && (
+            <div className="space-y-4 animate-fade-in-up">
+              <div>
+                <Label className="mb-2 block text-xs font-medium text-foreground/80">
+                  {t("selectPlan")}
+                </Label>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {PLANS.map((plan) => {
+                    const Icon = plan.icon;
+                    const isSelected = selectedPlan === plan.id;
+                    return (
+                      <button
+                        key={plan.id}
+                        onClick={() => setSelectedPlan(plan.id)}
+                        className={`relative flex flex-col gap-3 rounded-lg border px-4 py-4 text-left transition-all duration-300 ${
+                          isSelected
+                            ? "option-selected border-violet-500/50 bg-violet-500/10 text-white"
+                            : "border-border/50 bg-muted/50 text-foreground/80 hover:border-border hover:bg-muted hover:text-foreground"
+                        }`}
+                      >
+                        {plan.popular && (
+                          <Badge
+                            variant="secondary"
+                            className="absolute right-2 top-2 bg-violet-500 px-1.5 py-0 text-xs font-medium text-white border-none"
+                          >
+                            {t("popular")}
+                          </Badge>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <Icon
+                            className={`h-4 w-4 ${
+                              plan.id === "pro"
+                                ? "text-amber-400"
+                                : "text-violet-400"
+                            }`}
+                          />
+                          <span className="text-sm font-semibold uppercase tracking-wide">
+                            {t(plan.id === "pro" ? "planPro" : "planBasic")}
+                          </span>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-bold text-foreground">
+                            ${plan.price}
+                          </span>
+                          <span className="text-xs text-muted-foreground uppercase">
+                            / {t("perMonth")}
+                          </span>
+                        </div>
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                          {t(plan.taglineKey)}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <Label
+                  htmlFor="promo-code"
+                  className="mb-1.5 block text-xs font-medium text-foreground/80"
+                >
+                  {t("promoCode")}
+                </Label>
+                <Input
+                  id="promo-code"
+                  type="text"
+                  placeholder={t("promoCodePlaceholder")}
+                  value={promoCode}
+                  onChange={(e) =>
+                    setPromoCode(e.target.value.toUpperCase().slice(0, 64))
+                  }
+                  className="h-8 rounded-lg border-border bg-muted/50 font-mono text-xs uppercase tracking-wider text-foreground placeholder:text-muted-foreground/60 focus:border-violet-500 focus:ring-violet-500/20"
+                />
+                <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                  {t("promoCodeHint")}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Review Step (last) */}
+          {isReviewStep && (
             <div className="space-y-4 animate-fade-in-up">
               <div className="rounded-lg border border-border bg-muted/30 p-4">
                 <h4 className="mb-3 text-xs font-semibold text-foreground uppercase tracking-wider">
@@ -531,7 +691,7 @@ export function DeployDialog({
                       {t("selectChannel")}
                     </span>
                     <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                      <span className="text-[10px]">
+                      <span className="text-xs">
                         {selectedChannelData &&
                           getChannelIcon(selectedChannelData.id)}
                       </span>
@@ -545,21 +705,55 @@ export function DeployDialog({
                         ? t("phoneNumber")
                         : t("token")}
                     </span>
-                    <span className="font-mono text-[10px] text-muted-foreground">
+                    <span className="font-mono text-xs text-muted-foreground">
                       {selectedChannel === "whatsapp"
                         ? whatsappPhone
                         : `${botToken.slice(0, 8)}•••••`}
                     </span>
                   </div>
+                  {PAID_MODE && selectedPlan && (
+                    <>
+                      <div className="h-px bg-border/60" />
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          {t("selectPlan")}
+                        </span>
+                        <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                          {selectedPlan === "pro" ? (
+                            <Crown className="h-3.5 w-3.5 text-amber-400" />
+                          ) : (
+                            <Zap className="h-3.5 w-3.5 text-violet-400" />
+                          )}
+                          {t(selectedPlan === "pro" ? "planPro" : "planBasic")}{" "}
+                          — $
+                          {PLANS.find((p) => p.id === selectedPlan)?.price}/
+                          {t("perMonth")}
+                        </span>
+                      </div>
+                      {promoCode.trim() && (
+                        <>
+                          <div className="h-px bg-border/60" />
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">
+                              {t("promoCode")}
+                            </span>
+                            <span className="font-mono text-xs uppercase text-foreground">
+                              {promoCode.trim()}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
 
               <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 px-3 py-2.5">
-                <p className="text-[10px] leading-relaxed text-muted-foreground">
+                <p className="text-xs leading-relaxed text-muted-foreground">
                   <span className="font-medium text-violet-400">
                     {t("deployNoteLabel")}
                   </span>{" "}
-                  {t("deployNote")}
+                  {PAID_MODE ? t("checkoutNote") : t("deployNote")}
                 </p>
               </div>
             </div>
@@ -581,10 +775,10 @@ export function DeployDialog({
             <div />
           )}
 
-          {step < 3 ? (
+          {!isReviewStep ? (
             <Button
               onClick={() => setStep(step + 1)}
-              disabled={step === 1 ? !canProceedStep1 : !canProceedStep2}
+              disabled={!canProceed}
               className="cursor-pointer gap-1.5 rounded-xl bg-foreground px-5 py-2.5 text-sm font-semibold text-background shadow-lg transition-all duration-300 hover:bg-foreground/90 hover:shadow-xl disabled:opacity-40"
             >
               {t("next")}
@@ -592,19 +786,19 @@ export function DeployDialog({
             </Button>
           ) : (
             <Button
-              onClick={handleDeploy}
-              disabled={isDeploying}
+              onClick={handleSubmit}
+              disabled={isSubmitting}
               className="cursor-pointer gap-1.5 rounded-xl bg-gradient-to-r from-violet-500 to-blue-500 px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-violet-500/30 disabled:opacity-60"
             >
-              {isDeploying ? (
+              {isSubmitting ? (
                 <>
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  {t("deploying")}
+                  {PAID_MODE ? t("redirecting") : t("deploying")}
                 </>
               ) : (
                 <>
                   <Rocket className="h-4 w-4" />
-                  {t("deployInstance")}
+                  {PAID_MODE ? t("continueToCheckout") : t("deployInstance")}
                 </>
               )}
             </Button>

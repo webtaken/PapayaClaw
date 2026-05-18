@@ -31,7 +31,7 @@ export async function Comparison() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         {/* Traditional Column */}
-        <div className="neo-card flex flex-col rounded-none border-2 border-border bg-card p-8 neo-shadow transition-transform hover:-translate-y-1">
+        <div className="flex flex-col rounded-none border-2 border-border bg-card p-8 transition-transform hover:-translate-y-1">
           <h3 className="mb-8 text-2xl font-bold uppercase text-muted-foreground">
             {t("traditionalTitle")}
           </h3>
@@ -62,7 +62,7 @@ export async function Comparison() {
         </div>
 
         {/* PapayaClaw Column */}
-        <div className="neo-card flex flex-col justify-center rounded-none border-2 border-primary bg-[#ff5722]/5 p-8 neo-shadow-lime transition-transform hover:-translate-y-1">
+        <div className="flex flex-col justify-center rounded-none border-2 border-primary bg-[#ff5722]/5 p-8 transition-transform hover:-translate-y-1">
           <h3 className="mb-8 text-2xl font-bold uppercase text-foreground drop-shadow-[2px_2px_0_rgba(255,87,34,1)]">
             {t("papayaclawTitle")}
           </h3>

@@ -198,7 +198,7 @@ export function SubscriptionsContent({
 
       {/* Subscription Cards */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {subscriptions.map((sub, i) => {
+        {subscriptions.map((sub) => {
           const isPro = sub.planType === "pro";
           const statusCfg = STATUS_CONFIG[sub.status] ?? STATUS_CONFIG.incomplete;
           const instStatus = sub.instance
@@ -210,19 +210,13 @@ export function SubscriptionsContent({
             <div
               key={sub.id}
               className={`flex flex-col rounded-xl border bg-card shadow-2xl overflow-hidden transition-all duration-300 hover:border-border ${
-                i === 0
-                  ? "animate-slide-up-fade"
-                  : i === 1
-                    ? "animate-slide-up-fade-delay-1"
-                    : "animate-slide-up-fade-delay-2"
-              } ${
                 isPro ? "border-amber-500/20" : "border-border"
               }`}
             >
               {/* Card header */}
               <div className="flex items-center justify-between border-b border-border/80 bg-muted/20 px-5 py-3.5">
                 <span
-                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-widest ${
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-mono font-semibold uppercase tracking-widest ${
                     isPro
                       ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                       : "bg-sky-500/10 text-sky-400 border border-sky-500/20"
@@ -238,12 +232,12 @@ export function SubscriptionsContent({
 
                 <div className="flex items-center gap-2">
                   {sub.cancelAtPeriodEnd && (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-amber-400">
+                    <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-xs font-mono uppercase tracking-wider text-amber-400">
                       <AlertTriangle className="h-2.5 w-2.5" />
                       {t("cancelingAtEnd")}
                     </span>
                   )}
-                  <span className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider">
                     <span
                       className={`h-1.5 w-1.5 rounded-full ${statusCfg.dotClass}`}
                     />
@@ -258,7 +252,7 @@ export function SubscriptionsContent({
                 {/* VPS Spec + Billing Period */}
                 <div className="grid grid-cols-2 gap-px bg-muted/50 border border-border/50 rounded-lg overflow-hidden">
                   <div className="bg-card/80 p-3 flex flex-col gap-1.5">
-                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+                    <span className="flex items-center gap-1.5 text-xs uppercase tracking-widest text-muted-foreground font-semibold">
                       <Server className="h-2.5 w-2.5" />
                       {t("vpsSpec")}
                     </span>
@@ -267,7 +261,7 @@ export function SubscriptionsContent({
                     </span>
                   </div>
                   <div className="bg-card/80 p-3 flex flex-col gap-1.5">
-                    <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+                    <span className="flex items-center gap-1.5 text-xs uppercase tracking-widest text-muted-foreground font-semibold">
                       <CalendarDays className="h-2.5 w-2.5" />
                       {t("billingPeriod")}
                     </span>
@@ -280,7 +274,7 @@ export function SubscriptionsContent({
 
                 {/* Linked Instance */}
                 <div className="rounded-lg border border-border/80 bg-muted/30 p-4">
-                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-3 block">
+                  <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-3 block">
                     {t("linkedInstance")}
                   </span>
 
@@ -306,7 +300,7 @@ export function SubscriptionsContent({
                           </p>
                           <Badge
                             variant="outline"
-                            className={`mt-0.5 gap-1 rounded-md px-1.5 py-0 text-[9px] font-mono uppercase tracking-wider ${instStatus?.className}`}
+                            className={`mt-0.5 gap-1 rounded-md px-1.5 py-0 text-xs font-mono uppercase tracking-wider ${instStatus?.className}`}
                           >
                             <span
                               className={`h-1 w-1 rounded-full ${instStatus?.dotClass}`}
@@ -319,7 +313,7 @@ export function SubscriptionsContent({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="shrink-0 gap-1.5 rounded-lg border-border bg-muted/50 text-[10px] font-mono uppercase tracking-wider text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground h-8 shadow-none"
+                          className="shrink-0 gap-1.5 rounded-lg border-border bg-muted/50 text-xs font-mono uppercase tracking-wider text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground h-8 shadow-none"
                         >
                           View
                           <ArrowRight className="h-3 w-3" />
@@ -335,7 +329,7 @@ export function SubscriptionsContent({
                         <Link href="/dashboard">
                           <Button
                             size="sm"
-                            className="gap-1.5 bg-foreground text-background hover:bg-foreground/90 font-medium shadow-none h-8 px-3 border border-transparent transition-all hover:border-border font-mono text-[10px] uppercase tracking-wider"
+                            className="gap-1.5 bg-foreground text-background hover:bg-foreground/90 font-medium shadow-none h-8 px-3 border border-transparent transition-all hover:border-border font-mono text-xs uppercase tracking-wider"
                           >
                             <Plus className="h-3 w-3" />
                             {t("deployInstance")}
@@ -350,7 +344,7 @@ export function SubscriptionsContent({
                 <div className="mt-auto pt-1">
                   <a
                     href="/api/portal"
-                    className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground/80 transition-colors"
+                    className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground/80 transition-colors"
                   >
                     {t("managePlan")}
                     <ExternalLink className="h-2.5 w-2.5" />
@@ -365,7 +359,7 @@ export function SubscriptionsContent({
       {/* Add subscription hint */}
       {subscriptions.length > 0 && (
         <div className="flex items-center justify-center py-2">
-          <p className="text-[10px] font-mono text-muted-foreground/60 uppercase tracking-wider">
+          <p className="text-xs font-mono text-muted-foreground/60 uppercase tracking-wider">
             {t("addSubscriptionDescription")}
           </p>
         </div>
@@ -373,10 +367,10 @@ export function SubscriptionsContent({
 
       {/* Unlinked instances (legacy) */}
       {unlinkedInstances.length > 0 && (
-        <div className="animate-slide-up-fade-delay-2">
+        <div>
           <div className="flex items-center gap-2 mb-3">
             <Unlink className="h-3.5 w-3.5 text-muted-foreground/60" />
-            <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/60 font-semibold">
+            <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground/60 font-semibold">
               {t("unlinked")}
             </span>
           </div>
@@ -396,7 +390,7 @@ export function SubscriptionsContent({
                     </span>
                     <Badge
                       variant="outline"
-                      className={`gap-1 rounded-md px-1.5 py-0 text-[9px] font-mono uppercase tracking-wider ${instStatus.className}`}
+                      className={`gap-1 rounded-md px-1.5 py-0 text-xs font-mono uppercase tracking-wider ${instStatus.className}`}
                     >
                       <span
                         className={`h-1 w-1 rounded-full ${instStatus.dotClass}`}
@@ -408,7 +402,7 @@ export function SubscriptionsContent({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="shrink-0 gap-1.5 rounded-lg border-border bg-muted/50 text-[10px] font-mono uppercase tracking-wider text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground h-7 shadow-none"
+                      className="shrink-0 gap-1.5 rounded-lg border-border bg-muted/50 text-xs font-mono uppercase tracking-wider text-muted-foreground transition-all hover:border-border hover:bg-muted hover:text-foreground h-7 shadow-none"
                     >
                       View
                       <ArrowRight className="h-3 w-3" />

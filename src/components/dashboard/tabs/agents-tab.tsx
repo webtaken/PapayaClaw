@@ -18,7 +18,7 @@ export function AgentsTab() {
         <h2 className="text-base font-semibold text-foreground/80 font-mono uppercase tracking-wider">
           {t("agents.title")}
         </h2>
-        <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-0.5 text-[10px] font-mono font-medium uppercase tracking-widest text-violet-400">
+        <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-0.5 text-xs font-mono font-medium uppercase tracking-widest text-violet-400">
           {t("agents.comingSoon")}
         </span>
       </div>
@@ -33,7 +33,7 @@ export function AgentsTab() {
         {["Research", "Writer", "Analyst", "Coder", "Support"].map((role) => (
           <span
             key={role}
-            className="rounded-md border border-border bg-muted/40 px-3 py-1 text-[11px] font-mono text-muted-foreground/50"
+            className="rounded-md border border-border bg-muted/40 px-3 py-1 text-xs font-mono text-muted-foreground/50"
             aria-hidden
           >
             {role}

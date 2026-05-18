@@ -42,7 +42,7 @@ export function StepGoogleLogin() {
           <span className="text-sm font-medium text-foreground">Sign in with Google</span>
         </div>
 
-        <p className="text-[11px] text-muted-foreground/60 text-center">
+        <p className="text-xs text-muted-foreground/60 text-center">
           Secure · Private · Free
         </p>
       </div>

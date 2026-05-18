@@ -96,7 +96,7 @@ export function ChannelsTab({
           {activeChannelTab === "telegram" && pairingRequests.length > 0 ? (
             <Badge
               variant="outline"
-              className="rounded-md px-2 py-0.5 text-[10px] font-mono border-amber-500/30 bg-amber-500/10 text-amber-400"
+              className="rounded-md px-2 py-0.5 text-xs font-mono border-amber-500/30 bg-amber-500/10 text-amber-400"
             >
               {pairingRequests.length} PENDING
             </Badge>
@@ -107,7 +107,7 @@ export function ChannelsTab({
         <div className="flex px-4 gap-1 -mb-px">
           <button
             onClick={() => setActiveChannelTab("telegram")}
-            className={`group relative flex items-center gap-2 px-3 py-2 text-[11px] font-mono font-medium uppercase tracking-wider transition-all ${
+            className={`group relative flex items-center gap-2 px-3 py-2 text-xs font-mono font-medium uppercase tracking-wider transition-all ${
               activeChannelTab === "telegram"
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground/80"
@@ -129,7 +129,7 @@ export function ChannelsTab({
 
           <button
             onClick={() => setActiveChannelTab("whatsapp")}
-            className={`group relative flex items-center gap-2 px-3 py-2 text-[11px] font-mono font-medium uppercase tracking-wider transition-all ${
+            className={`group relative flex items-center gap-2 px-3 py-2 text-xs font-mono font-medium uppercase tracking-wider transition-all ${
               activeChannelTab === "whatsapp"
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground/80"
@@ -162,7 +162,7 @@ export function ChannelsTab({
                     size="sm"
                     onClick={onRefreshPairing}
                     disabled={isPairingLoading}
-                    className="h-6 px-2 text-[10px] font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded gap-1"
+                    className="h-6 px-2 text-xs font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded gap-1"
                   >
                     <RefreshCw className={`h-3 w-3 ${isPairingLoading ? "animate-spin" : ""}`} />
                     REFRESH
@@ -214,15 +214,15 @@ export function ChannelsTab({
                             <span className="text-sm font-mono font-medium text-foreground/90 truncate">
                               {req.senderName ?? `User ${req.senderId}`}
                             </span>
-                            <span className="text-[10px] font-mono text-muted-foreground/60">
+                            <span className="text-xs font-mono text-muted-foreground/60">
                               ID: {req.senderId}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <code className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-mono text-amber-400">
+                            <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono text-amber-400">
                               {req.code}
                             </code>
-                            <span className="text-[10px] font-mono text-muted-foreground/60">
+                            <span className="text-xs font-mono text-muted-foreground/60">
                               {new Date(req.timestamp).toLocaleString()}
                             </span>
                           </div>
@@ -231,7 +231,7 @@ export function ChannelsTab({
                           size="sm"
                           onClick={() => onApprovePairing(req.code)}
                           disabled={approvingCode === req.code}
-                          className="ml-4 shrink-0 h-8 px-3 bg-emerald-600/80 text-white hover:bg-emerald-500 border border-emerald-500/30 font-mono text-[10px] uppercase tracking-wider gap-1.5 shadow-none"
+                          className="ml-4 shrink-0 h-8 px-3 bg-emerald-600/80 text-white hover:bg-emerald-500 border border-emerald-500/30 font-mono text-xs uppercase tracking-wider gap-1.5 shadow-none"
                         >
                           {approvingCode === req.code ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
@@ -255,12 +255,12 @@ export function ChannelsTab({
                   Connect a Telegram bot to this instance via the Root Terminal.
                   Run the command below to start linking.
                 </p>
-                <code className="rounded-lg bg-muted border border-border px-4 py-2.5 text-[11px] font-mono text-foreground/80 mb-5 select-all">
+                <code className="rounded-lg bg-muted border border-border px-4 py-2.5 text-xs font-mono text-foreground/80 mb-5 select-all">
                   openclaw channels add --channel telegram
                 </code>
                 <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 max-w-sm">
                   <ShieldAlert className="h-3.5 w-3.5 shrink-0 text-muted-foreground mt-0.5" />
-                  <p className="text-[10px] text-muted-foreground leading-relaxed font-mono text-left">
+                  <p className="text-xs text-muted-foreground leading-relaxed font-mono text-left">
                     After adding the channel, pairing requests will appear here
                     for you to approve.
                   </p>
@@ -291,10 +291,10 @@ export function ChannelsTab({
 
                 <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
                   <div className="flex items-center justify-between px-3 py-2 border-b border-border/60 bg-muted/50">
-                    <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-muted-foreground">
+                    <span className="text-xs font-mono font-semibold uppercase tracking-widest text-muted-foreground">
                       {t("allowedNumbers")}
                     </span>
-                    <span className="text-[10px] font-mono text-muted-foreground/60">
+                    <span className="text-xs font-mono text-muted-foreground/60">
                       {whatsappNumbers.length}
                     </span>
                   </div>
@@ -352,7 +352,7 @@ export function ChannelsTab({
                         type="submit"
                         size="sm"
                         disabled={isAddingPhone || !/^\+\d+$/.test(newPhone.trim())}
-                        className="h-7 px-2.5 bg-emerald-600/80 text-white hover:bg-emerald-500 border border-emerald-500/30 font-mono text-[10px] uppercase tracking-wider gap-1 shadow-none"
+                        className="h-7 px-2.5 bg-emerald-600/80 text-white hover:bg-emerald-500 border border-emerald-500/30 font-mono text-xs uppercase tracking-wider gap-1 shadow-none"
                       >
                         {isAddingPhone ? (
                           <Loader2 className="h-3 w-3 animate-spin" />
@@ -363,7 +363,7 @@ export function ChannelsTab({
                     </form>
                     <div className="flex items-start gap-2 pt-1">
                       <Info className="h-3 w-3 shrink-0 text-muted-foreground mt-0.5" />
-                      <p className="text-[11px] text-muted-foreground leading-relaxed font-mono">
+                      <p className="text-xs text-muted-foreground leading-relaxed font-mono">
                         {t("allowedNumbersInfo")}
                       </p>
                     </div>
@@ -372,7 +372,7 @@ export function ChannelsTab({
 
                 <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
                   <div className="px-4 py-2.5 border-b border-border/60 bg-muted/50">
-                    <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-muted-foreground">
+                    <span className="text-xs font-mono font-semibold uppercase tracking-widest text-muted-foreground">
                       Link Device
                     </span>
                   </div>
@@ -380,10 +380,10 @@ export function ChannelsTab({
                     <p className="text-xs text-muted-foreground leading-relaxed font-mono">
                       Link your dedicated WhatsApp number via the Root Terminal:
                     </p>
-                    <code className="block rounded-lg bg-card border border-border px-3 py-2 text-[11px] font-mono text-foreground/80 select-all">
+                    <code className="block rounded-lg bg-card border border-border px-3 py-2 text-xs font-mono text-foreground/80 select-all">
                       openclaw channels login --channel whatsapp
                     </code>
-                    <p className="text-[10px] text-muted-foreground/60 leading-relaxed font-mono">
+                    <p className="text-xs text-muted-foreground/60 leading-relaxed font-mono">
                       Scan the QR code with WhatsApp on your dedicated phone.
                       Once linked, messages from your allowed number will reach
                       your agent automatically.
@@ -402,12 +402,12 @@ export function ChannelsTab({
                   Messages from your authorized number are accepted
                   automatically — no pairing codes needed.
                 </p>
-                <code className="rounded-lg bg-muted border border-border px-4 py-2.5 text-[11px] font-mono text-foreground/80 mb-5 select-all">
+                <code className="rounded-lg bg-muted border border-border px-4 py-2.5 text-xs font-mono text-foreground/80 mb-5 select-all">
                   openclaw channels add --channel whatsapp
                 </code>
                 <div className="flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 max-w-sm">
                   <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400 mt-0.5" />
-                  <p className="text-[10px] text-emerald-400/80 leading-relaxed font-mono text-left">
+                  <p className="text-xs text-emerald-400/80 leading-relaxed font-mono text-left">
                     WhatsApp uses allowlist policy — pre-authorize phone
                     numbers, no approval codes required.
                   </p>

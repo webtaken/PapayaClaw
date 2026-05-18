@@ -47,7 +47,7 @@ export function StepDeploy() {
           ))}
         </div>
 
-        <p className="text-[11px] text-muted-foreground/60 text-center">
+        <p className="text-xs text-muted-foreground/60 text-center">
           Your AI employee will be online shortly
         </p>
       </div>

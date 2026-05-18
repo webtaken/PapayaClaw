@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { getUserSubscription } from "@/lib/polar";
+import { getCapacitySnapshot } from "@/lib/hetzner-limits";
 import { setRequestLocale } from "next-intl/server";
 
 export default async function DashboardPage({
@@ -24,13 +25,14 @@ export default async function DashboardPage({
     redirect("/");
   }
 
-  const [instances, currentSubscription] = await Promise.all([
+  const [instances, currentSubscription, capacity] = await Promise.all([
     db
       .select()
       .from(instance)
       .where(eq(instance.userId, session.user.id))
       .orderBy(desc(instance.createdAt)),
     getUserSubscription(session.user.id),
+    getCapacitySnapshot().catch(() => undefined),
   ]);
 
   return (
@@ -38,6 +40,7 @@ export default async function DashboardPage({
       initialInstances={instances}
       subscription={currentSubscription}
       user={{ id: session.user.id, email: session.user.email }}
+      capacity={capacity}
     />
   );
 }

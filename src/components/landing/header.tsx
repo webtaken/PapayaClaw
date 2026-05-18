@@ -5,7 +5,6 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { useTranslations, useLocale } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { ThemeToggle } from "@/components/landing/theme-toggle";
 
 export function Header() {
   const { data: session, isPending } = authClient.useSession();
@@ -31,6 +30,13 @@ export function Header() {
       document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
     }
     // Otherwise, the Link navigates to /#pricing
+  };
+
+  const handleCompaniesClick = (e: React.MouseEvent) => {
+    if (pathname === "/") {
+      e.preventDefault();
+      document.getElementById("companies")?.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   return (
@@ -66,6 +72,13 @@ export function Header() {
             {t("pricing")}
           </Link>
           <Link
+            href="/#companies"
+            onClick={handleCompaniesClick}
+            className="text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:text-primary"
+          >
+            {t("companies")}
+          </Link>
+          <Link
             href="/dashboard"
             className="text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:text-primary"
           >
@@ -80,8 +93,6 @@ export function Header() {
             {locale === "en" ? "🇪🇸 ES" : "🇺🇸 EN"}
           </button>
 
-          <ThemeToggle />
-
           {!isPending && session ? (
             <Button
               onClick={handleSignOut}
@@ -92,7 +103,7 @@ export function Header() {
           ) : (
             <Link
               href="/login"
-              className="rounded-full bg-primary px-5 py-2 text-sm font-bold uppercase tracking-wide text-black transition-all hover:bg-white neo-shadow-sm hover:neo-shadow"
+              className="rounded-full bg-primary px-5 py-2 text-sm font-bold uppercase tracking-wide text-black transition-all hover:bg-white"
             >
               {t("login")}
             </Link>

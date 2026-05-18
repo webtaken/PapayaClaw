@@ -38,14 +38,14 @@ export function StepMarketplace() {
               }`}
             >
               <span className="text-lg leading-none">{tpl.emoji}</span>
-              <span className="text-[10px] font-medium text-muted-foreground text-center leading-tight">
+              <span className="text-xs font-medium text-muted-foreground text-center leading-tight">
                 {tpl.label}
               </span>
             </div>
           ))}
         </div>
 
-        <p className="text-[11px] text-muted-foreground/60 text-center">
+        <p className="text-xs text-muted-foreground/60 text-center">
           20+ ready-to-deploy templates
         </p>
       </div>

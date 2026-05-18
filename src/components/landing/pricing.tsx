@@ -39,9 +39,6 @@ export function Pricing() {
       interval: "month",
       descriptionKey: "plans.basic.description" as const,
       accentColor: "primary",
-      shadow: "neo-shadow",
-      borderColor: "border-border",
-      bgTint: "bg-background",
       icon: Zap,
       featureKeys: [
         "plans.basic.features.f1",
@@ -53,7 +50,7 @@ export function Pricing() {
       ] as const,
       ctaKey: "plans.basic.cta" as const,
       ctaStyle:
-        "bg-foreground text-background border-2 border-foreground hover:bg-primary hover:border-primary hover:neo-shadow transition-all font-bold uppercase tracking-wider",
+        "bg-foreground text-background hover:bg-primary transition-colors font-semibold",
       productId: basicProductId,
     },
     {
@@ -62,9 +59,6 @@ export function Pricing() {
       interval: "month",
       descriptionKey: "plans.pro.description" as const,
       accentColor: "secondary",
-      shadow: "neo-shadow-lime",
-      borderColor: "border-secondary",
-      bgTint: "bg-[#cddc39]/[0.03]",
       icon: Crown,
       popular: true,
       featureKeys: [
@@ -78,7 +72,7 @@ export function Pricing() {
       ] as const,
       ctaKey: "plans.pro.cta" as const,
       ctaStyle:
-        "bg-secondary text-black border-2 border-secondary hover:bg-lime-300 hover:border-lime-300 neo-shadow-sm hover:neo-shadow-lime transition-all font-bold uppercase tracking-wider",
+        "bg-secondary text-black hover:bg-lime-300 transition-colors font-semibold",
       productId: proProductId,
     },
   ];
@@ -94,7 +88,7 @@ export function Pricing() {
 
       <div className="relative mx-auto max-w-5xl px-6 py-24">
         {/* Section Header */}
-        <div className="text-center mb-20 animate-slide-up-fade">
+        <div className="text-center mb-20">
           <Badge className="mb-8 rounded-full border-2 border-primary bg-primary/10 px-4 py-1.5 text-sm font-bold leading-none tracking-wider text-primary uppercase">
             {t("badge")}
           </Badge>
@@ -110,7 +104,7 @@ export function Pricing() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 animate-slide-up-fade-delay-1">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
           {plans.map((plan) => {
             const Icon = plan.icon;
             const checkoutUrl = plan.productId
@@ -120,11 +114,15 @@ export function Pricing() {
             return (
               <Card
                 key={plan.nameKey}
-                className={`neo-card relative rounded-none border-2 py-0 shadow-none gap-0 ${plan.borderColor} ${plan.bgTint} ${plan.shadow} transition-transform hover:-translate-y-1`}
+                className={`relative gap-0 py-0 overflow-hidden transition-all hover:-translate-y-1 hover:shadow-lg ${
+                  plan.popular
+                    ? "border-secondary/40 ring-1 ring-secondary/30 shadow-md"
+                    : "border-border"
+                }`}
               >
                 {/* Popular Badge */}
                 {plan.popular && (
-                  <Badge className="absolute -top-px -right-px rounded-none bg-secondary text-black px-4 py-1.5 text-xs font-black uppercase tracking-widest border-l-2 border-b-2 border-secondary">
+                  <Badge className="absolute top-4 right-4 rounded-full bg-secondary text-black px-3 py-1 text-xs font-semibold uppercase tracking-wider">
                     {t("popular")}
                   </Badge>
                 )}
@@ -133,78 +131,58 @@ export function Pricing() {
                 <CardHeader className="p-8 pb-0">
                   <div className="flex items-center gap-3 mb-6">
                     <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-none border-2 ${
+                      className={`flex h-10 w-10 items-center justify-center rounded-lg ${
                         plan.accentColor === "secondary"
-                          ? "border-secondary bg-secondary text-black"
-                          : "border-primary bg-primary text-black"
+                          ? "bg-secondary/15 text-secondary-foreground"
+                          : "bg-primary/10 text-primary"
                       }`}
                     >
-                      <Icon className="h-5 w-5" strokeWidth={2.5} />
+                      <Icon className="h-5 w-5" strokeWidth={2} />
                     </div>
-                    <h3 className="text-2xl font-bold uppercase tracking-tight text-foreground">
+                    <h3 className="text-xl font-semibold tracking-tight text-foreground">
                       {t(plan.nameKey)}
                     </h3>
                   </div>
 
-                  <p className="text-sm font-medium text-muted-foreground mb-8">
+                  <p className="text-sm text-muted-foreground mb-8">
                     {t(plan.descriptionKey)}
                   </p>
 
                   {/* Price */}
                   <div className="flex items-baseline gap-1 mb-8">
-                    <span className="text-sm font-bold text-muted-foreground">
+                    <span className="text-sm font-medium text-muted-foreground">
                       $
                     </span>
-                    <span
-                      className={`text-6xl font-black tracking-tighter ${
-                        plan.accentColor === "secondary"
-                          ? "text-secondary [-webkit-text-stroke:1px_#000] drop-shadow-[3px_3px_0_rgba(255,87,34,1)]"
-                          : "text-foreground"
-                      }`}
-                    >
+                    <span className="text-5xl font-bold tracking-tight text-foreground">
                       {plan.price}
                     </span>
-                    <span className="text-base font-bold text-muted-foreground uppercase ml-1">
+                    <span className="text-sm font-medium text-muted-foreground ml-1">
                       / {plan.interval}
                     </span>
                   </div>
                 </CardHeader>
 
                 {/* Divider */}
-                <Separator
-                  className={`mx-8 w-auto ${
-                    plan.accentColor === "secondary"
-                      ? "bg-secondary/30"
-                      : "bg-border"
-                  }`}
-                />
+                <Separator className="mx-8 w-auto bg-border" />
 
                 {/* Features */}
                 <CardContent className="p-8 flex-1">
-                  <div className="space-y-0">
-                    {plan.featureKeys.map((featureKey, i) => (
+                  <div className="space-y-3">
+                    {plan.featureKeys.map((featureKey) => (
                       <div
                         key={featureKey}
-                        className={`flex items-center gap-4 py-3.5 ${
-                          i < plan.featureKeys.length - 1
-                            ? `border-b-2 ${
-                                plan.accentColor === "secondary"
-                                  ? "border-secondary/10"
-                                  : "border-border/50"
-                              }`
-                            : ""
-                        }`}
+                        className="flex items-center gap-3"
                       >
                         <div
-                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-none border-2 ${
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
                             plan.accentColor === "secondary"
-                              ? "border-secondary bg-secondary text-black"
-                              : "border-border bg-muted text-muted-foreground"
-                          } text-xs font-bold`}
+                              ? "bg-secondary/20 text-secondary-foreground"
+                              : "bg-primary/10 text-primary"
+                          }`}
                         >
-                          <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                          <Check className="h-3 w-3" strokeWidth={3} />
                         </div>
-                        <span className="text-sm font-semibold text-muted-foreground">
+                        <span className="text-sm text-muted-foreground">
                           {t(featureKey)}
                         </span>
                       </div>
@@ -217,21 +195,21 @@ export function Pricing() {
                   {isPending ? (
                     <Button
                       disabled
-                      className={`w-full rounded-none px-6 py-4 text-sm h-auto opacity-50 cursor-not-allowed ${plan.ctaStyle}`}
+                      className={`w-full h-11 opacity-50 cursor-not-allowed ${plan.ctaStyle}`}
                     >
                       {t("loading")}
                     </Button>
                   ) : !session ? (
                     <Button
                       onClick={handleSignIn}
-                      className={`w-full rounded-none px-6 py-4 text-sm h-auto cursor-pointer ${plan.ctaStyle}`}
+                      className={`w-full h-11 cursor-pointer ${plan.ctaStyle}`}
                     >
                       {t(plan.ctaKey)}
                     </Button>
                   ) : (
                     <Button
                       asChild
-                      className={`w-full rounded-none px-6 py-4 text-sm h-auto ${plan.ctaStyle}`}
+                      className={`w-full h-11 ${plan.ctaStyle}`}
                     >
                       <Link
                         href={
@@ -251,7 +229,7 @@ export function Pricing() {
         </div>
 
         {/* Bottom note */}
-        <div className="mt-16 text-center animate-slide-up-fade-delay-2">
+        <div className="mt-16 text-center">
           <p className="text-sm font-medium text-muted-foreground">
             {t("bottomNote")}{" "}
             <span className="font-bold text-muted-foreground">

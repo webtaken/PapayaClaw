@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { InstanceCard } from "./instance-card";
 import { DeployDialog } from "./deploy-dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, Crown, ExternalLink, CreditCard } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { CapacityBadge } from "@/components/capacity-badge";
 
 export interface Instance {
   id: string;
@@ -29,10 +32,17 @@ export interface Subscription {
   currentPeriodEnd: Date | null;
 }
 
+interface CapacitySnapshot {
+  used: number;
+  limit: number;
+  remaining: number;
+}
+
 interface DashboardProps {
   initialInstances: Instance[];
   subscription: Subscription | null;
   user: { id: string; email: string };
+  capacity?: CapacitySnapshot;
 }
 
 const BASIC_PRODUCT_ID = process.env.NEXT_PUBLIC_POLAR_BASIC_PRODUCT_ID;
@@ -46,10 +56,30 @@ export function DashboardContent({
   initialInstances,
   subscription,
   user,
+  capacity,
 }: DashboardProps) {
   const [instances, setInstances] = useState<Instance[]>(initialInstances);
   const [deployOpen, setDeployOpen] = useState(false);
   const t = useTranslations("Dashboard");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const checkoutSuccessShown = useRef(false);
+
+  useEffect(() => {
+    if (searchParams.get("checkout") !== "success") return;
+    if (checkoutSuccessShown.current) return;
+    checkoutSuccessShown.current = true;
+    toast.success(t("checkoutSuccessTitle"), {
+      description: t("checkoutSuccessBody"),
+      duration: 8000,
+    });
+    const url = new URL(window.location.href);
+    url.searchParams.delete("checkout");
+    url.searchParams.delete("co");
+    window.history.replaceState({}, "", url.toString());
+    const timeout = setTimeout(() => router.refresh(), 4000);
+    return () => clearTimeout(timeout);
+  }, [searchParams, router, t]);
 
   const planLabel =
     subscription?.planType === "pro"
@@ -96,7 +126,7 @@ export function DashboardContent({
               {t("yourInstances")}
             </h1>
             <span
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase tracking-widest ${
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-mono font-semibold uppercase tracking-widest ${
                 planLabel === "Pro"
                   ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                   : planLabel === "Basic"
@@ -107,6 +137,7 @@ export function DashboardContent({
               {planLabel === "Pro" && <Crown className="h-2.5 w-2.5" />}
               {planLabel}
             </span>
+            <CapacityBadge initial={capacity} />
           </div>
           <p className="text-xs font-mono text-muted-foreground">
             {t("manageDescription")}

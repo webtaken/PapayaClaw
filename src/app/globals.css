@@ -2,8 +2,6 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -47,7 +45,6 @@
   --radius-4xl: calc(var(--radius) + 16px);
 }
 
-/* Light theme (default) */
 :root {
   --radius: 0.75rem;
   --background: #fafaf9;
@@ -62,8 +59,8 @@
   --secondary-foreground: #1c1917;
   --muted: #f5f5f4;
   --muted-foreground: #78716c;
-  --accent: #ff5722;
-  --accent-foreground: #ffffff;
+  --accent: #f5f5f4;
+  --accent-foreground: #1c1917;
   --destructive: #dc2626;
   --border: #e7e5e4;
   --input: rgba(0, 0, 0, 0.06);
@@ -83,41 +80,6 @@
   --sidebar-ring: #ff5722;
 }
 
-/* Dark theme — Cyber-Tropical design */
-.dark {
-  --background: #0f1014;
-  --foreground: #f4f4f5;
-  --card: #18191f;
-  --card-foreground: #f4f4f5;
-  --popover: #18191f;
-  --popover-foreground: #f4f4f5;
-  --primary: #ff5722;
-  --primary-foreground: #000000;
-  --secondary: #cddc39;
-  --secondary-foreground: #000000;
-  --muted: #272a35;
-  --muted-foreground: #a1a1aa;
-  --accent: #ff5722;
-  --accent-foreground: #000000;
-  --destructive: #ef4444;
-  --border: #333644;
-  --input: rgba(255, 255, 255, 0.1);
-  --ring: #ff5722;
-  --chart-1: #ff5722;
-  --chart-2: #cddc39;
-  --chart-3: #f59e0b;
-  --chart-4: #ec4899;
-  --chart-5: #8b5cf6;
-  --sidebar: #18191f;
-  --sidebar-foreground: #f4f4f5;
-  --sidebar-primary: #ff5722;
-  --sidebar-primary-foreground: #000000;
-  --sidebar-accent: #272a35;
-  --sidebar-accent-foreground: #f4f4f5;
-  --sidebar-border: #333644;
-  --sidebar-ring: #ff5722;
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -131,44 +93,14 @@
   }
 }
 
-/* Custom utilities for the Cyber-Tropical clone */
+/* Custom utilities */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
-  .neo-shadow {
-    box-shadow: 6px 6px 0px 0px rgba(255, 87, 34, 1);
-  }
-  .neo-shadow-lime {
-    box-shadow: 6px 6px 0px 0px rgba(205, 220, 57, 1);
-  }
-  .neo-shadow-sm {
-    box-shadow: 3px 3px 0px 0px rgba(255, 87, 34, 1);
-  }
-  .neo-shadow-lime-sm {
-    box-shadow: 3px 3px 0px 0px rgba(205, 220, 57, 1);
-  }
-  .neo-border {
-    border: 2px solid rgba(0, 0, 0, 0.15);
-  }
-}
-
-.dark .neo-border {
-  border: 2px solid rgba(255, 255, 255, 0.8);
 }
 
 /* Custom animations */
-@keyframes slide-up-fade {
-  0% {
-    opacity: 0;
-    transform: translateY(40px) scale(0.98);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
 @keyframes float {
   0%, 100% {
     transform: translateY(0px) rotate(0deg);
@@ -176,25 +108,6 @@
   50% {
     transform: translateY(-10px) rotate(1deg);
   }
-}
-
-.animate-slide-up-fade {
-  animation: slide-up-fade 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.animate-slide-up-fade-delay-1 {
-  animation: slide-up-fade 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
-  opacity: 0;
-}
-
-.animate-slide-up-fade-delay-2 {
-  animation: slide-up-fade 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
-  opacity: 0;
-}
-
-.animate-slide-up-fade-delay-3 {
-  animation: slide-up-fade 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.45s forwards;
-  opacity: 0;
 }
 
 .animate-float {
@@ -209,34 +122,11 @@
     linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
 }
 
-.dark .cyber-grid {
-  background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-}
-
 .gradient-mesh {
   background:
     radial-gradient(circle at 10% 20%, rgba(255, 87, 34, 0.08) 0%, transparent 40%),
     radial-gradient(circle at 90% 80%, rgba(205, 220, 57, 0.08) 0%, transparent 40%),
     radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.06) 0%, transparent 60%);
-}
-
-.dark .gradient-mesh {
-  background:
-    radial-gradient(circle at 10% 20%, rgba(255, 87, 34, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(205, 220, 57, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.1) 0%, transparent 60%);
-}
-
-/* Card interactions */
-.neo-card {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.neo-card-hover:hover {
-  transform: translate(-3px, -3px);
-  box-shadow: 6px 6px 0px 0px rgba(255, 87, 34, 1);
-  border-color: rgba(255, 87, 34, 1);
 }
 
 /* Selection card selected state */
@@ -259,12 +149,6 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a29e;
-}
-.dark ::-webkit-scrollbar-thumb {
-  background: #27272a;
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
 }
 
 /* Blog heading anchors */

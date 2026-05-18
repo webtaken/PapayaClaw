@@ -7,7 +7,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Toaster } from "@/components/ui/sonner";
-import { ThemeToggle } from "@/components/landing/theme-toggle";
 
 export default async function DashboardLayout({
   children,
@@ -73,7 +72,6 @@ export default async function DashboardLayout({
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <ThemeToggle />
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8">
                 <AvatarImage

@@ -179,7 +179,7 @@ export function ModelProviderModule({
                 <span className="text-sm font-medium text-foreground truncate">
                   {currentInfo.name}
                 </span>
-                <span className="text-[10px] font-mono text-muted-foreground truncate">
+                <span className="text-xs font-mono text-muted-foreground truncate">
                   {currentProvider?.name ?? "Unknown"} &middot; {currentModel}
                 </span>
               </div>
@@ -227,7 +227,7 @@ export function ModelProviderModule({
                           {provider.badge === "recommended" && (
                             <Badge
                               variant="secondary"
-                              className="ml-auto bg-violet-500 px-1.5 text-[9px] font-medium text-white border-none"
+                              className="ml-auto bg-violet-500 px-1.5 text-xs font-medium text-white border-none"
                             >
                               ★
                             </Badge>
@@ -261,11 +261,11 @@ export function ModelProviderModule({
                         <span className="text-xs font-medium truncate w-full pr-4">
                           {m.name}
                         </span>
-                        <span className="text-[9px] text-muted-foreground font-mono truncate w-full flex-1">
+                        <span className="text-xs text-muted-foreground font-mono truncate w-full flex-1">
                           {m.id}
                         </span>
                         {m.badge && (
-                          <span className="absolute right-1.5 top-1.5 text-[8px] font-medium text-amber-400">
+                          <span className="absolute right-1.5 top-1.5 text-xs font-medium text-amber-400">
                             ★
                           </span>
                         )}

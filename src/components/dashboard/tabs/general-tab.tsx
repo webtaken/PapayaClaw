@@ -113,7 +113,7 @@ export function GeneralTab({
       <div className="rounded-xl border border-border bg-card shadow-2xl overflow-hidden">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-muted/50">
           <div className="bg-card p-4 flex flex-col gap-1.5">
-            <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+            <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
               IP Address
             </span>
             <span className="font-mono text-sm text-foreground/90">
@@ -122,7 +122,7 @@ export function GeneralTab({
           </div>
 
           <div className="bg-card p-4 flex flex-col gap-1.5">
-            <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+            <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
               Model
             </span>
             <span className="flex items-center gap-2 text-sm text-foreground/90">
@@ -134,7 +134,7 @@ export function GeneralTab({
           </div>
 
           <div className="bg-card p-4 flex flex-col gap-1.5">
-            <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+            <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
               {channels.length === 1 ? "Channel" : "Channels"}
             </span>
             <span className="flex items-center gap-2 text-sm text-foreground/90 flex-wrap">
@@ -157,7 +157,7 @@ export function GeneralTab({
           </div>
 
           <div className="bg-card p-4 flex flex-col gap-1.5">
-            <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+            <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
               Gateway
             </span>
             <span

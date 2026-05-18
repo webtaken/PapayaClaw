@@ -50,12 +50,12 @@ export function SshTab({
             variant="ghost"
             size="sm"
             onClick={() => setIsTerminalOpen(false)}
-            className="h-6 px-2 text-[10px] font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded uppercase tracking-wider"
+            className="h-6 px-2 text-xs font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded uppercase tracking-wider"
           >
             {t("ssh.disconnect")}
           </Button>
         ) : (
-          <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
+          <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
             {t("ssh.idleLabel")}
           </span>
         )}

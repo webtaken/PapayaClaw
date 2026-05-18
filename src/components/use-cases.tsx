@@ -49,7 +49,7 @@ export async function UseCases() {
           <Badge
             key={key}
             variant="secondary"
-            className="cursor-default rounded-full border-2 border-border bg-card px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-muted-foreground transition-all duration-200 hover:-translate-y-1 hover:border-primary hover:bg-primary hover:text-primary-foreground neo-shadow-sm hover:neo-shadow"
+            className="cursor-default rounded-full border-2 border-border bg-card px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-muted-foreground transition-all duration-200 hover:-translate-y-1 hover:border-primary hover:bg-primary hover:text-primary-foreground"
             style={{ animationDelay: `${i * 0.05}s` }}
           >
             {t(`cases.${key}`)}
