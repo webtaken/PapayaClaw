@@ -9,9 +9,8 @@
     "login": "Iniciar sesión"
   },
   "Capacity": {
-    "remaining": "Quedan {count} de {limit} servidores disponibles",
-    "full": "Sin servidores disponibles",
-    "title": "{used}/{limit} servidores aprovisionados"
+    "remaining": "Quedan {count} servidores disponibles",
+    "full": "Sin servidores disponibles"
   },
   "Hero": {
     "badge": "Plataforma de Empleados IA",

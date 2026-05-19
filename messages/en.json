@@ -9,9 +9,8 @@
     "login": "Login"
   },
   "Capacity": {
-    "remaining": "{count} of {limit} server slots left",
-    "full": "All server slots taken",
-    "title": "{used}/{limit} servers provisioned"
+    "remaining": "{count} server slots left",
+    "full": "All server slots taken"
   },
   "Hero": {
     "badge": "AI Employees Platform",

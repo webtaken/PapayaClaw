@@ -44,9 +44,7 @@ export function CapacityBadge({
       ? "border-amber-500/30 bg-amber-500/10 text-amber-500"
       : "border-green-600/20 bg-green-600/5 text-green-500";
 
-  const label = isFull
-    ? t("full")
-    : t("remaining", { count: remaining, limit });
+  const label = isFull ? t("full") : t("remaining", { count: remaining });
 
   return (
     <div
@@ -55,7 +53,6 @@ export function CapacityBadge({
       } ${className ?? ""}`}
       role="status"
       aria-live="polite"
-      title={t("title", { used, limit })}
     >
       <Server className="h-3 w-3" />
       <span>{label}</span>
