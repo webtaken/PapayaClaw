@@ -27,7 +27,12 @@ const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
 
 app.prepare().then(() => {
-  const httpServer = createServer(handler);
+  const httpServer = createServer((req, res) => {
+    if (req.headers["x-forwarded-proto"] === "https") {
+      req.headers["x-forwarded-port"] = "443";
+    }
+    return handler(req, res);
+  });
 
   // ── Socket.IO ──────────────────────────────────────────────────────
   const io = new SocketIOServer(httpServer, {
