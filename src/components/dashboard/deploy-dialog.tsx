@@ -95,7 +95,6 @@ export function DeployDialog({
   const [botToken, setBotToken] = useState("");
   const [whatsappPhone, setWhatsappPhone] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
-  const [promoCode, setPromoCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const totalSteps = PAID_MODE ? 4 : 3;
@@ -123,7 +122,6 @@ export function DeployDialog({
     setBotToken("");
     setWhatsappPhone("");
     setSelectedPlan(null);
-    setPromoCode("");
     setIsSubmitting(false);
   };
 
@@ -166,7 +164,6 @@ export function DeployDialog({
           channelPhone:
             selectedChannel === "whatsapp" ? whatsappPhone.trim() : undefined,
           planType: selectedPlan!,
-          promoCode: promoCode.trim() || undefined,
         });
         if ("error" in res) {
           toast.error(res.error);
@@ -574,7 +571,7 @@ export function DeployDialog({
             </div>
           )}
 
-          {/* Step 3 (paid mode only): Plan + Promo */}
+          {/* Step 3 (paid mode only): Plan */}
           {PAID_MODE && step === 3 && (
             <div className="space-y-4 animate-fade-in-up">
               <div>
@@ -630,28 +627,6 @@ export function DeployDialog({
                     );
                   })}
                 </div>
-              </div>
-
-              <div>
-                <Label
-                  htmlFor="promo-code"
-                  className="mb-1.5 block text-xs font-medium text-foreground/80"
-                >
-                  {t("promoCode")}
-                </Label>
-                <Input
-                  id="promo-code"
-                  type="text"
-                  placeholder={t("promoCodePlaceholder")}
-                  value={promoCode}
-                  onChange={(e) =>
-                    setPromoCode(e.target.value.toUpperCase().slice(0, 64))
-                  }
-                  className="h-8 rounded-lg border-border bg-muted/50 font-mono text-xs uppercase tracking-wider text-foreground placeholder:text-muted-foreground/60 focus:border-violet-500 focus:ring-violet-500/20"
-                />
-                <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                  {t("promoCodeHint")}
-                </p>
               </div>
             </div>
           )}
@@ -730,19 +705,6 @@ export function DeployDialog({
                           {t("perMonth")}
                         </span>
                       </div>
-                      {promoCode.trim() && (
-                        <>
-                          <div className="h-px bg-border/60" />
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">
-                              {t("promoCode")}
-                            </span>
-                            <span className="font-mono text-xs uppercase text-foreground">
-                              {promoCode.trim()}
-                            </span>
-                          </div>
-                        </>
-                      )}
                     </>
                   )}
                 </div>

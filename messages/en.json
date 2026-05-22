@@ -310,9 +310,6 @@
     "planProTagline": "Faster server, more memory, priority support.",
     "perMonth": "month",
     "popular": "POPULAR",
-    "promoCode": "Promo Code (optional)",
-    "promoCodePlaceholder": "ENTER CODE",
-    "promoCodeHint": "Have a discount code? Enter it here or apply it on the checkout page.",
     "continueToCheckout": "Continue to Checkout",
     "redirecting": "Redirecting...",
     "checkoutNote": "You'll be redirected to a secure Polar checkout. Your AI employee will be provisioned automatically after payment."

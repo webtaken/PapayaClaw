@@ -21,7 +21,6 @@ export type CheckoutInput = {
   botToken?: string;
   channelPhone?: string;
   planType: PlanType;
-  promoCode?: string;
 };
 
 export type CheckoutResult = { url: string } | { error: string };
@@ -41,7 +40,6 @@ export async function createPendingCheckout(
   const channel = input.channel;
   const botToken = input.botToken?.trim();
   const channelPhone = input.channelPhone?.trim();
-  const promoCode = input.promoCode?.trim();
 
   if (!name || !model || !modelApiKey || !channel) {
     return { error: "Missing required fields" };
@@ -101,10 +99,7 @@ export async function createPendingCheckout(
       successUrl,
     });
 
-    const url = promoCode
-      ? `${checkout.url}?discount_code=${encodeURIComponent(promoCode)}`
-      : checkout.url;
-    return { url };
+    return { url: checkout.url };
   } catch (err) {
     console.error("[createPendingCheckout] Polar error:", err);
     return { error: "Failed to create checkout. Please try again." };
