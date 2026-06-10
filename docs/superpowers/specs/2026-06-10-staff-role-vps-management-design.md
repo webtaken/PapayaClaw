@@ -57,6 +57,7 @@ Drizzle migration adds the column; existing rows default to `'user'`. No other s
 - **Self-healing sync**, performed inside `getSessionContext()`:
   - If `isStaffEmail(user.email)` and stored `role !== 'staff'` → update column to `'staff'`.
   - If not in the list and stored `role === 'staff'` → demote to `'user'`.
+- The sync writes **only when the stored value differs** (no-op when `role` already matches), so the common path — a staff user already marked `'staff'` — performs zero writes per request.
 - Effect: editing the env promotes/demotes existing users on their next request — no re-login, no manual DB op. The env is the source of truth; the column is a persisted cache used for queries and display.
 
 ## 3. Authorization layer
@@ -64,8 +65,8 @@ Drizzle migration adds the column; existing rows default to `'user'`. No other s
 New `src/lib/auth-context.ts`:
 
 ```ts
-// wraps auth.api.getSession + role sync
-getSessionContext(): Promise<{ user; isStaff: boolean } | null>
+// wraps auth.api.getSession + role sync; accepts headers for non-request callers
+getSessionContext(headers?: Headers): Promise<{ user; isStaff: boolean } | null>
 
 // the single ownership/staff rule
 canAccessInstance(ctx, inst): boolean // => ctx.isStaff || inst.userId === ctx.user.id
@@ -73,11 +74,18 @@ canAccessInstance(ctx, inst): boolean // => ctx.isStaff || inst.userId === ctx.u
 
 Every API route and server action replaces its raw `auth.api.getSession` call with `getSessionContext`. The access rule lives in exactly one place.
 
+**Header injection caveat:** Next.js routes/actions get headers from `next/headers`, but the Socket.IO SSH server (`server.ts`) builds its own `Headers` from the raw socket request (`server.ts:50`) and cannot use `next/headers`. So `getSessionContext` must accept an optional `headers` argument; `server.ts` passes its hand-built `Headers`. Default (no arg) uses `await headers()` for the Next.js callers.
+
 ## 4. API changes
 
 - `GET /api/instances` — staff: return **all** instances joined with owner email; user: own only (unchanged). `dashboard/page.tsx` server fetch mirrors this.
 - `POST /api/instances` — staff: **bypass** the subscription check, accept `planType` and derive `serverType = PLAN_SERVER_TYPE[planType]`, provision with `subscriptionId: null`. The `assertProvisioningCapacity` check **still applies**. Non-staff path unchanged.
 - `GET/PATCH/DELETE /api/instances/[id]` — replace the `eq(userId, session.user.id)` scoping with: fetch by `id`, then gate on `canAccessInstance(ctx, inst)`. Staff get full parity. Same treatment for the sub-routes: `status`, `reconfigure`, `whatsapp-numbers`, `pairing`.
+  - **Write-clause note:** the `PATCH`/`DELETE`/`reconfigure` handlers currently re-apply `eq(userId, …)` inside their `db.update(...).where(...)` / `db.delete(...).where(...)` clauses, not just the initial fetch. After the `canAccessInstance` gate passes, those write `.where(...)` clauses must key on `id` alone — otherwise staff edits/deletes of another user's instance silently affect zero rows.
+  - **Body-validation note:** `validateBody` (`route.ts:114`) does not currently accept `planType`. The POST handler's validation must be extended to read `planType` on the staff branch (map via `PLAN_SERVER_TYPE`); reject unknown values.
+- **SSH terminal (`server.ts`)** — the Socket.IO `init` handler is owner-scoped at `server.ts:81` (`and(eq(instance.id, instanceId), eq(instance.userId, user.id))`). Replace with `getSessionContext(headers)` (passing the hand-built `Headers`) + `canAccessInstance`, fetching the instance by `id` alone. Without this, staff are blocked from SSH-ing into other users' VPS, contradicting full parity.
+
+> Note on `whatsapp-numbers` / `pairing`: these two sub-routes manage channel pairing and number state (not secret reveal), but they are still owner-scoped today and must take the same `canAccessInstance` gate so staff can operate them on any instance.
 
 ## 5. Deploy / payment bypass (frontend)
 
@@ -91,7 +99,8 @@ Every API route and server action replaces its raw `auth.api.getSession` call wi
 - `DashboardContent` receives `isStaff` (resolved in `page.tsx` via `getSessionContext`) and instances carrying an optional `ownerEmail`.
 - Header: a `STAFF` badge beside the email when `isStaff` (shadcn `Badge`).
 - Instance card (`instance-card.tsx`): show `owner: <email>` when `inst.userId !== user.id`.
-- New i18n strings added to `messages/*` for the badge label and owner tag.
+- **Instance detail page (`src/app/[locale]/dashboard/[id]/page.tsx`)** — currently owner-scoped at `page.tsx:29` (`eq(instance.userId, session.user.id)`), `notFound()` otherwise. It server-fetches the full instance (`modelApiKey`, `botToken`, `sshPrivateKey`) and renders `InstanceDetail` (the surface for view-detail, reveal-secrets, and the SSH tab). Switch to `getSessionContext` + `canAccessInstance` so staff can open any user's instance; without this the "view any VPS detail" / "reveal secrets" parity is unmet.
+- New i18n strings added to **both** `messages/en.json` and `messages/es.json` for the badge label and owner tag (a missing key throws at render — neither locale may be skipped).
 
 UI work follows the project's required skills: `frontend-design`, `interface-design`, `shadcn`.
 
@@ -105,7 +114,8 @@ UI work follows the project's required skills: `frontend-design`, `interface-des
 ## 8. Testing
 
 - Unit: `isStaffEmail` parsing; sync promote and demote paths; `canAccessInstance` (owner, staff-on-other, non-staff-on-other).
-- API authorization: staff vs. user accessing another user's instance (GET/PATCH/DELETE); POST subscription bypass for staff; capacity still enforced for staff.
+- API authorization: staff vs. user accessing another user's instance (GET/PATCH/DELETE, incl. the write-clause keyed on `id`); POST subscription bypass + `planType` validation for staff; capacity still enforced for staff.
+- SSH/detail authorization: `canAccessInstance` gate on the `server.ts` SSH `init` handler and the `[id]/page.tsx` detail fetch (staff opens another user's instance; non-staff is denied).
 - Gate: `npm test && npm run lint`.
 
 ## Files touched
@@ -115,11 +125,13 @@ UI work follows the project's required skills: `frontend-design`, `interface-des
 - `src/lib/polar.ts` (`PLAN_SERVER_TYPE` reuse; possibly an exported helper)
 - `src/app/api/instances/route.ts`
 - `src/app/api/instances/[id]/route.ts` (+ `status`, `reconfigure`, `whatsapp-numbers`, `pairing` sub-routes)
+- `server.ts` (Socket.IO SSH `init` handler — owner scope → `canAccessInstance`)
 - `src/app/[locale]/dashboard/page.tsx`
+- `src/app/[locale]/dashboard/[id]/page.tsx` (detail page — owner scope → `canAccessInstance`)
 - `src/components/dashboard/dashboard-content.tsx`
 - `src/components/dashboard/instance-card.tsx`
 - `src/components/dashboard/deploy-dialog.tsx`
-- `messages/*`
+- `messages/en.json`, `messages/es.json`
 - `.env.example`
 
 ## Out of scope (YAGNI)
