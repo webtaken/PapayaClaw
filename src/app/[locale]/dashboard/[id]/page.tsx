@@ -1,11 +1,11 @@
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { instance } from "@/lib/schema";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import { InstanceDetail } from "@/components/dashboard/instance-detail";
 import { setRequestLocale } from "next-intl/server";
+import { getSessionContext, canAccessInstance } from "@/lib/auth-context";
 
 export default async function InstancePage({
   params,
@@ -15,20 +15,15 @@ export default async function InstancePage({
   const { id, locale } = await params;
   setRequestLocale(locale);
 
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const ctx = await getSessionContext(await headers());
 
-  if (!session) {
+  if (!ctx) {
     redirect("/");
   }
 
-  const [inst] = await db
-    .select()
-    .from(instance)
-    .where(and(eq(instance.id, id), eq(instance.userId, session.user.id)));
+  const [inst] = await db.select().from(instance).where(eq(instance.id, id));
 
-  if (!inst) {
+  if (!inst || !canAccessInstance(ctx, inst)) {
     notFound();
   }
 

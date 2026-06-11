@@ -265,7 +265,8 @@
     "model": "Model",
     "channel": "Channel",
     "checkoutSuccessTitle": "Payment received",
-    "checkoutSuccessBody": "Your AI employee is being provisioned. This usually takes 1–2 minutes — the page will refresh automatically."
+    "checkoutSuccessBody": "Your AI employee is being provisioned. This usually takes 1–2 minutes — the page will refresh automatically.",
+    "staffBadge": "Staff"
   },
   "DeployDialog": {
     "title": "Hire New AI Employee",
@@ -330,7 +331,8 @@
     "deleteDescription": "Are you sure you want to delete",
     "deleteDescriptionEnd": "? This action cannot be undone. All data and configuration will be permanently lost.",
     "cancel": "Cancel",
-    "confirmDelete": "Confirm Delete"
+    "confirmDelete": "Confirm Delete",
+    "owner": "Owner"
   },
   "PairingDialog": {
     "title": "Pairing Requests",

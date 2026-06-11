@@ -20,6 +20,7 @@ export interface Instance {
   botToken: string;
   status: string;
   userId: string;
+  ownerEmail?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +43,7 @@ interface DashboardProps {
   initialInstances: Instance[];
   subscription: Subscription | null;
   user: { id: string; email: string };
+  isStaff: boolean;
   capacity?: CapacitySnapshot;
 }
 
@@ -56,6 +58,7 @@ export function DashboardContent({
   initialInstances,
   subscription,
   user,
+  isStaff,
   capacity,
 }: DashboardProps) {
   const [instances, setInstances] = useState<Instance[]>(initialInstances);
@@ -138,6 +141,11 @@ export function DashboardContent({
               {planLabel}
             </span>
             <CapacityBadge initial={capacity} />
+            {isStaff && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-0.5 text-xs font-mono font-semibold uppercase tracking-widest text-violet-400">
+                {t("staffBadge")}
+              </span>
+            )}
           </div>
           <p className="text-xs font-mono text-muted-foreground">
             {t("manageDescription")}
@@ -191,8 +199,8 @@ export function DashboardContent({
         </div>
       </div>
 
-      {/* Subscription CTA Banner — shown when user has no active plan */}
-      {!subscription && (
+      {/* Subscription CTA Banner — shown when user has no active plan (not for staff) */}
+      {!subscription && !isStaff && (
         <div className="flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/5 px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20">
@@ -244,6 +252,7 @@ export function DashboardContent({
             <InstanceCard
               key={inst.id}
               instance={inst}
+              currentUserId={user.id}
               onStatusChange={handleStatusChange}
               onDelete={handleDelete}
             />
@@ -256,6 +265,7 @@ export function DashboardContent({
         open={deployOpen}
         onOpenChange={setDeployOpen}
         onInstanceCreated={handleInstanceCreated}
+        isStaff={isStaff}
       />
     </div>
   );
