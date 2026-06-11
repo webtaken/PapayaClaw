@@ -1,32 +1,27 @@
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { instance } from "@/lib/schema";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { deleteServer, powerOn, powerOff, deleteSSHKey } from "@/lib/hetzner";
 import { deleteTunnel, deleteDnsRecord } from "@/lib/cloudflare";
+import { getSessionContext, canAccessInstance } from "@/lib/auth-context";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const ctx = await getSessionContext(await headers());
 
-  if (!session) {
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await params;
 
-  const [inst] = await db
-    .select()
-    .from(instance)
-    .where(and(eq(instance.id, id), eq(instance.userId, session.user.id)));
+  const [inst] = await db.select().from(instance).where(eq(instance.id, id));
 
-  if (!inst) {
+  if (!inst || !canAccessInstance(ctx, inst)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -37,11 +32,9 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const ctx = await getSessionContext(await headers());
 
-  if (!session) {
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -53,9 +46,9 @@ export async function PATCH(
   const [current] = await db
     .select()
     .from(instance)
-    .where(and(eq(instance.id, id), eq(instance.userId, session.user.id)));
+    .where(eq(instance.id, id));
 
-  if (!current) {
+  if (!current || !canAccessInstance(ctx, current)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -89,7 +82,7 @@ export async function PATCH(
   const [updated] = await db
     .update(instance)
     .set(updateData)
-    .where(and(eq(instance.id, id), eq(instance.userId, session.user.id)))
+    .where(eq(instance.id, id))
     .returning();
 
   return NextResponse.json(updated);
@@ -99,11 +92,9 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const ctx = await getSessionContext(await headers());
 
-  if (!session) {
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -113,9 +104,9 @@ export async function DELETE(
   const [current] = await db
     .select()
     .from(instance)
-    .where(and(eq(instance.id, id), eq(instance.userId, session.user.id)));
+    .where(eq(instance.id, id));
 
-  if (!current) {
+  if (!current || !canAccessInstance(ctx, current)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -160,7 +151,7 @@ export async function DELETE(
   // Delete from database
   const [deleted] = await db
     .delete(instance)
-    .where(and(eq(instance.id, id), eq(instance.userId, session.user.id)))
+    .where(eq(instance.id, id))
     .returning();
 
   if (!deleted) {

@@ -265,7 +265,8 @@
     "model": "Modelo",
     "channel": "Canal",
     "checkoutSuccessTitle": "Pago recibido",
-    "checkoutSuccessBody": "Tu empleado IA se está aprovisionando. Esto suele tardar 1–2 minutos — la página se actualizará automáticamente."
+    "checkoutSuccessBody": "Tu empleado IA se está aprovisionando. Esto suele tardar 1–2 minutos — la página se actualizará automáticamente.",
+    "staffBadge": "Staff"
   },
   "DeployDialog": {
     "title": "Contratar Nuevo Empleado IA",
@@ -330,7 +331,8 @@
     "deleteDescription": "¿Estás seguro de que quieres eliminar",
     "deleteDescriptionEnd": "? Esta acción no se puede deshacer. Todos los datos y la configuración se perderán permanentemente.",
     "cancel": "Cancelar",
-    "confirmDelete": "Confirmar Eliminación"
+    "confirmDelete": "Confirmar Eliminación",
+    "owner": "Propietario"
   },
   "PairingDialog": {
     "title": "Solicitudes de Vinculación",

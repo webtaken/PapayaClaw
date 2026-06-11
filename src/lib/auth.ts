@@ -10,6 +10,16 @@ export const auth = betterAuth({
       ...schema,
     },
   }),
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        required: false,
+        defaultValue: "user",
+        input: false, // clients cannot set their own role
+      },
+    },
+  },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,

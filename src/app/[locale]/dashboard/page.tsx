@@ -1,6 +1,5 @@
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { instance } from "@/lib/schema";
+import { instance, user } from "@/lib/schema";
 import { eq, desc } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -8,6 +7,7 @@ import { DashboardContent } from "@/components/dashboard/dashboard-content";
 import { getUserSubscription } from "@/lib/polar";
 import { getCapacitySnapshot } from "@/lib/hetzner-limits";
 import { setRequestLocale } from "next-intl/server";
+import { getSessionContext } from "@/lib/auth-context";
 
 export default async function DashboardPage({
   params,
@@ -17,21 +17,31 @@ export default async function DashboardPage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const ctx = await getSessionContext(await headers());
 
-  if (!session) {
+  if (!ctx) {
     redirect("/");
   }
 
+  // Staff see every instance with the owner's email; users see only their own.
+  const instancesPromise = ctx.isStaff
+    ? db
+        .select()
+        .from(instance)
+        .leftJoin(user, eq(instance.userId, user.id))
+        .orderBy(desc(instance.createdAt))
+        .then((rows) =>
+          rows.map((r) => ({ ...r.instance, ownerEmail: r.user?.email ?? null })),
+        )
+    : db
+        .select()
+        .from(instance)
+        .where(eq(instance.userId, ctx.user.id))
+        .orderBy(desc(instance.createdAt));
+
   const [instances, currentSubscription, capacity] = await Promise.all([
-    db
-      .select()
-      .from(instance)
-      .where(eq(instance.userId, session.user.id))
-      .orderBy(desc(instance.createdAt)),
-    getUserSubscription(session.user.id),
+    instancesPromise,
+    getUserSubscription(ctx.user.id),
     getCapacitySnapshot().catch(() => undefined),
   ]);
 
@@ -39,7 +49,8 @@ export default async function DashboardPage({
     <DashboardContent
       initialInstances={instances}
       subscription={currentSubscription}
-      user={{ id: session.user.id, email: session.user.email }}
+      user={{ id: ctx.user.id, email: ctx.user.email }}
+      isStaff={ctx.isStaff}
       capacity={capacity}
     />
   );

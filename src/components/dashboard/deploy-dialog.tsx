@@ -78,10 +78,12 @@ export function DeployDialog({
   open,
   onOpenChange,
   onInstanceCreated,
+  isStaff,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onInstanceCreated: (instance: Instance) => void;
+  isStaff: boolean;
 }) {
   const router = useRouter();
   const t = useTranslations("DeployDialog");
@@ -154,7 +156,8 @@ export function DeployDialog({
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      if (PAID_MODE) {
+      // Staff deploy directly without payment, even in PAID_MODE.
+      if (PAID_MODE && !isStaff) {
         const res = await createPendingCheckout({
           name: name.trim(),
           model: finalModelId!,
@@ -179,7 +182,7 @@ export function DeployDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          model: finalModelId,
+          model: finalModelId!,
           modelApiKey: activeApiKey,
           channel: selectedChannel,
           ...(selectedChannel === "telegram"
@@ -188,6 +191,7 @@ export function DeployDialog({
           ...(selectedChannel === "whatsapp"
             ? { channelPhone: whatsappPhone.trim() }
             : {}),
+          ...(isStaff && selectedPlan ? { planType: selectedPlan } : {}),
         }),
       });
 
@@ -715,7 +719,7 @@ export function DeployDialog({
                   <span className="font-medium text-violet-400">
                     {t("deployNoteLabel")}
                   </span>{" "}
-                  {PAID_MODE ? t("checkoutNote") : t("deployNote")}
+                  {PAID_MODE && !isStaff ? t("checkoutNote") : t("deployNote")}
                 </p>
               </div>
             </div>
@@ -755,12 +759,14 @@ export function DeployDialog({
               {isSubmitting ? (
                 <>
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  {PAID_MODE ? t("redirecting") : t("deploying")}
+                  {PAID_MODE && !isStaff ? t("redirecting") : t("deploying")}
                 </>
               ) : (
                 <>
                   <Rocket className="h-4 w-4" />
-                  {PAID_MODE ? t("continueToCheckout") : t("deployInstance")}
+                  {PAID_MODE && !isStaff
+                    ? t("continueToCheckout")
+                    : t("deployInstance")}
                 </>
               )}
             </Button>

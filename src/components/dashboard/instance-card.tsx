@@ -24,10 +24,12 @@ import {
 
 export function InstanceCard({
   instance,
+  currentUserId,
   onStatusChange,
   onDelete,
 }: {
   instance: Instance;
+  currentUserId: string;
   onStatusChange: (id: string, status: string) => void;
   onDelete: (id: string) => void;
 }) {
@@ -78,6 +80,11 @@ export function InstanceCard({
           <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest truncate">
             {new Date(instance.createdAt).toISOString().split("T")[0]}
           </p>
+          {instance.ownerEmail && instance.userId !== currentUserId && (
+            <p className="mt-0.5 text-xs font-mono text-violet-400/80 truncate">
+              {t("owner")}: {instance.ownerEmail}
+            </p>
+          )}
         </div>
         <Badge
           variant="outline"

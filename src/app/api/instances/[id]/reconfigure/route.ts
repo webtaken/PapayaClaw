@@ -1,11 +1,11 @@
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { instance } from "@/lib/schema";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { executeCommand } from "@/lib/ssh";
 import { detectProviderByModelId } from "@/lib/ai-config";
+import { getSessionContext, canAccessInstance } from "@/lib/auth-context";
 
 /**
  * POST /api/instances/[id]/reconfigure
@@ -19,11 +19,9 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
+  const ctx = await getSessionContext(await headers());
 
-  if (!session) {
+  if (!ctx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -48,9 +46,9 @@ export async function POST(
   const [inst] = await db
     .select()
     .from(instance)
-    .where(and(eq(instance.id, id), eq(instance.userId, session.user.id)));
+    .where(eq(instance.id, id));
 
-  if (!inst) {
+  if (!inst || !canAccessInstance(ctx, inst)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -167,7 +165,7 @@ export async function POST(
     await db
       .update(instance)
       .set({ model, modelApiKey })
-      .where(and(eq(instance.id, id), eq(instance.userId, session.user.id)));
+      .where(eq(instance.id, id));
 
     return NextResponse.json({ success: true, model: primaryModel });
   } catch (error) {
