@@ -13,11 +13,17 @@
 import { createServer } from "node:http";
 import next from "next";
 import { Server as SocketIOServer } from "socket.io";
+import type { DefaultEventsMap } from "socket.io";
+import type { AuthContext } from "./src/lib/auth-context.js";
 import { Client as SSHClient } from "ssh2";
+
+interface SocketData {
+  ctx: AuthContext;
+}
 import { db } from "./src/lib/db.js";
 import { instance } from "./src/lib/schema.js";
-import { auth } from "./src/lib/auth.js";
-import { eq, and } from "drizzle-orm";
+import { getSessionContext, canAccessInstance } from "./src/lib/auth-context.js";
+import { eq } from "drizzle-orm";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = dev ? "localhost" : "0.0.0.0";
@@ -35,7 +41,12 @@ app.prepare().then(() => {
   });
 
   // ── Socket.IO ──────────────────────────────────────────────────────
-  const io = new SocketIOServer(httpServer, {
+  const io = new SocketIOServer<
+    DefaultEventsMap,
+    DefaultEventsMap,
+    DefaultEventsMap,
+    SocketData
+  >(httpServer, {
     path: "/api/ssh",
     addTrailingSlash: false,
     cors: {
@@ -54,10 +65,10 @@ app.prepare().then(() => {
         else if (Array.isArray(v)) v.forEach((val) => headers.append(k, val));
       }
 
-      const session = await auth.api.getSession({ headers });
-      if (!session) return next(new Error("Unauthorized"));
+      const ctx = await getSessionContext(headers);
+      if (!ctx) return next(new Error("Unauthorized"));
 
-      socket.data.user = session.user;
+      socket.data.ctx = ctx;
       next();
     } catch (error) {
       console.error("[Socket.IO] Auth error:", error);
@@ -73,15 +84,13 @@ app.prepare().then(() => {
 
     socket.on("init", async ({ instanceId }: { instanceId: string }) => {
       try {
-        const user = socket.data.user;
+        const ctx = socket.data.ctx;
         const [inst] = await db
           .select()
           .from(instance)
-          .where(
-            and(eq(instance.id, instanceId), eq(instance.userId, user.id)),
-          );
+          .where(eq(instance.id, instanceId));
 
-        if (!inst) {
+        if (!inst || !canAccessInstance(ctx, inst)) {
           socket.emit("error", "Instance not found or unauthorized");
           socket.disconnect();
           return;
