@@ -326,7 +326,7 @@ export function SubscriptionsContent({
                         {t("noInstanceLinked")}
                       </p>
                       {sub.status === "active" && (
-                        <Link href="/dashboard">
+                        <Link href="/dashboard?deploy=1">
                           <Button
                             size="sm"
                             className="gap-1.5 bg-foreground text-background hover:bg-foreground/90 font-medium shadow-none h-8 px-3 border border-transparent transition-all hover:border-border font-mono text-xs uppercase tracking-wider"

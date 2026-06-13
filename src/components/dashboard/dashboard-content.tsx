@@ -42,6 +42,7 @@ interface CapacitySnapshot {
 interface DashboardProps {
   initialInstances: Instance[];
   subscription: Subscription | null;
+  hasAvailableSubscription: boolean;
   user: { id: string; email: string };
   isStaff: boolean;
   capacity?: CapacitySnapshot;
@@ -57,6 +58,7 @@ function getCheckoutUrl(productId: string, userId: string, email: string) {
 export function DashboardContent({
   initialInstances,
   subscription,
+  hasAvailableSubscription,
   user,
   isStaff,
   capacity,
@@ -67,6 +69,7 @@ export function DashboardContent({
   const router = useRouter();
   const searchParams = useSearchParams();
   const checkoutSuccessShown = useRef(false);
+  const deepLinkOpened = useRef(false);
 
   useEffect(() => {
     if (searchParams.get("checkout") !== "success") return;
@@ -83,6 +86,17 @@ export function DashboardContent({
     const timeout = setTimeout(() => router.refresh(), 4000);
     return () => clearTimeout(timeout);
   }, [searchParams, router, t]);
+
+  // Deep-link from the Subscriptions page: open the deploy dialog directly.
+  useEffect(() => {
+    if (searchParams.get("deploy") !== "1") return;
+    if (deepLinkOpened.current) return;
+    deepLinkOpened.current = true;
+    setDeployOpen(true);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("deploy");
+    window.history.replaceState({}, "", url.toString());
+  }, [searchParams]);
 
   const planLabel =
     subscription?.planType === "pro"
@@ -266,6 +280,7 @@ export function DashboardContent({
         onOpenChange={setDeployOpen}
         onInstanceCreated={handleInstanceCreated}
         isStaff={isStaff}
+        hasAvailableSubscription={hasAvailableSubscription}
       />
     </div>
   );
