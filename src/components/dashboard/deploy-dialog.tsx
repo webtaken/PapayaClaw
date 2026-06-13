@@ -79,11 +79,13 @@ export function DeployDialog({
   onOpenChange,
   onInstanceCreated,
   isStaff,
+  hasAvailableSubscription,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onInstanceCreated: (instance: Instance) => void;
   isStaff: boolean;
+  hasAvailableSubscription: boolean;
 }) {
   const router = useRouter();
   const t = useTranslations("DeployDialog");
@@ -99,8 +101,14 @@ export function DeployDialog({
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const totalSteps = PAID_MODE ? 4 : 3;
-  const steps = PAID_MODE
+  // Plan picker only needed when paying for a new subscription (and for staff,
+  // who pick a tier for server size). Hidden when an active sub is reused.
+  const showPlanStep = PAID_MODE && !hasAvailableSubscription;
+  // Send to Polar checkout only when there is no subscription to reuse.
+  const needsCheckout = PAID_MODE && !isStaff && !hasAvailableSubscription;
+
+  const totalSteps = showPlanStep ? 4 : 3;
+  const steps = showPlanStep
     ? [
         { number: 1, label: t("step1") },
         { number: 2, label: t("step2") },
@@ -156,8 +164,9 @@ export function DeployDialog({
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // Staff deploy directly without payment, even in PAID_MODE.
-      if (PAID_MODE && !isStaff) {
+      // Checkout only when there is no active subscription to reuse. Staff and
+      // users with an available subscription deploy directly via /api/instances.
+      if (needsCheckout) {
         const res = await createPendingCheckout({
           name: name.trim(),
           model: finalModelId!,
@@ -225,7 +234,7 @@ export function DeployDialog({
   const canProceed = (() => {
     if (step === 1) return canProceedStep1;
     if (step === 2) return canProceedStep2;
-    if (step === 3 && PAID_MODE) return canProceedStep3Plan;
+    if (step === 3 && showPlanStep) return canProceedStep3Plan;
     return true;
   })();
 
@@ -575,8 +584,8 @@ export function DeployDialog({
             </div>
           )}
 
-          {/* Step 3 (paid mode only): Plan */}
-          {PAID_MODE && step === 3 && (
+          {/* Step 3 (paid mode, new subscription only): Plan */}
+          {showPlanStep && step === 3 && (
             <div className="space-y-4 animate-fade-in-up">
               <div>
                 <Label className="mb-2 block text-xs font-medium text-foreground/80">
@@ -690,7 +699,7 @@ export function DeployDialog({
                         : `${botToken.slice(0, 8)}•••••`}
                     </span>
                   </div>
-                  {PAID_MODE && selectedPlan && (
+                  {showPlanStep && selectedPlan && (
                     <>
                       <div className="h-px bg-border/60" />
                       <div className="flex items-center justify-between">
@@ -719,7 +728,7 @@ export function DeployDialog({
                   <span className="font-medium text-violet-400">
                     {t("deployNoteLabel")}
                   </span>{" "}
-                  {PAID_MODE && !isStaff ? t("checkoutNote") : t("deployNote")}
+                  {needsCheckout ? t("checkoutNote") : t("deployNote")}
                 </p>
               </div>
             </div>
@@ -759,12 +768,12 @@ export function DeployDialog({
               {isSubmitting ? (
                 <>
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  {PAID_MODE && !isStaff ? t("redirecting") : t("deploying")}
+                  {needsCheckout ? t("redirecting") : t("deploying")}
                 </>
               ) : (
                 <>
                   <Rocket className="h-4 w-4" />
-                  {PAID_MODE && !isStaff
+                  {needsCheckout
                     ? t("continueToCheckout")
                     : t("deployInstance")}
                 </>

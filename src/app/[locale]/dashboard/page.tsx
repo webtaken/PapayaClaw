@@ -4,7 +4,7 @@ import { eq, desc } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
-import { getUserSubscription } from "@/lib/polar";
+import { getUserSubscription, getAvailableSubscription } from "@/lib/polar";
 import { getCapacitySnapshot } from "@/lib/hetzner-limits";
 import { setRequestLocale } from "next-intl/server";
 import { getSessionContext } from "@/lib/auth-context";
@@ -39,16 +39,19 @@ export default async function DashboardPage({
         .where(eq(instance.userId, ctx.user.id))
         .orderBy(desc(instance.createdAt));
 
-  const [instances, currentSubscription, capacity] = await Promise.all([
-    instancesPromise,
-    getUserSubscription(ctx.user.id),
-    getCapacitySnapshot().catch(() => undefined),
-  ]);
+  const [instances, currentSubscription, availableSubscription, capacity] =
+    await Promise.all([
+      instancesPromise,
+      getUserSubscription(ctx.user.id),
+      getAvailableSubscription(ctx.user.id),
+      getCapacitySnapshot().catch(() => undefined),
+    ]);
 
   return (
     <DashboardContent
       initialInstances={instances}
       subscription={currentSubscription}
+      hasAvailableSubscription={Boolean(availableSubscription)}
       user={{ id: ctx.user.id, email: ctx.user.email }}
       isStaff={ctx.isStaff}
       capacity={capacity}
