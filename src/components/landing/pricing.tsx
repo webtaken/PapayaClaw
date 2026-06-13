@@ -206,20 +206,26 @@ export function Pricing() {
                     >
                       {t(plan.ctaKey)}
                     </Button>
+                  ) : plan.productId ? (
+                    // Raw <a>, not next-intl <Link>: /api/checkout is a global
+                    // API route with no [locale] segment. Locale-prefixing it
+                    // (e.g. /es/api/checkout) 404s before reaching Polar.
+                    <Button
+                      asChild
+                      className={`w-full h-11 ${plan.ctaStyle}`}
+                    >
+                      <a
+                        href={`${checkoutUrl}&customerExternalId=${session.user.id}&customerEmail=${encodeURIComponent(session.user.email)}`}
+                      >
+                        {t(plan.ctaKey)}
+                      </a>
+                    </Button>
                   ) : (
                     <Button
                       asChild
                       className={`w-full h-11 ${plan.ctaStyle}`}
                     >
-                      <Link
-                        href={
-                          plan.productId
-                            ? `${checkoutUrl}&customerExternalId=${session.user.id}&customerEmail=${encodeURIComponent(session.user.email)}`
-                            : checkoutUrl
-                        }
-                      >
-                        {t(plan.ctaKey)}
-                      </Link>
+                      <Link href="/dashboard">{t(plan.ctaKey)}</Link>
                     </Button>
                   )}
                 </CardFooter>
