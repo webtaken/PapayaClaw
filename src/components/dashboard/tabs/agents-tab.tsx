@@ -25,6 +25,24 @@ function formatBinding(detail: string): string {
   return `${trimmed.slice(0, space)}: ${trimmed.slice(space + 1)}`;
 }
 
+/**
+ * Splits OpenClaw's `identityEmoji` into the leading glyph for the avatar tile
+ * and any trailing descriptor for a subtitle. OpenClaw may emit more than a
+ * single emoji here (e.g. "🦎 (papaya energy)"); rendering the whole string in
+ * the tile overflows. Splits on the first space so multi-codepoint emoji
+ * sequences without internal spaces stay intact.
+ */
+function parseIdentityEmoji(
+  raw: string | undefined,
+): { glyph: string; note: string } {
+  if (!raw) return { glyph: "🤖", note: "" };
+  const trimmed = raw.trim();
+  if (!trimmed) return { glyph: "🤖", note: "" };
+  const space = trimmed.indexOf(" ");
+  if (space === -1) return { glyph: trimmed, note: "" };
+  return { glyph: trimmed.slice(0, space), note: trimmed.slice(space + 1).trim() };
+}
+
 function RefreshButton({
   loading,
   onClick,
@@ -80,13 +98,16 @@ function CenteredMessage({
 function AgentCard({ agent }: { agent: OpenClawAgent }) {
   const t = useTranslations("InstanceDetail");
   const name = agent.identityName ?? agent.id;
+  const { glyph: emoji, note: emojiNote } = parseIdentityEmoji(
+    agent.identityEmoji,
+  );
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-2xl p-4">
       <div className="flex items-start gap-3">
         {/* Avatar tile */}
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/50 text-xl">
-          <span aria-hidden>{agent.identityEmoji || "🤖"}</span>
+          <span aria-hidden>{emoji}</span>
         </div>
 
         {/* Identity + meta */}
@@ -107,6 +128,11 @@ function AgentCard({ agent }: { agent: OpenClawAgent }) {
               </Badge>
             ) : null}
           </div>
+          {emojiNote ? (
+            <p className="mt-0.5 text-xs italic text-muted-foreground/70">
+              {emojiNote}
+            </p>
+          ) : null}
           {agent.model ? (
             <div className="mt-1 flex items-center gap-1.5">
               <span className="font-mono text-xs text-muted-foreground">
