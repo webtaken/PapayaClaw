@@ -147,7 +147,7 @@ export function AgentsTab({
 }) {
   const t = useTranslations("InstanceDetail");
 
-  const { data, error, isLoading, mutate } = useSWR<AgentsResponse>(
+  const { data, error, isLoading, isValidating, mutate } = useSWR<AgentsResponse>(
     ["agents", instanceId],
     () =>
       fetch(`/api/instances/${instanceId}/agents`).then((res) => res.json()),
@@ -187,7 +187,7 @@ export function AgentsTab({
         description={t("agents.errorDescription")}
         action={
           <RefreshButton
-            loading={isLoading}
+            loading={isValidating}
             onClick={() => mutate()}
             label={t("agents.retry")}
             ariaLabel={t("agents.retry")}
@@ -205,7 +205,7 @@ export function AgentsTab({
         description={t("agents.emptyDescription")}
         action={
           <RefreshButton
-            loading={isLoading}
+            loading={isValidating}
             onClick={() => mutate()}
             label={t("agents.refresh")}
             ariaLabel={t("agents.refreshAria")}
@@ -228,7 +228,7 @@ export function AgentsTab({
           </span>
         </div>
         <RefreshButton
-          loading={isLoading}
+          loading={isValidating}
           onClick={() => mutate()}
           label={t("agents.refresh")}
           ariaLabel={t("agents.refreshAria")}
