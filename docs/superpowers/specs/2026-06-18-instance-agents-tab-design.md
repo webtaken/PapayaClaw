@@ -74,8 +74,8 @@ Reused primitives (no changes needed):
      'export PATH="/root/.local/bin:/usr/bin:$PATH" && openclaw agents list --bindings --json',
    );
    ```
-7. `if (code !== 0)` → `502 { error: "Command failed", detail: <trimmed stderr> }`.
-8. Parse + validate: `const parsed = JSON.parse(stdout.trim())`; `if (!Array.isArray(parsed))` → `502 { error: "Unexpected output" }`.
+7. `if (code !== 0)` → `listAgents` returns `{ error: stderr.trim() || stdout.trim() || "Failed to list agents" }`; the route forwards it as `502 { error }`. (Single-field `error` surfaced from the remote command's own output — matches the convention used by sibling routes `pairing` and `whatsapp-numbers`. Only the instance owner sees it; the SSH private key / host are never part of it.)
+8. Parse + validate: `const parsed = JSON.parse(stdout.trim())` (nested try/catch → `{ error: "Unexpected output from openclaw" }`); `if (!Array.isArray(parsed))` → `{ error: "Unexpected output from openclaw" }` (route → 502).
 9. Map to contract (strip unused fields, coerce optionals). Implemented as a pure, unit-tested `parseAgents` in `src/lib/ssh.ts` (see plan). The optional string fields use `typeof x === "string" && x ? x : undefined` — a stricter form than naive truthiness, so a truthy non-string (e.g. `123`) is dropped to `undefined` rather than silently stringified; this is unreachable against OpenClaw's string contract but more defensive:
    ```ts
    const agents: OpenClawAgent[] = parseAgents(parsed);
