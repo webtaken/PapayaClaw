@@ -76,21 +76,21 @@ Reused primitives (no changes needed):
    ```
 7. `if (code !== 0)` → `502 { error: "Command failed", detail: <trimmed stderr> }`.
 8. Parse + validate: `const parsed = JSON.parse(stdout.trim())`; `if (!Array.isArray(parsed))` → `502 { error: "Unexpected output" }`.
-9. Map to contract (strip unused fields, coerce optionals):
+9. Map to contract (strip unused fields, coerce optionals). Implemented as a pure, unit-tested `parseAgents` in `src/lib/ssh.ts` (see plan). The optional string fields use `typeof x === "string" && x ? x : undefined` — a stricter form than naive truthiness, so a truthy non-string (e.g. `123`) is dropped to `undefined` rather than silently stringified; this is unreachable against OpenClaw's string contract but more defensive:
    ```ts
-   const agents: OpenClawAgent[] = parsed.map((a) => ({
-     id: String(a.id),
-     identityName: a.identityName ? String(a.identityName) : undefined,
-     identityEmoji: a.identityEmoji ? String(a.identityEmoji) : undefined,
-     model: a.model ? String(a.model) : undefined,
-     isDefault: Boolean(a.isDefault),
-     bindingDetails: Array.isArray(a.bindingDetails) ? a.bindingDetails.map(String) : [],
-   }));
+   const agents: OpenClawAgent[] = parseAgents(parsed);
+   // parseAgents maps each entry to:
+   //   id: String(entry?.id ?? ""),
+   //   identityName: typeof entry?.identityName === "string" && entry.identityName ? entry.identityName : undefined,
+   //   identityEmoji: (same),
+   //   model: (same),
+   //   isDefault: Boolean(entry?.isDefault),
+   //   bindingDetails: Array.isArray(entry?.bindingDetails) ? entry.bindingDetails.map(String) : [],
    ```
 10. Return `200 { agents }`.
 11. `catch` → `502 { error: "Failed to connect" }`.
 
-**Shared type** — export from the route file, import into the component:
+**Shared type** — defined in `src/lib/ssh.ts` (next to `parseAgents`/`listAgents`), imported (type-only) by the route and the component:
 ```ts
 export interface OpenClawAgent {
   id: string;
