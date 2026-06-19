@@ -229,6 +229,45 @@ export async function setWhatsAppAllowedNumbers(
 }
 
 /**
+ * One OpenClaw agent as exposed to the UI. Optional fields are `undefined`
+ * when OpenClaw did not report them; consumers fall back to `id`.
+ */
+export interface OpenClawAgent {
+  id: string;
+  identityName?: string;
+  identityEmoji?: string;
+  model?: string;
+  isDefault: boolean;
+  bindingDetails: string[];
+}
+
+/**
+ * Maps raw `openclaw agents list --bindings --json` output to the UI contract,
+ * stripping unused fields and coercing optionals. Pure + unit-tested.
+ * Expects an array (validated upstream); defensively returns [] otherwise.
+ */
+export function parseAgents(raw: unknown): OpenClawAgent[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((entry: any) => ({
+    id: String(entry?.id ?? ""),
+    identityName:
+      typeof entry?.identityName === "string" && entry.identityName
+        ? entry.identityName
+        : undefined,
+    identityEmoji:
+      typeof entry?.identityEmoji === "string" && entry.identityEmoji
+        ? entry.identityEmoji
+        : undefined,
+    model:
+      typeof entry?.model === "string" && entry.model ? entry.model : undefined,
+    isDefault: Boolean(entry?.isDefault),
+    bindingDetails: Array.isArray(entry?.bindingDetails)
+      ? entry.bindingDetails.map(String)
+      : [],
+  }));
+}
+
+/**
  * Checks if WhatsApp is linked on a remote OpenClaw instance
  * by looking for credential files.
  */
