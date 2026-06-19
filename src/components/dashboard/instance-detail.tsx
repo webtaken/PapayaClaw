@@ -406,7 +406,10 @@ export function InstanceDetail({
         </TabsContent>
 
         <TabsContent value="agents" className="mt-6">
-          <AgentsTab />
+          <AgentsTab
+            instanceId={instance.id}
+            isProvisioning={!!isProvisioning}
+          />
         </TabsContent>
       </Tabs>
     </div>

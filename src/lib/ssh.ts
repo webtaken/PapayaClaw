@@ -229,6 +229,87 @@ export async function setWhatsAppAllowedNumbers(
 }
 
 /**
+ * One OpenClaw agent as exposed to the UI. Optional fields are `undefined`
+ * when OpenClaw did not report them; consumers fall back to `id`.
+ */
+export interface OpenClawAgent {
+  id: string;
+  identityName?: string;
+  identityEmoji?: string;
+  model?: string;
+  isDefault: boolean;
+  bindingDetails: string[];
+}
+
+/**
+ * Maps raw `openclaw agents list --bindings --json` output to the UI contract,
+ * stripping unused fields and coercing optionals. Pure + unit-tested.
+ * Expects an array (validated upstream); defensively returns [] otherwise.
+ */
+export function parseAgents(raw: unknown): OpenClawAgent[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((entry: any) => ({
+    id: String(entry?.id ?? ""),
+    identityName:
+      typeof entry?.identityName === "string" && entry.identityName
+        ? entry.identityName
+        : undefined,
+    identityEmoji:
+      typeof entry?.identityEmoji === "string" && entry.identityEmoji
+        ? entry.identityEmoji
+        : undefined,
+    model:
+      typeof entry?.model === "string" && entry.model ? entry.model : undefined,
+    isDefault: Boolean(entry?.isDefault),
+    bindingDetails: Array.isArray(entry?.bindingDetails)
+      ? entry.bindingDetails.map(String)
+      : [],
+  }));
+}
+
+/**
+ * Lists OpenClaw agents on a remote instance by running
+ * `openclaw agents list --bindings --json`.
+ *
+ * Returns `{ agents }` on success (possibly empty), or `{ error }` when the
+ * command fails, the output is not a JSON array, or the connection errors.
+ */
+export async function listAgents(
+  host: string,
+  privateKey: string,
+): Promise<{ agents?: OpenClawAgent[]; error?: string }> {
+  try {
+    const { stdout, stderr, code } = await executeCommand(
+      host,
+      privateKey,
+      'export PATH="/root/.local/bin:/usr/bin:$PATH" && openclaw agents list --bindings --json',
+    );
+
+    if (code !== 0) {
+      return {
+        error:
+          stderr.trim() || stdout.trim() || "Failed to list agents",
+      };
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(stdout.trim());
+    } catch {
+      return { error: "Unexpected output from openclaw" };
+    }
+
+    if (!Array.isArray(parsed)) {
+      return { error: "Unexpected output from openclaw" };
+    }
+
+    return { agents: parseAgents(parsed) };
+  } catch {
+    return { error: "Failed to connect to instance" };
+  }
+}
+
+/**
  * Checks if WhatsApp is linked on a remote OpenClaw instance
  * by looking for credential files.
  */
