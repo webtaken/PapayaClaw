@@ -407,9 +407,21 @@
       "copied": "Copiado"
     },
     "agents": {
-      "title": "Agentes Personalizados",
-      "comingSoon": "Aún no disponible",
-      "description": "Define comportamientos y personalidades de agente personalizados para esta instancia. Esta sección está en desarrollo activo y estará disponible en una versión futura."
+      "title": "Agentes",
+      "count": "{count, plural, one {# agente} other {# agentes}}",
+      "refresh": "Actualizar",
+      "refreshAria": "Actualizar lista de agentes",
+      "provisioningTitle": "Configurando agentes",
+      "provisioningDescription": "Tu instancia aún se está aprovisionando. Los agentes aparecerán aquí cuando esté lista.",
+      "loadingAria": "Cargando agentes",
+      "errorTitle": "No se pudieron cargar los agentes",
+      "errorDescription": "No se pudo llegar a tu instancia.",
+      "retry": "Reintentar",
+      "emptyTitle": "No se encontraron agentes",
+      "emptyDescription": "Esta instancia no tiene agentes configurados.",
+      "defaultBadge": "Predeterminado",
+      "model": "Modelo",
+      "bindings": "Enlaces"
     },
     "provisioning": {
       "bannerTitle": "Secuencia de Arranque",

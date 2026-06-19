@@ -407,9 +407,21 @@
       "copied": "Copied"
     },
     "agents": {
-      "title": "Custom Agents",
-      "comingSoon": "Not yet available",
-      "description": "Define custom agent behaviors and personas for this instance. This section is under active development and will be available in a future release."
+      "title": "Agents",
+      "count": "{count, plural, one {# agent} other {# agents}}",
+      "refresh": "Refresh",
+      "refreshAria": "Refresh agents list",
+      "provisioningTitle": "Setting up agents",
+      "provisioningDescription": "Your instance is still being provisioned. Agents will appear here once it's ready.",
+      "loadingAria": "Loading agents",
+      "errorTitle": "Couldn't load agents",
+      "errorDescription": "Failed to reach your instance.",
+      "retry": "Retry",
+      "emptyTitle": "No agents found",
+      "emptyDescription": "This instance has no agents configured.",
+      "defaultBadge": "Default",
+      "model": "Model",
+      "bindings": "Bindings"
     },
     "provisioning": {
       "bannerTitle": "System Boot Sequence",
