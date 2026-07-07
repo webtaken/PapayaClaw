@@ -2,9 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import { z } from 'zod';
-import { extractToc } from './toc';
+import { extractToc, type TocEntry } from './toc';
 
-export type { TocEntry } from './toc';
+export type { TocEntry };
 
 const FrontmatterSchema = z.object({
   title: z.string().min(1),
