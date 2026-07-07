@@ -65,6 +65,12 @@ export function Header() {
             {t("blog")}
           </Link>
           <Link
+            href="/templates"
+            className="text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:text-primary"
+          >
+            {t("templates")}
+          </Link>
+          <Link
             href="/#pricing"
             onClick={handlePricingClick}
             className="text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:text-primary"
