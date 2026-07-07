@@ -130,3 +130,18 @@ describe("validation", () => {
     await expect(getTemplateSteps("formula-100k", "es", dir)).rejects.toThrow(/order/);
   });
 });
+
+describe("path traversal", () => {
+  it("getTemplateOverview returns null for an unsafe slug", async () => {
+    expect(await getTemplateOverview("../x", "es", dir)).toBeNull();
+  });
+
+  it("getTemplateStep returns null for an unsafe step", async () => {
+    write("formula-100k/index/es.mdx", overviewFm);
+    expect(await getTemplateStep("formula-100k", "../../x", "es", dir)).toBeNull();
+  });
+
+  it("getTemplateSteps returns [] for an unsafe slug", async () => {
+    expect(await getTemplateSteps("../x", "es", dir)).toEqual([]);
+  });
+});

@@ -18,7 +18,7 @@ export function StepPager({ templateSlug, prev, next, labels }: StepPagerProps) 
       {prev ? (
         <Link href={`/templates/${templateSlug}/${prev.slug}`} className={cardBase}>
           <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-            <ArrowLeft className="h-3 w-3 transition-transform duration-150 group-hover:-translate-x-0.5" />
+            <ArrowLeft aria-hidden="true" className="h-3 w-3 transition-transform duration-150 group-hover:-translate-x-0.5" />
             {labels.prevStep}
           </span>
           <span className="mt-1.5 block text-sm font-medium text-foreground transition-colors duration-200 group-hover:text-violet-300">
@@ -32,7 +32,7 @@ export function StepPager({ templateSlug, prev, next, labels }: StepPagerProps) 
         <Link href={`/templates/${templateSlug}/${next.slug}`} className={`${cardBase} text-right`}>
           <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
             {labels.nextStep}
-            <ArrowRight className="h-3 w-3 transition-transform duration-150 group-hover:translate-x-0.5" />
+            <ArrowRight aria-hidden="true" className="h-3 w-3 transition-transform duration-150 group-hover:translate-x-0.5" />
           </span>
           <span className="mt-1.5 block text-sm font-medium text-foreground transition-colors duration-200 group-hover:text-violet-300">
             {next.title}
@@ -45,7 +45,7 @@ export function StepPager({ templateSlug, prev, next, labels }: StepPagerProps) 
         >
           <span className="inline-flex items-center gap-1.5 text-xs text-violet-400">
             {labels.finishTitle}
-            <Rocket className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5" />
+            <Rocket aria-hidden="true" className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5" />
           </span>
           <span className="mt-1.5 block text-sm font-medium text-foreground">{labels.finishCta}</span>
         </Link>

@@ -3,6 +3,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import { z } from 'zod';
 import { extractToc, type TocEntry } from './toc';
+import { isSafeSlug } from './safe-slug';
 import type { Locale } from './mdx';
 
 const LOCALES: Locale[] = ['en', 'es'];
@@ -101,6 +102,7 @@ export async function getTemplateOverview(
   locale: Locale,
   dir = defaultDir()
 ): Promise<TemplateDocPage<TemplateOverview> | null> {
+  if (!isSafeSlug(slug)) return null;
   const page = readOverview(slug, locale, dir);
   if (!page || page.frontmatter.draft) return null;
   return page;
@@ -111,6 +113,7 @@ export async function getTemplateSteps(
   locale: Locale,
   dir = defaultDir()
 ): Promise<TemplateStepMeta[]> {
+  if (!isSafeSlug(slug)) return [];
   const templateDir = path.join(dir, slug);
   if (!fs.existsSync(templateDir)) return [];
   const steps: TemplateStepMeta[] = [];
@@ -130,6 +133,7 @@ export async function getTemplateStep(
   locale: Locale,
   dir = defaultDir()
 ): Promise<TemplateDocPage<TemplateStepMeta> | null> {
+  if (!isSafeSlug(slug) || !isSafeSlug(step)) return null;
   const folder = path.join(dir, slug, step);
   if (step === 'index') return null;
   const filePath = resolveDocFile(folder, locale);

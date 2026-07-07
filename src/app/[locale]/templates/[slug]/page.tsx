@@ -31,7 +31,7 @@ export async function generateMetadata({
   const effectiveLocale = available.includes(locale as Locale) ? locale : available[0];
   return {
     title: page.frontmatter.title,
-    description: page.frontmatter.tagline,
+    description: page.frontmatter.summary,
     alternates: {
       canonical: canonicalPath(effectiveLocale, slug),
       languages: Object.fromEntries(
@@ -65,7 +65,7 @@ export default async function TemplateOverviewPage({
           href="/templates"
           className="group inline-flex items-center gap-2 text-sm text-muted-foreground transition-all duration-150 hover:text-foreground rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          <ArrowLeft className="h-3.5 w-3.5 transition-transform duration-150 group-hover:-translate-x-0.5" />
+          <ArrowLeft aria-hidden="true" className="h-3.5 w-3.5 transition-transform duration-150 group-hover:-translate-x-0.5" />
           {t("back")}
         </Link>
 
@@ -107,7 +107,7 @@ export default async function TemplateOverviewPage({
                       <span className="block text-sm font-medium text-foreground">{step.title}</span>
                       <span className="block text-xs text-muted-foreground mt-0.5">{step.description}</span>
                     </span>
-                    <ArrowRight className="ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5" />
+                    <ArrowRight aria-hidden="true" className="ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5" />
                   </Link>
                 </li>
               ))}
@@ -122,14 +122,14 @@ export default async function TemplateOverviewPage({
               className="inline-flex items-center gap-2.5 rounded-xl px-6 py-3.5 bg-gradient-to-r from-violet-500 to-blue-500 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 transition-all duration-200 hover:shadow-xl hover:shadow-violet-500/35 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               {t("startGuide")}
-              <ArrowRight className="h-4 w-4 shrink-0" />
+              <ArrowRight aria-hidden="true" className="h-4 w-4 shrink-0" />
             </Link>
           )}
           <Link
             href="/dashboard"
             className="inline-flex items-center gap-2.5 rounded-xl px-6 py-3.5 border border-border bg-card text-sm font-semibold text-foreground transition-all duration-150 hover:border-violet-500/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            <Rocket className="h-4 w-4 shrink-0" />
+            <Rocket aria-hidden="true" className="h-4 w-4 shrink-0" />
             {t("deployCta")}
           </Link>
         </div>

@@ -3,6 +3,7 @@ import path from 'path';
 import matter from 'gray-matter';
 import { z } from 'zod';
 import { extractToc, type TocEntry } from './toc';
+import { isSafeSlug } from './safe-slug';
 
 export type { TocEntry };
 
@@ -34,6 +35,7 @@ const LOCALES: Locale[] = ['en', 'es'];
 const DEFAULT_LOCALE: Locale = 'en';
 
 function resolvePostFile(slug: string, locale: Locale): { filePath: string; resolvedLocale: Locale } | null {
+  if (!isSafeSlug(slug)) return null;
   const folder = path.join(blogDir, slug);
   if (!fs.existsSync(folder) || !fs.statSync(folder).isDirectory()) return null;
 

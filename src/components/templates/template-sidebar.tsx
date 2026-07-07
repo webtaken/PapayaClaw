@@ -84,7 +84,7 @@ export function TemplateSidebar(props: TemplateSidebarProps) {
         )}
       >
         {rest.labels.stepsTitle}
-        <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-150 group-open:rotate-180" />
+        <ChevronDown aria-hidden="true" className="h-4 w-4 text-muted-foreground transition-transform duration-150 group-open:rotate-180" />
       </summary>
       <div className="border-t border-border px-3 py-3">
         <StepList {...rest} />
