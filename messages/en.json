@@ -6,7 +6,8 @@
     "dashboard": "Dashboard",
     "logout": "Logout",
     "contact": "Contact",
-    "login": "Login"
+    "login": "Login",
+    "templates": "Templates"
   },
   "Capacity": {
     "remaining": "{count} server slots left",
@@ -215,6 +216,31 @@
     "linkCopied": "Link copied",
     "copyCode": "Copy code",
     "codeCopied": "Copied!"
+  },
+  "Templates": {
+    "metaTitle": "Templates",
+    "metaDescription": "Step-by-step guides to configure your OpenClaw instance for a specific role.",
+    "title": "Templates",
+    "subtitle": "Step-by-step guides that turn your OpenClaw instance into a specialist.",
+    "tagPlural": "Templates",
+    "tagSingular": "Guide",
+    "empty": "No templates available yet.",
+    "viewGuide": "View guide",
+    "stepsCount": "{count, plural, one {# step} other {# steps}}",
+    "back": "All templates",
+    "startGuide": "Start the guide",
+    "deployCta": "Deploy your instance",
+    "stepsTitle": "Steps",
+    "stepLabel": "Step {current} of {total}",
+    "prevStep": "Previous",
+    "nextStep": "Next",
+    "finishTitle": "Guide complete",
+    "finishCta": "Deploy your instance and put it to work",
+    "onThisPage": "On this page",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied",
+    "copyCode": "Copy code",
+    "codeCopied": "Code copied"
   },
   "PricingPage": {
     "title": "Pricing — PapayaClaw",

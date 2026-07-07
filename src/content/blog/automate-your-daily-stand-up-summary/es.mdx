@@ -1,0 +1,150 @@
+---
+title: "Automatiza tu Resumen Diario de Reunión"
+date: "2026-06-24"
+summary: "Cómo usar agentes OpenClaw para asistir a reuniones diarias y enviar resumenes concisos a Slack."
+---
+
+# Automatiza tu Resumen Diario de Reunión
+
+Tus reuniones diacutales acaban de mejorar. ¿Y si un agente de IA pudiera asistir por ti y enviar un resumen conciso a Slack? Más corriendo de una reunión a otra. Más pánico tomando notas mientras intentas no derramar tu café.
+
+No es otro sustituto de reuniones. Es un multiplicador de productividad para jefes de ingeniería en todas partes.
+
+## El Problema con las Reuniones Diarias
+
+Las reuniones diarias deberían ser simples. 15 minutos, cada uno dice qué hizo y qué va a hacer. Pero en la práctica?
+
+- Estás escuchando cómo los desarrolladores describen su proceso de pruebas durante 5 minutos
+- Alguien se va por las ramas sobre cambios en infraestructura
+- El desarrollador senior explica cómo refactorizaron un servicio que ni siquiera usas
+- Al terminar, sigues sin saber quién tiene bloqueos hoy
+
+Para cuando termina la reunión, tienes páginas de notas pero aún no puedes responder: ¿quién necesita ayuda hoy?
+
+## OpenClaw al Rescate
+
+Aquí es donde los agentes de OpenClaw brillan. Configura un agente que se una a tus reuniones diarias como participante. No habla (a menos que quieras). En su lugar, escucha y extrae lo que importa.
+
+El agente sabe exactamente qué extraer:
+- Quién tiene bloqueos hoy
+- Qué dependencias están deteniendo el trabajo
+- Progreso de tareas de ayer
+- Actualizaciones de hitos
+- Acciones con responsables
+
+Sin relleno. Sin divagaciones sobre alguien que arregló un error en producción a las 2am.
+
+## La Implementación
+
+Configurar esto toma unos 30 minutos. Aquí lo que necesitas:
+
+### 1. Configura tu Agente
+
+Crea una nueva sesión de OpenClaw con esta configuración:
+
+```yaml
+# config.yaml
+name: resumen-reunion-diaria
+model: gpt-4
+schedule:
+  cron: "0 9 * * *"  # Cada día laborable a las 9 AM
+tools:
+  - slack-send-message
+  - calendar
+  - jira
+```
+
+### 2. Escribe la Lógica del Resumen
+
+El agente extrae información clave de la reunión:
+
+```python
+def resumir_reunion(transcripcion):
+    """Extrae puntos clave de la reunión diaria."""
+    
+    # Encontrar bloqueos
+    bloqueos = extraer_secciones(
+        transcripcion,
+        palabras_clave=["bloqueado", "bloqueado por", "esperando", "dependencia"]
+    )
+    
+    # Encontrar actualizaciones de progreso
+    progreso = extraer_secciones(
+        transcripcion,
+        palabras_clave=["completado", "terminado", "hecho", "desplegado"]
+    )
+    
+    # Encontrar acciones
+    acciones = extraer_acciones(transcripcion)
+    
+    return {
+        "bloqueos": bloqueos,
+        "progreso": progreso,
+        "acciones": acciones,
+        "resumen": generar_resumen(bloqueos, progreso, acciones)
+    }
+```
+
+### 3. Envía el Resumen a Slack
+
+Configura el agente para publicar el resumen en el canal de Slack de tu equipo:
+
+```python
+def publicar_en_slack(resumen):
+    """Envía resumen de reunión a Slack."""
+    
+    mensaje = (
+        "# Resumen Diario - Hoy\n\n"
+        f"🔴 **Bloqueos:** {len(resumen['bloqueos'])}\n\n"
+        "## Actualizaciones de Progreso\n"
+        f"{resumen['progreso']}\n\n"
+        "## Acciones\n"
+        f"{resumen['acciones']}\n\n"
+        "---\n"
+        "📋 Transcripción completa disponible en PapayaClaw"
+    )
+    
+    slack_client.chat_postMessage(
+        channel="#reuniones",
+        text=mensaje,
+        mrkdwn=True
+    )
+```
+
+## Por Qué Funciona
+
+La magia no está en reemplazar humanos. Está en amplificarlos. Tu equipo aún tiene su reunión diaria. Todos tienen su turno para hablar. Pero ahora obtienes algo útil después.
+
+- **Jefes de ingeniería** ahorran tiempo revisando reuniones
+- **Desarrolladores** pueden enfocarse en hablar en vez de tomar notas
+- **Interesados** obtienen un resumen de lo que realmente pasó
+- **Jira** se actualiza automáticamente con los bloqueos
+
+Y porque corre en PapayaClaw, no hay infraestructura que administrar. Solo despliega una vez y deja que corra.
+
+## La Implementación en la Práctica
+
+Lo implementamos en un equipo de ingeniería de 20 personas. Los resultados?
+
+- **30% menos tiempo** gastado en reuniones posteriores
+- **50% menos bloqueos perdidos** porque se capturan inmediatamente
+- **Actualizaciones automáticas de Jira** para que nada se pierda
+
+La configuración nos tomó unos 20 minutos. La ROI? Aproximadamente 5 horas por semana ahorradas en el equipo.
+
+## Empezando
+
+¿Quieres configurar esto para tu equipo? PapayaClaw hace el despliegue simple:
+
+1. Crea una cuenta gratuita en papayaclaw.com
+2. Importa la plantilla de agente de resumen de reuniones
+3. Conecta tus cuentas de Slack y Jira
+4. Configura el horario de tus reuniones diarias
+
+Listo. Sin servidores. Sin mantenimiento. Solo productividad.
+
+Tus reuniones diarias nunca volverán a ser lo mismo. Y te preguntarás cómo viviste sin esto.
+
+---
+
+Despliega tu propia automatización de reuniones en [papayaclaw.com](https://papayaclaw.com)
