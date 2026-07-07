@@ -6,7 +6,8 @@
     "dashboard": "Panel",
     "logout": "Cerrar sesión",
     "contact": "Contacto",
-    "login": "Iniciar sesión"
+    "login": "Iniciar sesión",
+    "templates": "Plantillas"
   },
   "Capacity": {
     "remaining": "Quedan {count} servidores disponibles",
@@ -215,6 +216,31 @@
     "linkCopied": "Enlace copiado",
     "copyCode": "Copiar código",
     "codeCopied": "¡Copiado!"
+  },
+  "Templates": {
+    "metaTitle": "Plantillas",
+    "metaDescription": "Guías paso a paso para configurar tu instancia de OpenClaw para un rol específico.",
+    "title": "Plantillas",
+    "subtitle": "Guías paso a paso que convierten tu instancia de OpenClaw en un especialista.",
+    "tagPlural": "Plantillas",
+    "tagSingular": "Guía",
+    "empty": "Aún no hay plantillas disponibles.",
+    "viewGuide": "Ver guía",
+    "stepsCount": "{count, plural, one {# paso} other {# pasos}}",
+    "back": "Todas las plantillas",
+    "startGuide": "Empezar la guía",
+    "deployCta": "Despliega tu instancia",
+    "stepsTitle": "Pasos",
+    "stepLabel": "Paso {current} de {total}",
+    "prevStep": "Anterior",
+    "nextStep": "Siguiente",
+    "finishTitle": "Guía completada",
+    "finishCta": "Despliega tu instancia y ponla a trabajar",
+    "onThisPage": "En esta página",
+    "copyLink": "Copiar enlace",
+    "linkCopied": "Enlace copiado",
+    "copyCode": "Copiar código",
+    "codeCopied": "Código copiado"
   },
   "PricingPage": {
     "title": "Precios — PapayaClaw",
