@@ -1,0 +1,143 @@
+---
+title: "Kill Bad Ideas Fast: Pre-Build Validation for Indie Hackers"
+date: "2026-07-08"
+summary: "A reality check system that scans GitHub, Hacker News, npm, PyPI and Product Hunt before you write a single line of code."
+---
+
+# Kill Bad Ideas Fast: Pre-Build Validation for Indie Hackers
+
+You tell your agent "build me an AI code review tool" and it happily spends 6 hours coding. Meanwhile, 143,000+ repos already exist on GitHub — the top one has 53,000 stars. The agent never checks because you never asked, and it doesn't know to look. You only discover competitors after you've invested significant time.
+
+This pattern repeats for every new project idea. We've all been there. We get excited about an idea and start building before realizing someone else solved the problem years ago. Worse, we might build something that's already saturated with competition, making success almost impossible.
+
+## What This Pre-Build Validator Actually Does
+
+Before OpenClaw starts building anything new, it automatically checks whether the idea already exists across multiple real data sources:
+
+- Scans GitHub repo count and star distributions
+- Checks Hacker News discussion history
+- Looks for existing npm/PyPI packages
+- Searches Product Hunt launches
+- Returns a `reality_signal` score (0-100) indicating how crowded the space is
+
+No more guessing based on gut feeling. Just data-driven validation.
+
+### How It Works in Practice
+
+Let me show you what happens when you test an idea:
+
+**You:** "Build me a CLI tool for AI code review"
+
+> **reality_signal: 90/100 (very high)**
+>
+> Top competitors:
+> 1. Gitea — 53,940 stars
+> 2. reviewdog — 9,104 stars  
+> 3. Danger (Ruby) — 5,649 stars
+>
+> This space has 143,000+ related repos. The top players are mature and well-funded.
+>
+> **Pivot suggestions:**
+> - Focus on a specific language (Rust/Go-only AI code review)
+> - Target a specific framework (React/Vue component review)
+> - Target a specific industry (financial/medical code compliance review)
+>
+> Should I proceed with a differentiated angle, or pivot to something else?
+
+The system immediately tells you this is a crowded space with strong competitors. It suggests concrete pivot directions based on what's missing.
+
+Now test a different idea:
+
+**You:** "What about an MCP server for pre-build idea validation?"
+
+> **reality_signal: 8/100 (very low)**
+>
+> 0 direct competitors found on PyPI or npm. GitHub has some tangentially related repos but none solve this exact problem.
+>
+> The space is wide open. Proceeding to build.
+
+That's the sweet spot. Zero direct competitors and plenty of room to build something new.
+
+## Setting It Up: The Reality Check Gateway
+
+You need the idea-reality-mcp MCP server. This is the bridge between your OpenClaw agent and real-world data.
+
+```bash
+uvx idea-reality-mcp
+```
+
+Add this to your OpenClaw config:
+
+```json
+{
+  "mcpServers": {
+    "idea-reality": {
+      "command": "uvx",
+      "args": ["idea-reality-mcp"]
+    }
+  }
+}
+```
+
+Then add these instructions to your agent:
+
+```
+Before starting any new project, feature, or tool, always run idea_check first.
+
+Rules:
+- If reality_signal > 70: STOP. Report the top 3 competitors with star counts.
+  Ask me if I want to proceed, pivot, or abandon.
+- If reality_signal 30-70: Show me the results and pivot_hints.
+  Suggest a niche angle that existing projects don't cover.
+- If reality_signal < 30: Proceed to build.
+  Mention that the space is open.
+- Always show the reality_signal score and top competitors before writing any code.
+```
+
+## Why This Matters More Than You Think
+
+Most indie hackers fail because they're solving problems that don't need solving. They're building in spaces that are already saturated with well-funded, mature products.
+
+The `reality_signal` is based on real data, not LLM guessing. It looks at:
+
+- Actual repo counts on GitHub
+- Star distributions of top projects
+- Discussion volume on Hacker News
+- Existing packages on npm and PyPI
+- Product Hunt launch history
+
+A high score doesn't mean "don't build" — it means "differentiate or don't bother." A low score means genuine white space exists. That's where solo builders have the best odds.
+
+## Real-World Variations
+
+### Deep Mode for Major Decisions
+
+For serious decisions (like your startup idea), use the deep mode to scan all 5 sources in parallel:
+
+```bash
+idea_check("AI code review tool", depth="deep")
+```
+
+This gives you the most comprehensive view before committing months of work.
+
+### Batch Validation Before a Hackathon
+
+Before a hackathon, give OpenClaw a list of 10 ideas and have it rank them by `reality_signal`. The lowest score means the most original opportunity.
+
+```bash
+idea_check_list(["idea1", "idea2", "idea3", ...])
+```
+
+### Try Without Installing
+
+Not sure if this workflow fits your needs? Try the web demo first at [mnemox.ai/check](https://mnemox.ai/check). No installation required, just test your ideas.
+
+## The Bottom Line
+
+This prevents the most expensive mistake in building: **solving a problem that's already been solved**. It saves you from spending weeks or months on ideas that have no chance.
+
+The reality check system doesn't kill creativity — it channels it. It shows you where genuine opportunities exist and helps you avoid crowded spaces where you'll compete against giants.
+
+With papayaclaw.com, you can deploy this validation system as a hosted service so you don't have to manage the infrastructure yourself. Just focus on building things that actually matter.
+
+Try it before your next big idea. You might be surprised at what you discover.
