@@ -1,0 +1,143 @@
+---
+title: "Convierte un solo prompt en una máquina de contenido: la fábrica multi-agente"
+date: "2026-07-20"
+summary: "Crea un sistema en Discord donde tres agentes de IA investigan, escriben y generan imágenes automáticamente cada mañana."
+---
+
+# Convierte un solo prompt en una máquina de contenido: la fábrica multi-agente
+
+Publicar contenido constante es el infierno del founder independiente.
+
+Investigas tendencias. Escribes el post. Generas la imagen de portada. Tres fases, tres contextos mentales distintos, y al final pasaste tres horas para sacar un hilo en X.
+
+El problema no es la IA. El problema es que la usas como una herramienta, no como un sistema.
+
+## La diferencia entre usar IA y orquestar agentes
+
+Cuando le pides a ChatGPT que te escriba un hilo, funciona. Pero tú seguís haciendo el trabajo de investigación previa. Y el trabajo de diseño posterior. Sigues siendo el cuello de botella.
+
+La alternativa es encadenar agentes especializados donde la salida de uno alimenta la entrada del siguiente.
+
+Investigación → Escritura → Diseño.
+
+Sin intervención tuya.
+
+## Cómo funciona la arquitectura
+
+La fábrica de contenido vive dentro de Discord. Cada agente tiene su propio canal:
+
+- `#research` — el agente de investigación publica las 5 mejores oportunidades de contenido con fuentes
+- `#scripts` — el agente de escritura toma la mejor idea y produce el borrador completo
+- `#thumbnails` — el agente de imágenes genera las portadas o thumbnails
+
+Los canales separados sirven para algo concreto: revisar cada salida de forma aislada y dar feedback directo. Si los scripts quedan largos, lo dices en `#scripts`. Si las imágenes no funcionan, lo dices en `#thumbnails`.
+
+El pipeline corre automáticamente cada mañana a las 8 AM. Te despiertas, abres Discord, y tienes contenido listo para revisar.
+
+## Qué necesitas antes de empezar
+
+Tres cosas técnicas:
+
+**Discord integrado** — necesitas un servidor con los tres canales creados. Puedes hacerlo tú o pedirle a OpenClaw que lo configure con un solo mensaje.
+
+**Multi-agente orchestration** — los comandos clave son `sessions_spawn` para lanzar cada agente y `sessions_send` para pasar datos entre ellos. Esto es lo que permite que el agente de investigación le pase sus hallazgos al agente de escritura sin que tú intervengas.
+
+**Skills específicos** — el agente de investigación necesita [x-research-v2](https://clawhub.ai) para escanear tendencias en redes sociales. Opcionalmente, puedes agregar [knowledge-base](https://clawhub.ai) si quieres que la investigación tenga contexto RAG sobre tu niche.
+
+Para la generación de imágenes tienes dos caminos: una API externa (DALL-E, Midjourney) o un modelo local como Nano Banana corriendo en un Mac Studio. Lo local te da más control y cero costo por imagen.
+
+## El prompt que arranca todo
+
+Una vez tengas Discord listo, este es el prompt base:
+
+```text
+I want you to build me a content factory inside of Discord.
+Set up channels for different agents:
+
+1. Research Agent (#research): Every morning at 8 AM, research top trending
+   stories, competitor content, and what's performing well on social media
+   in my niche. Post the top 5 content opportunities with sources.
+
+2. Writing Agent (#scripts): Take the best idea from the research agent
+   and write a full script/thread/newsletter draft. Post it in #scripts.
+
+3. Thumbnail Agent (#thumbnails): Generate AI thumbnails or cover images
+   for the content. Post them in #thumbnails.
+
+Have all their work organized in different channels.
+Run this pipeline automatically every morning.
+```
+
+Ese prompt crea la estructura completa. Pero lo interesante es la adaptación.
+
+## Ajustando para tu formato real
+
+El prompt base genera scripts genéricos. Si tu canal principal es X/Twitter y no YouTube, ajustas así:
+
+```text
+I focus on X/Twitter threads, not YouTube. Change the writing agent
+to produce tweet threads instead of video scripts.
+```
+
+Si haces newsletters:
+
+```text
+Change the writing agent to produce newsletter sections with
+a hook, 3 key points, and a CTA. Keep each section under 150 words.
+```
+
+Si tu nicho es SaaS específico:
+
+```text
+My niche is B2B SaaS tools for remote teams. The research agent
+should focus on Product Hunt launches, Twitter debates about
+remote work, and competitor blog posts from tools like Notion,
+Linear, and Slack.
+```
+
+Cada ajuste cambia el comportamiento de los tres agentes sin tocar la arquitectura. El pipeline sigue siendo el mismo.
+
+## Por qué los canales separados importan
+
+Poderías hacer todo en un solo canal. Pero no deberías.
+
+Cuando todo está mezclado, el feedback se vuelve confuso. "Acorta esto" — ¿a qué te refieres? ¿Al script o a la lista de investigación?
+
+Con canales separados, el contexto es claro. El agente de escritura solo ve mensajes en `#scripts`. El de imágenes solo ve `#thumbnails`. El feedback que das en cada canal es contextualmente aislado.
+
+Además, si un agente falla, sabes exactamente dónde buscar. Si las imágenes no se generan, revisas `#thumbnails`. Si la investigación es genérica, revisas `#research`.
+
+## El costo de correr esto
+
+Depende de tu stack de imágenes.
+
+Con una API de imágenes, pagas por cada generación. A ~$0.04 por imagen con DALL-E 3, y digamos 3 imágenes diarias, son ~$3.60 al mes. Nada.
+
+Con un modelo local como Nano Banana en un Mac Studio, el costo es cero. Solo electricidad. La desventaja es que necesitas el hardware y la configuración inicial toma más tiempo.
+
+Los agentes de texto consumen tokens de contexto. Con `sessions_spawn`, cada agente abre su propia sesión. El costo mensual en tokens es marginal comparado con lo que pagarías por un asistente de contenido parcial.
+
+## Lo que nadie te dice sobre multi-agentes
+
+El primer día, el contenido va a ser genérico. Los agentes no conocen tu voz, tu audiencia, ni qué tipo de posts te han funcionado antes.
+
+La clave es el feedback iterativo en los canales. Durante la primera semana, dedica 10 minutos cada mañana a corregir salidas directamente en Discord. "Los hilos son muy largos, apunta a 8 tweets máximo." "Las imágenes necesitan menos texto." "Enfócate más en AI news, menos en productividad genérica."
+
+Los agentes mejoran con ese feedback porque el contexto de la sesión lo absorbe.
+
+Otra cosa: no necesitas los tres agentes desde el día uno. Puedes empezar solo con investigación + escritura y agregar imágenes después de que los primeros dos funcionen bien.
+
+## Adaptando a otros formatos
+
+El mismo pipeline sirve para:
+
+- **LinkedIn posts** — cambias el writing agent a posts de 1300 caracteres con hook inicial
+- **Newsletter** — el writing agent genera secciones con estructura fija
+- **Podcast outlines** — el writing agent produce bullet points con preguntas para el invitado
+- **Blog articles** — agregas un paso extra de edición entre escritura y publicación
+
+La arquitectura no cambia. Solo cambias las instrucciones del writing agent.
+
+---
+
+Si estás perdiendo horas en el ciclo investigación-escritura-diseño, este patrón de multi-agentes es lo que necesitabas probar. En [papayaclaw.com](https://papayaclaw.com) armamos stacks de automatización como este para founders que quieren dejar de ser el cuello de botrella de su propio contenido.
