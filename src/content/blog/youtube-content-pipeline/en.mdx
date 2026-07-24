@@ -1,0 +1,143 @@
+---
+title: "Build a YouTube Content Engine That Runs Itself"
+date: "2026-07-24"
+summary: "Automate your entire YouTube research pipeline—idea scouting, deduplication, and script outlines—without hiring a team."
+---
+
+# Build a YouTube Content Engine That Runs Itself
+
+Research → script → edit → thumbnail → upload.
+
+That's the cycle. And if you're running a YouTube channel alongside a SaaS, the "research" part eats you alive.
+
+You're refreshing X/Twitter, scanning RSS feeds, checking what competitors covered, trying to remember if you already did a video on that OpenAI announcement three weeks ago.
+
+Meanwhile, your actual product work stalls.
+
+Here's what I built instead: a pipeline that scouts video ideas every hour, checks them against my entire back catalog, deduplicates them semantically (not just keyword matching), and pitches me only the good stuff on Telegram.
+
+When something catches my eye, I drop a link in Slack. Five minutes later, there's a fully researched outline waiting in Asana.
+
+No team. No manual research. Just me approving ideas and making videos.
+
+## The actual architecture
+
+Let me break down what's running under the hood before we get to setup.
+
+**Layer 1: Hourly scouting.** A cron job fires every 60 minutes. It hits the web and X/Twitter for breaking AI news. But it doesn't just dump results—it cross-references everything against two filters.
+
+**Layer 2: The 90-day catalog check.** Using `gog` CLI (YouTube Analytics on the command line), it pulls my recent video data—view counts, topics, titles. If I covered something recently, the idea gets killed.
+
+**Layer 3: Semantic deduplication.** This is the part that actually matters. All past pitches live in a SQLite database with vector embeddings. When a new idea comes in, it checks semantic similarity—not just string matching. So "GPT-5 rumors" and "Next OpenAI model speculation" get correctly flagged as duplicates.
+
+**Layer 4: Telegram delivery.** Novel ideas land in a dedicated Telegram topic with sources attached. I skim once or twice a day.
+
+**Layer 5: The Slack-to-Asana trigger.** Separate from the hourly scan. When I share a link in `#ai_trends`, OpenClaw researches the topic, pulls related X posts, queries my knowledge base for context, and creates an Asana card in my Video Pipeline project—with a full outline ready to script from.
+
+## What you need before starting
+
+- `web_search` skill (built into OpenClaw)
+- [x-research-v2](https://clawhub.ai) for X/Twitter search
+- [knowledge-base](https://clawhub.ai) skill for RAG queries
+- Asana integration (Todoist works too if you prefer)
+- `gog` CLI for YouTube Analytics
+- A Telegram topic set up for receiving pitches
+
+Most of these are plug-and-play from ClawHub. The only thing you need to configure manually is the database.
+
+## Step 1: Create the pitch database
+
+This is where all your idea history lives. Fire up SQLite and run:
+
+```sql
+CREATE TABLE pitches (
+  id INTEGER PRIMARY KEY,
+  timestamp TEXT,
+  topic TEXT,
+  embedding BLOB,
+  sources TEXT
+);
+```
+
+The `embedding BLOB` column is what makes semantic dedup work. Every pitch gets vectorized when it enters the database, so future pitches get compared by meaning, not just text overlap.
+
+Keep this database somewhere persistent. It becomes more valuable over time—the more pitches it has, the better it gets at filtering repeats.
+
+## Step 2: Set up your Telegram topic
+
+Create a dedicated topic in Telegram (not just a channel—a topic, so it stays organized). Note the topic ID and configure it in OpenClaw as your pitch destination.
+
+This is your inbox. The only things that land here have already passed the catalog check and the dedup check.
+
+## Step 3: Wire up the cron job
+
+Here's the prompt that drives the whole thing:
+
+```text
+Run an hourly cron job to:
+1. Search web and X/Twitter for breaking AI news
+2. Check against my 90-day YouTube catalog (fetch from YouTube Analytics via gog)
+3. Check semantic similarity against all past pitches in the database
+4. If novel, pitch the idea to my Telegram "video ideas" topic with sources
+
+Also: when I share a link in Slack #ai_trends, automatically:
+1. Research the topic
+2. Search X for related posts
+3. Query my knowledge base
+4. Create an Asana card in Video Pipeline with a full outline
+```
+
+That's it. Two behaviors in one prompt: the passive scouting loop and the active research trigger.
+
+## Why semantic dedup matters more than you think
+
+Early on, I tried just keyword matching. It was garbage.
+
+"OpenAI releases new model" and "GPT-4.5 launches" are the same video. Keyword matching says they're different. Vector embeddings say they're 94% similar.
+
+Over 90 days, this saves you from pitching yourself the same idea in slightly different words 15 times. It also means the pipeline gets smarter the longer you run it—your pitch database becomes a semantic map of everything you've ever considered making.
+
+## The Slack trigger is where the real leverage is
+
+The hourly cron gets you ideas. The Slack trigger gets you *execution-ready* ideas.
+
+When I drop a link in `#ai_trends`, I'm not asking for a summary. I'm asking for a video. The pipeline knows this because of how the prompt is structured.
+
+It pulls the article, finds what people on X are saying about it, checks my knowledge base for anything I've written or recorded about related topics, and synthesizes all of that into an Asana card with:
+
+- A working title
+- The angle (why this matters *now*)
+- Key points to cover
+- Related X posts for social proof or quotes
+- Context from my own content to avoid repeating myself
+
+That card goes straight into my Video Pipeline project. I open Asana, grab the next card, and start scripting. The research phase is already done.
+
+## What this actually replaces
+
+Before this pipeline, my research process looked like:
+
+- 30-45 minutes scrolling X and Hacker News
+- 15 minutes checking my own channel to avoid repeats
+- 20 minutes digging into a topic once I picked one
+- 10 minutes outlining in a Google Doc
+
+Roughly 90 minutes per video, just on research. At two videos a week, that's three hours I wasn't shipping product.
+
+Now I spend maybe 10 minutes skimming Telegram pitches and another 5 reviewing the Asana card before I start scripting. The pipeline does the other 85 minutes.
+
+## The catch
+
+This isn't magic. You still have to:
+
+- Actually review the pitches (they pile up if you ignore them)
+- Edit the Asana outlines (they're good starting points, not final scripts)
+- Make the video
+
+The pipeline doesn't make videos for you. It eliminates the 90-minute research tax that makes consistent publishing feel unsustainable for solo founders.
+
+If you're publishing YouTube content to drive awareness for your SaaS and you're still doing research manually, you're leaving time on the table. Time you could spend on your product.
+
+---
+
+Ready to automate your content research? [papayaclaw.com](https://papayaclaw.com) has the skills, integrations, and infrastructure to run this entire pipeline—no custom code required beyond the SQLite table. Set it up in an afternoon, let it run while you ship.
