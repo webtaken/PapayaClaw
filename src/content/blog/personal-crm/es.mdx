@@ -1,0 +1,141 @@
+---
+title: "Tu CRM personal que funciona solo: descubre contactos automáticamente"
+date: "2026-07-29"
+summary: "Cómo montar un CRM personal que escanea tu email y calendario cada día, extrae contactos y te prepara briefings antes de cada reunión."
+---
+
+# Tu CRM personal que funciona solo: descubre contactos automáticamente
+
+Te pasa igual que a mí. Conoces a alguien en un evento, intercambiáis emails, habláis por llamada. Todo bien.
+
+Tres semanas después, te escribe. Y no tienes ni idea de quién es, qué hablasteis, o si te debía algo tú o él.
+
+No es falta de interés. Es que tu cerebro no es una base de datos.
+
+## El problema real de los CRMs personales
+
+Los CRMs convencionales te piden que tú introduzcas los datos. Manualmente. Después de cada reunión, después de cada email relevante.
+
+Funciona dos días. El tercero ya no lo haces.
+
+Lo que necesitas no es otra herramienta que mantener. Necesitas algo que trabaje en segundo plano, sin que tú hagas nada.
+
+## La arquitectura que sí funciona
+
+La idea es simple: un proceso diario que escanea tu Gmail y tu Google Calendar, extrae contactos e interacciones, y los guarda en una base de datos estructurada.
+
+Sobre esa base, construyes dos cosas:
+
+1. **Consultas en lenguaje natural** desde Telegram: "¿Qué sé sobre María García?", "¿Quién necesita seguimiento?"
+2. **Briefing matutino automático** antes de tus reuniones del día
+
+Nada de interfaces complejas. Nada de datos manuales.
+
+## Lo que necesitas
+
+- `gog` CLI para conectar con Gmail y Google Calendar
+- Una base de datos SQLite (o lo que prefieras)
+- Un topic de Telegram llamado "personal-crm" para las consultas
+- OpenClaw como orquestador
+
+Si usas el skill `crm-query` de Clawhub, te ahorras parte del trabajo. Pero la base es la misma.
+
+## Paso 1: la base de datos
+
+Empieza con algo sencillo. Una tabla de contactos con el contexto mínimo que necesitas:
+
+```sql
+CREATE TABLE contacts (
+  id INTEGER PRIMARY KEY,
+  name TEXT,
+  email TEXT,
+  first_seen TEXT,
+  last_contact TEXT,
+  interaction_count INTEGER,
+  notes TEXT
+);
+```
+
+No necesitas más campos al principio. El campo `notes` es donde va a parar el contexto extraído de tus emails y reuniones. OpenClaw se encarga de darle formato y sentido.
+
+## Paso 2: el topic de Telegram
+
+Crea un topic en Telegram llamado exactamente "personal-crm". Aquí recibirás los briefings matutinos y aquí harás tus consultas.
+
+Nada de apps extra. Nada de logins. Telegram ya lo tienes abierto.
+
+## Paso 3: el prompt que hace todo funcionar
+
+Aquí está el núcleo del sistema. Este prompt le dice a OpenClaw exactamente qué hacer:
+
+```text
+Run a daily cron job at 6 AM to:
+1. Scan my Gmail and Calendar for the past 24 hours
+2. Extract new contacts and update existing ones
+3. Log interactions (meetings, emails) with timestamps and context
+
+Also, every morning at 7 AM:
+1. Check my calendar for today's meetings
+2. For each external attendee, search my CRM and email history
+3. Deliver a briefing to Telegram with: who they are, when we last spoke, what we discussed, and any follow-up items
+
+When I ask about a contact in the personal-crm topic, search the database and give me everything you know.
+```
+
+Tres bloques, tres funciones claras.
+
+El primero ejecuta a las 6 AM. Escanea las últimas 24 horas, extrae nombres y emails nuevos, actualiza los que ya existen, y registra cada interacción con contexto.
+
+El segundo ejecuta a las 7 AM. Mira tu calendario del día, identifica asistentes externos, y te manda un briefing a Telegram con todo lo que sabe de cada uno.
+
+El tercero es reactivo. Cuando tú preguntas algo en el topic, busca en la base de datos y te responde.
+
+## Cómo se ve esto en la práctica
+
+Son las 7:02 AM. Tu teléfono vibra.
+
+Telegram:
+
+> **Briefing de reuniones hoy**
+>
+> **10:00 - Carlos Ruiz (Ventas Corp)**
+> Último contacto: 12 Dic, llamada de 30 min
+> Contexto: Evaluando tu producto para equipo de 15 personas. Presupuesto aprobado Q1. Le enviaste pricing el 14 Dic y no ha respondido.
+> **Acción:** Seguimiento pendiente sobre el pricing.
+>
+> **15:30 - Ana Martínez ( freelance)**
+> Último contacto: 3 Ene, email
+> Contexto: Te preguntó por integraciones con Notion. Le pasaste docs.
+> **Acción:** Sin seguimiento pendiente, pero buena oportunidad para cerrar.
+
+Tú llegas a la reunión con Carlos sabiendo exactamente dónde quedaron las cosas. Sin abrir nada. Sin buscar en tu email.
+
+Eso es lo que cambia la dinámica.
+
+## Las consultas que te salvan
+
+Además del briefing, puedes preguntar lo que quieras en cualquier momento:
+
+- "¿Quién no he tocado en más de 30 días?"
+- "¿Qué sé sobre David de la startup de logística?"
+- "Dame un resumen de mis interacciones con el equipo de Vertex este mes"
+
+OpenClaw busca en la base de datos, cruza con el historial de email si hace falta, y te devuelve una respuesta concreta. No una lista de registros. Una respuesta que puedes leer y actuar.
+
+## Por qué esta arquitectura gana
+
+No te pide comportamiento nuevo. No tienes que abrir una app extra después de cada reunión. No tienes que etiquetar nada.
+
+El sistema consume los datos que ya generas: emails que ya escribes, reuniones que ya tienes en tu calendario. Los procesa en segundo plano y te entrega la información cuando la necesitas.
+
+Para un indie hacker o un fundador con 20-30 conversaciones activas por semana, esto marca la diferencia entre parecer desorganizado y parecer que te importa de verdad cada relación.
+
+## Empezar ya
+
+Lo más difícil de un CRM personal no es la tecnología. Es el mantenimiento. Si tienes que introducir datos manualmente, fallará.
+
+Con esta arquitectura, el mantenimiento es cero. Configuras una vez, y el sistema se alimenta solo.
+
+Si quieres montar esto sin pelear con la configuración, en [papayaclaw.com](https://papayaclaw.com) tenemos plantillas preconfiguradas para flujos de CRM personal con OpenClaw. Conectas tus cuentas, ejecutas el prompt, y a las 7 AM del día siguiente ya tienes tu primer briefing en Telegram.
+
+Deja de depender de tu memoria. Que el sistema trabaje por ti.
