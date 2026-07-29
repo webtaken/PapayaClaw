@@ -1,0 +1,152 @@
+---
+title: "Your Always-On Personal CRM That Finds Contacts Automatically"
+date: "2026-07-29"
+summary: "Stop losing leads in scattered notes — automatically discover, enrich, and track every contact from your emails, calls, and socials."
+---
+
+# Your Always-On Personal CRM That Finds Contacts Automatically
+
+You know that feeling. You hop on a call with someone, and you *know* you've talked before. Maybe exchanged emails six months ago. But you can't remember the details, and your search through Gmail gives you nothing useful.
+
+So you fake it. Smile, nod, hope they don't notice.
+
+That's not a pipeline problem. That's a systems problem. And if you're an indie founder or small team, you can't afford to lose relationship context — every lead, every connection, every follow-up matters.
+
+## The scattered notes problem
+
+Most indie hackers track contacts in one of three ways:
+
+1. A messy Notion database they update for two weeks then abandon
+2. A spreadsheet that lives on their desktop and never gets touched
+3. Pure memory (the "I'll remember" approach that always fails)
+
+None of these work because they all require manual input. You have to *remember* to log the contact, *remember* what you discussed, and *remember* to actually open the tool.
+
+The fix isn't a better CRM. It's removing yourself from the loop entirely.
+
+## What this actually does
+
+I built a personal CRM that runs without me. Literally — I don't touch it.
+
+Here's what happens behind the scenes:
+
+- Every morning at 6 AM, a cron job scans my Gmail and Google Calendar for the past 24 hours
+- It extracts new contacts, updates existing ones, and logs every interaction with timestamps and context
+- At 7 AM, it checks my calendar for the day's meetings and preps a briefing on every external attendee
+- I can query it anytime through Telegram with natural language
+
+No data entry. No "remembering to log stuff." It just works.
+
+## The architecture
+
+This isn't complex. You need three things:
+
+1. **`gog` CLI** — handles Gmail and Google Calendar access
+2. **SQLite database** — stores your contacts and interactions
+3. **Telegram topic** — your query interface (called "personal-crm")
+
+That's it. No SaaS subscriptions, no bloated integrations, no dashboard you'll never log into.
+
+## Setting up the database
+
+Start with a simple SQLite table:
+
+```sql
+CREATE TABLE contacts (
+  id INTEGER PRIMARY KEY,
+  name TEXT,
+  email TEXT,
+  first_seen TEXT,
+  last_contact TEXT,
+  interaction_count INTEGER,
+  notes TEXT
+);
+```
+
+Notice what's missing: no company field, no deal stage, no lead score. This isn't Salesforce. It's a *personal* CRM. You care about relationship context — when you last talked, how many times, and what you discussed.
+
+You can extend this later. Start simple.
+
+## Wiring up the automation
+
+Create a Telegram topic called "personal-crm." This is where you'll ask questions and receive briefings.
+
+Then prompt OpenClaw with the full workflow:
+
+```text
+Run a daily cron job at 6 AM to:
+1. Scan my Gmail and Calendar for the past 24 hours
+2. Extract new contacts and update existing ones
+3. Log interactions (meetings, emails) with timestamps and context
+
+Also, every morning at 7 AM:
+1. Check my calendar for today's meetings
+2. For each external attendee, search my CRM and email history
+3. Deliver a briefing to Telegram with: who they are, when we last spoke, what we discussed, and any follow-up items
+
+When I ask about a contact in the personal-crm topic, search the database and give me everything you know.
+```
+
+That prompt is the entire orchestration layer. OpenClaw handles the scheduling, the `gog` CLI calls, the data extraction, and the Telegram delivery.
+
+## What the morning briefing looks like
+
+At 7 AM, your phone buzzes. Telegram message from your CRM bot:
+
+> **Meeting: 10:00 AM with Sarah Chen**
+> - First contact: March 2024
+> - Last interaction: Email on Dec 12 about pricing for team plan
+> - Context: Expressed interest but wanted to check with co-founder. You followed up Dec 19, no response.
+> - Suggested talking point: Ask if she had that conversation with her co-founder.
+
+That's not just data. That's *leverage*. You walk into the call knowing exactly where things stand.
+
+## Querying on the fly
+
+The Telegram topic isn't just for briefings. It's your search interface.
+
+Ask: "What do I know about Marcus from Vercel?"
+
+Get back: full history, interaction count, last contact date, any notes from previous conversations.
+
+Ask: "Who needs follow-up?"
+
+Get back: a list of contacts you haven't touched in 14+ days, sorted by interaction count (so high-value relationships bubble up first).
+
+Ask: "When did I last talk to the Stripe team?"
+
+Get back: every contact at Stripe, sorted by recency.
+
+No SQL. No filters. Just ask.
+
+## Why this beats traditional CRMs for solo founders
+
+Pipedrive, HubSpot, Close — they're built for sales teams with reps and managers and pipelines. You're not a sales team. You're a founder who needs to remember context.
+
+Traditional CRMs fail indie hackers for three reasons:
+
+1. **Input friction** — you have to manually create contacts and log activities
+2. **Feature bloat** — 80% of the tool is useless to you
+3. **Cost** — paying $50-100/month for something you use twice a week is painful
+
+This setup flips all three. Zero input friction (it's automatic). Zero bloat (it does exactly three things). Zero recurring cost (runs on tools you already have).
+
+## The compounding value
+
+Here's what most people miss: this system gets better over time.
+
+Week one, it's catching today's contacts. Nothing special.
+
+Month three, it has context on 200+ people. Your morning briefings start revealing patterns — "you haven't talked to this person in 45 days but they've emailed you three times."
+
+Month six, it's genuinely irreplaceable. You can't recreate that relationship history without it.
+
+The earlier you start, the more valuable it becomes. That's the compounding return on automated contact tracking.
+
+## Getting started
+
+If you want to build this yourself, grab `gog`, set up the SQLite schema, and wire it through OpenClaw. The full setup takes maybe 30 minutes if you have your Google credentials handy.
+
+If you'd rather skip the wiring, we've packaged this exact workflow at [papayaclaw.com](https://papayaclaw.com) — pre-configured cron jobs, database schema, Telegram integration, the whole thing. Plug in your credentials and it runs.
+
+Either way, stop losing contacts to scattered notes. Build the system once, let it run forever.
