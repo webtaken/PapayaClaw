@@ -1,0 +1,120 @@
+---
+title: "Construí una IA que edita mis videos mejor que yo"
+date: "2026-08-07"
+summary: "Cómo convertir la edición de video en una conversación de texto y reducir horas de trabajo a minutos con dos skills de ClawHub."
+---
+
+# Construí una IA que edita mis videos mejor que yo
+
+Editar videos suele seguir la misma rutina: abres Premiere o DaVinci, arrastras clips a la timeline, ajustas cortes, agregas subtítulos uno por uno, y tres horas después tienes un video de 90 segundos.
+
+Si publicas contenido con regularidad, ese loop se vuelve insoportable.
+
+Yo llegué a un punto donde pasaba más tiempo editando que grabando. Así que busqué otra forma. El resultado: un flujo donde le digo a una IA qué quiero y me devuelve el video listo. Sin timeline, sin interfaz gráfica, sin hacer clic en menús.
+
+## El problema real no es la edición, es la repetición
+
+Cortar intros, quemar subtítulos, ajustar el color, exportar para TikTok en vertical. Son tareas mecánicas que no requieren creatividad, solo tiempo.
+
+Cuando tienes 5 clips del mismo evento y necesitas aplicar la misma edición a todos, la cosa se pone fea. Cada video son 20-30 minutos de trabajo repetitivo. Multiplícalo por una semana de publicación y ya perdiste medio día.
+
+## La solución: editar hablando, no cliqueando
+
+Resulta que puedes convertir la edición de video en una conversación. Describes qué quieres cambiar, sueltas el archivo en el chat, y recibes el resultado.
+
+Funciona así:
+
+- Recortas, cortas y unes clips describiendo timestamps en lenguaje natural
+- Agregas música de fondo con ducking automático de audio
+- Generas y quemas subtítulos a partir del habla (más de 50 idiomas)
+- Aplicas gradación de color con descripciones ("hazlo más cálido", "que parezca atardecer")
+- Recortas a vertical para TikTok, Reels o Shorts
+- Procesas lotes completos con la misma edición
+
+Todo sin abrir un solo editor de video.
+
+## La arquitectura detrás
+
+Esto no es magia. Son dos skills de ClawHub que hacen el trabajo pesado:
+
+- **video-editor-ai** — edición de video por chat con BGM, subtítulos y exportación
+- **ai-subtitle-generator** — subtítulos automáticos, quemado de subtítulos, exportación SRT
+
+El agente maneja las llamadas a la API, hace polling hasta que termina el procesamiento, y te entrega los archivos finales directamente en el chat.
+
+## Cómo configurarlo
+
+La instalación toma dos comandos:
+
+```bash
+clawhub install video-editor-ai
+clawhub install ai-subtitle-generator
+```
+
+Listo. Ya puedes empezar a editar.
+
+### Edición básica
+
+Sueltas un video en el chat y describes lo que quieres:
+
+```text
+Recorta este video desde 0:15 hasta 1:30, agrega música de fondo
+(algo upbeat), y quema subtítulos en inglés.
+```
+
+El agente procesa la solicitud, aplica los cambios, y te devuelve el archivo terminado.
+
+### Procesamiento por lotes
+
+Acá es donde esto brilla realmente. Tienes 5 clips crudos y necesitas todos listos para Shorts:
+
+```text
+Tengo 5 clips en /videos/raw/. Para cada uno:
+- Recortar a 9:16 vertical
+- Agregar subtítulos auto-generados abajo
+- Exportar como mp4
+```
+
+Un solo mensaje. Cinco videos procesados con la misma configuración.
+
+## Lo que aprendí usándolo
+
+Después de un par de semanas con este flujo, aprendí algunas cosas:
+
+**Sé específico con timestamps y formato de salida.** "Exportar como mp4 a 1080p" funciona mejor que "exportarlo bonito". La IA no adivina tus preferencias de bitrate.
+
+**Menciona el idioma de origen si no es inglés.** El generador de subtítulos asume inglés por defecto. Si tu video está en español, dilo explícito: "quema subtítulos en español, idioma de origen: español".
+
+**Para gradación de color, usa descripciones de referencia.** "Tonos cálidos de atardecer" da mejores resultados que "sube la temperatura 200K y baja la saturación un 10%". La IA entiende mejor conceptos visuales que valores técnicos.
+
+**Cuidado con lo que subes.** Evita footage con rostros de terceros, documentos de identidad o pantallas confidenciales a menos que hayas revisado la política de retención de datos del proveedor. No todas las APIs tratan tus archivos con el mismo nivel de privacidad.
+
+## Un ejemplo real
+
+Ayer grabé una entrevista de 12 minutos. Necesitaba tres cosas: un clip de 45 segundos para Shorts con subtítulos, un corte de 2 minutos para YouTube, y el audio limpio como MP3.
+
+Antes: 45 minutos de edición.
+
+Ayer:
+
+```text
+Tengo este archivo entrevista_raw.mp4. Necesito tres versiones:
+
+1. Cortar de 3:22 a 4:07, recortar a 9:16, agregar subtítulos en español, exportar como mp4
+2. Cortar de 1:00 a 3:00, quema subtítulos en español, exporta como mp4 a 1080p
+3. Extraer solo el audio completo, exportar como mp3
+```
+
+Cuatro minutos después tenía los tres archivos. El agente procesó todo en paralelo.
+
+## Lo que esto no reemplaza
+
+Esto no va a reemplazar edits complejos con múltiples capas, transiciones elaboradas, o trabajo de color cinematográfico. Para eso sigues necesitando una timeline y control manual.
+
+Pero para el 80% de las tareas repetitivas que te comen horas cada semana, editar por chat es una solución concreta que funciona hoy.
+
+## Empieza a probarlo
+
+Si pasas más de 5 horas semanales editando videos con cambios repetitivos, este flujo te devuelve ese tiempo.
+
+Los dos skills que necesitas están en [papayaclaw.com](https://papayaclaw.com) junto con documentación detallada y más ejemplos de uso. Instala, suelta un video en el chat, y mira qué pasa.
