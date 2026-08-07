@@ -1,0 +1,151 @@
+---
+title: "I Built an AI That Edits My Videos Better Than I Do"
+date: "2026-08-07"
+summary: "How I turned video editing into a chat conversation — no timeline, no GUI, just describe what you want and get the finished file back."
+---
+
+# I Built an AI That Edits My Videos Better Than I Do
+
+What if your raw footage could turn itself into a polished video while you sleep?
+
+I used to spend 3-4 hours per video in a timeline editor. Dragging clips. Sliding audio tracks. Manually aligning cuts to the beat. For one video, fine. For ten videos a week, it's a death spiral.
+
+Last month I ripped out that entire workflow. Now I edit videos by typing sentences.
+
+## The problem with timeline editors
+
+Traditional video editing hasn't changed much in 20 years. You open Premiere or DaVinci, drop footage onto a timeline, and manually click through everything.
+
+This works for complex creative work. Color grading a short film? Yeah, you want fine-grained control.
+
+But most of what I do isn't creative. It's repetitive:
+
+- Trimming dead air from talking-head clips
+- Adding subtitles to every video
+- Cropping horizontal footage to vertical for TikTok
+- Slapping background music on and ducking the audio when someone speaks
+
+Each of these tasks takes 15-30 minutes in a GUI. Across a batch of videos, that's my entire afternoon gone.
+
+## What I built instead
+
+I turned video editing into a conversation.
+
+I drop a file into chat. I describe what I want changed. I get the edited video back. No timeline, no menus, no mouse.
+
+Here's what it handles:
+
+- **Trim, cut, and merge** clips by describing timestamps in plain language
+- **Add background music** with automatic audio ducking
+- **Generate and burn subtitles** from speech (50+ languages supported)
+- **Color grade** footage using natural descriptions
+- **Crop to vertical** for TikTok, Reels, or Shorts
+- **Batch process** multiple files with the same edit
+
+The last one is what sold me. Batch processing 10 clips used to mean 10 separate editing sessions. Now it's one message.
+
+## The setup
+
+This runs on two skills from ClawHub: `video-editor-ai` for the core editing, and `ai-subtitle-generator` for caption work.
+
+Install them:
+
+```bash
+clawhub install video-editor-ai
+clawhub install ai-subtitle-generator
+```
+
+That's it. No API keys to juggle, no cloud services to configure, no Docker containers to babysit.
+
+## How it actually works in practice
+
+Single video edit. I drop in a talking-head clip and type:
+
+```text
+Trim this video from 0:15 to 1:30, add background music (something upbeat),
+and burn subtitles in English.
+```
+
+The agent parses that instruction, makes the API calls, polls for completion, and drops the finished MP4 back in chat. I don't touch a single button.
+
+Batch edit. This is where the time savings get real:
+
+```text
+I have 5 clips in /videos/raw/. For each one:
+- Crop to 9:16 vertical
+- Add auto-generated captions at the bottom
+- Export as mp4
+```
+
+Five videos, one message. The agent processes them sequentially and delivers each file as it finishes.
+
+I've run this on batches of 20 clips for a client's social media pipeline. What used to take me a full day now runs while I'm making coffee.
+
+## Subtitle workflow specifically
+
+Subtitles used to be my least favorite part of editing. Generate the SRT, import it, style it, position it, check for timing errors, repeat.
+
+Now I drop a clip and say:
+
+```text
+Burn subtitles in Spanish at the bottom, white text with black outline.
+```
+
+The `ai-subtitle-generator` skill handles transcription, timing, and burning. If I need the SRT file separately for YouTube's caption system, I just ask for it by name.
+
+It handles 50+ languages. I've used it for English, Spanish, and Japanese content without issues.
+
+## Color grading without the technical jargon
+
+I'm not a colorist. I don't know what "lift the shadows 0.2 stops while pulling the highlights" means in practice.
+
+With this setup, I describe the look I want:
+
+```text
+Make it warmer, like golden hour sunset tones.
+```
+
+Or reference another clip:
+
+```text
+Match the color grade of the first clip.
+```
+
+It works best with descriptive language rather than technical values. "Warm sunset tones" produces better results than "increase temperature by 15." The AI maps your description to actual grading parameters.
+
+## Things I learned the hard way
+
+Be specific about output format. "Export as mp4 at 1080p" gives you exactly that. Just saying "export" leaves the resolution ambiguous, and you might get a surprise file size.
+
+Mention the source language if it's not English. The subtitle generator assumes English by default. For Spanish audio, say "burn subtitles from Spanish audio" to skip the wrong-language detection loop.
+
+Don't upload sensitive footage unless you've reviewed the provider's data retention policy. This routes through external APIs. Faces, IDs, confidential screen recordings — think twice.
+
+## The real numbers
+
+Before this setup: ~3 hours per video for my standard edit (trim, subtitles, music, export). Across 10 videos a week, that's 30 hours.
+
+After: ~15 minutes per video. Most of that is writing the instruction and reviewing the output. Across 10 videos, that's 2.5 hours.
+
+I cut my editing time by roughly 90%. The remaining time goes to actual creative decisions — which takes to keep, what BGM fits the mood, whether the color grade matches my brand.
+
+The repetitive work is gone.
+
+## What this isn't
+
+This isn't replacing creative editing. If you're cutting a narrative film, a music video, or anything where each frame matters, you still want a timeline and manual control.
+
+This replaces the assembly line. The repetitive tasks that eat your time but don't require your brain.
+
+If you're a YouTuber publishing 3+ videos per week, or a social media manager processing dozens of clips daily, that assembly line is probably most of your job.
+
+## Get started
+
+I published both skills on ClawHub so you can replicate this exact workflow:
+
+- [video-editor-ai](https://clawhub.ai/skills/video-editor-ai) — chat-based editing with BGM, subtitles, and export
+- [ai-subtitle-generator](https://clawhub.ai/skills/ai-subtitle-generator) — auto captions, subtitle burning, SRT export
+
+Install them, drop a clip, and type your first edit. It takes about two minutes to go from zero to your first AI-edited video.
+
+More workflows like this are live at [papayaclaw.com](https://papayaclaw.com). I document the systems I actually use, not the ones I wish worked.
