@@ -1,0 +1,110 @@
+---
+title: "Mi escritorio ahora tiene un compañero de IA a tiempo completo"
+date: "2026-08-10"
+summary: "Cómo usar OpenClaw con AionUi para tener visibilidad real de lo que hace tu agente, repararlo remotamente cuando se rompe, y centralizar múltiples agentes en una sola interfaz."
+---
+
+# Mi escritorio ahora tiene un compañero de IA a tiempo completo
+
+Uso OpenClaw desde hace meses. Funciona bien desde la CLI.
+
+Pero hay un problema que nadie menciona en los tutoriales: cuando ejecutas un agente en segundo plano, no ves qué hace. Lees logs. Inferís acciones. A veces adivinas.
+
+Y cuando se rompe y no estás en la máquina, básicamente estás volando a ciegas hasta que vuelves al escritorio.
+
+AionUi cambió eso para mí.
+
+## El problema real de los agentes CLI
+
+OpenClaw es útil desde la terminal. También lo es desde Telegram para cosas rápidas.
+
+Pero la experiencia tiene grietas:
+
+**No ves el trabajo en tiempo real.** El agente lee archivos, ejecuta comandos, navega la web. Tú ves texto scrolleando. No es lo mismo que ver el workspace, los archivos que toca, los procesos que corre.
+
+**No puedes arreglarlo si no estás frente al PC.** OpenClaw no conecta. El gateway se cayó. La config tiene un error. Necesitas correr `openclaw doctor`, pero estás en el celular o en otra máquina. No hay punto de entrada remoto para repararlo.
+
+**Juegas al malabar con múltiples agentes.** Usas OpenClaw, Claude Code, Codex, Qwen Code. Cada uno con su CLI, su config, sus servidores MCP. Mantener todo sincronizado es un trabajo en sí mismo.
+
+## Qué es AionUi (y por qué importa)
+
+AionUi es una app gratuita y open-source que corre OpenClaw como un agente de primera clase dentro de una interfaz tipo Cowork.
+
+No es otro wrapper de chat. Es un workspace donde ves al agente operar: archivos que abre, comandos que ejecuta, contenido que lee. Visibilidad completa.
+
+Lo instalé en macOS, pero también hay builds para Windows y Linux.
+
+Lo que me convenció:
+
+**OpenClaw aparece como agente nativo.** AionUi lo detecta automáticamente si ya lo tienes instalado. Lo mismo aplica para Claude Code, Codex, y otros 12+ agentes. Todos en la misma interfaz, con sesiones paralelas si quieres.
+
+**MCP se configura una vez.** Antes tenía servidores MCP declarados en la config de OpenClaw, otra vez para Claude Code, otra para... AionUi centraliza eso. Configuras los servidores MCP una vez y se sincronizan con OpenClaw y todos los demás agentes.
+
+**Acceso remoto real.** WebUI, Telegram, Lark, DingTalk. Todo apunta a la misma instancia de AionUi, y por extensión, a tu OpenClaw.
+
+## El feature que nadie espera: rescate remoto
+
+Esta es la parte que más valoro.
+
+Antes, si OpenClaw se caía y yo no estaba en mi máquina, tenía que esperar. O intentar SSH sin saber exactamente qué falló.
+
+Ahora: abro Telegram, hablo con mi instancia de AionUi, y uso el **OpenClaw deployment expert** que viene integrado.
+
+Este agente interno sabe diagnosticar y reparar OpenClaw. Puede correr `openclaw doctor`, fijar la configuración, reiniciar el gateway, y guiarte paso a paso por la recuperación.
+
+Para quienes corren OpenClaw headless o en servidores remotos, esto no es un nice-to-have. Es esencial.
+
+## Setup concreto
+
+La instalación es directa. Tres pasos reales:
+
+**1. Instala AionUi**
+
+Descarga desde [los releases en GitHub](https://github.com/iOfficeAI/AionUi/releases). Elige tu OS. Instala como cualquier app de escritorio.
+
+**2. Instala OpenClaw (si no lo tienes)**
+
+```bash
+npm install -g openclaw@latest
+openclaw onboard --install-daemon   # opcional: para correr 24/7
+```
+
+El daemon es útil si quieres que OpenClaw esté disponible siempre, no solo cuando abres una terminal.
+
+**3. Abre AionUi y crea una sesión Cowork**
+
+AionUi detecta OpenClaw automáticamente. Si por alguna razón no lo hace, usá el asistente de **OpenClaw Setup** que viene dentro de la app.
+
+Elegís OpenClaw como agente para la sesión. El workspace comparte el mismo contexto de archivos, la misma config MCP, y los mismos canales remotos si los configuraste.
+
+## Configurar acceso remoto (opcional pero recomendado)
+
+En la configuración de AionUi agregás los canales que necesites:
+
+- **WebUI** para acceder desde cualquier navegador
+- **Telegram** para interactuar desde el celular
+- **Lark** o **DingTalk** si tu equipo ya usa esas herramientas
+
+Todos los canales llegan a la misma instancia. Misma sesión, mismo contexto, mismos agentes disponibles.
+
+## Automatización con cron
+
+AionUi tiene soporte para cron. Podés programar que OpenClaw (u otro agente) corra tareas en horarios específicos.
+
+Útil para monitoreo, reportes nocturnos, o cualquier tarea que no necesite que estés frente al teclado.
+
+## Mi opinión después de un mes
+
+El cambio principal no es la interfaz bonita. Es la reducción de fricción.
+
+Antes: terminal para OpenClaw, otra terminal para Claude Code, Telegram para consultas rápidas, SSH para arreglar cosas remotas. Cuatro puntos de entrada, cuatro contextos mentales.
+
+Ahora: una app, todos los agentes, visibilidad real de lo que hacen, y la capacidad de arreglar OpenClaw desde el celular si algo se rompe a las 2am.
+
+No es perfecto. La curva de configuración inicial de MCP compartido puede tener sus edge cases. Pero el tradeoff vale.
+
+Si ya usás OpenClaw y sentís que le falta visibilidad o que repararlo remotamente es un dolor, probá AionUi. El deployment expert integrado alone justifica la instalación.
+
+---
+
+¿Tu equipo está evaluando herramientas de productividad con IA pero no sabe por dónde empezar? En [papayaclaw.com](https://papayaclaw.com) ayudamos a fundadores y equipos pequeños a cortar el ruido y encontrar lo que realmente funciona.
