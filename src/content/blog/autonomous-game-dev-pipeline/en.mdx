@@ -1,0 +1,163 @@
+---
+title: "I Let AI Build an Entire Game While I Grabbed Coffee"
+date: "2026-08-14"
+summary: "How one developer set up an autonomous pipeline that ships a new HTML5 game every 7 minutes — with zero manual coding."
+---
+
+# I Let AI Build an Entire Game While I Grabbed Coffee
+
+From idea to playable prototype with almost zero manual work — this pipeline actually ships.
+
+A dad wanted a safe gaming portal for his toddler. No ads, no dark patterns, no garbage. Just clean HTML5 games for kids aged 0-15.
+
+The portal itself? Easy. A simple static site. The real problem: populating it with 40+ educational games.
+
+As a solo developer working nights, manual development was too slow. Each game needed consistent structure, mobile support, offline capability, and proper integration into a central registry. Doing this by hand across dozens of games was a pipe dream.
+
+So he built an agent that does it for him.
+
+## The Numbers
+
+This pipeline ships one new game or bugfix every 7 minutes.
+
+Not "up to." Not "theoretically." The agent runs, picks a game from the queue, writes the code, registers it, commits with conventional commits, and pushes to master. Then it grabs the next one.
+
+41+ games in the backlog. The agent just works through them.
+
+## How It Actually Works
+
+The core idea is dead simple: give an LLM a strict system prompt, point it at your repo, and let it follow a checklist.
+
+No frameworks. No build tools. Pure HTML, CSS, and JS in a folder.
+
+The agent follows a rigid workflow:
+
+1. **Check for bugs first** — if the `bugs/` folder has files, fix only the first one (alphabetically). Ignore everything else.
+2. **If no bugs**, pull from master and identify the next game marked `[NEXT]` in `development-queue.md`
+3. **Create a feature branch** — `feature/[game-id]`
+4. **Build the game** — following strict rules from `game-design-rules.md`
+5. **Register it** — add metadata to `games-list.json` so it appears on the homepage
+6. **Update docs** — bump version in `CHANGELOG.md`, update `master-game-plan.md` and the queue
+7. **Commit and push** — conventional commit format, then merge to master
+
+That's it. No magic. Just a disciplined prompt and a Git repo.
+
+## The "Bugs First" Policy
+
+This is the part I find most interesting.
+
+The agent doesn't just blindly build new things. It checks `bugs/` before touching the queue. If there's a bug report, that becomes the only priority.
+
+And here's the key detail: it only fixes one bug per cycle. First file alphabetically. No trying to be clever and batch-fixing everything.
+
+Why? Because LLMs get confused when you give them too much context. One bug. One branch. One fix. Merge. Repeat.
+
+This single constraint probably makes the whole thing reliable.
+
+## The Actual Prompt
+
+Here's the translated system instruction. The production version runs in Spanish (es-419) to match the target audience, but the structure is what matters:
+
+```text
+Act as an Expert in Web Game Development and Child UX.
+Your goal is to develop the next game in the production queue.
+
+Please read and analyze the following context files before starting:
+
+1.  BUG CONTEXT (Top Priority - CRITICAL):
+    @[bugs/]
+    (Check this folder. If there are files, YOUR TASK IS TO FIX 
+    **ONLY THE FIRST FILE** (in alphabetical order). Ignore the 
+    rest of the bugs and the game queue for now).
+
+2.  QUEUE CONTEXT (Which game is next):
+    @[development-queue.md]
+    (Identify the game marked as [NEXT] in the "Next Games" section. 
+    ONLY if there are no bugs).
+
+3.  DESIGN RULES (Technical Standards):
+    @[game-design-rules.md]
+    (Strictly follow these rules: Pure HTML/CSS/JS, folder structure, 
+    mobile responsiveness)
+
+4.  GAME SPECIFICATIONS (Mechanics and Assets):
+    (Identify the corresponding file in games-backlog/ based on 
+    the game ID)
+
+5.  CENTRAL REGISTRY (Integration):
+    @[public/js/games-list.json]
+    (File where you MUST register the new game so it appears 
+    on the home page)
+
+TASK:
+0. **BUGS FIRST!**: If the `bugs/` folder has content, your only 
+   priority is to fix **the first bug in alphabetical order**. 
+   Create a `fix/...` branch, resolve **that** bug, update status, 
+   and merge. **Do not attempt to fix multiple bugs at once.**
+   - IF THERE ARE NO BUGS, proceed with the next game:
+
+1. **Synchronization**: `git fetch && git pull origin master` (CRITICAL).
+2. Create a new branch: `git checkout -b feature/[game-id]`.
+3. Create the folder and files in 'public/games/[game-id]/'.
+4. Implement logic and design according to the backlog and design rules.
+5. Register the game in 'games-list.json' (CRITICAL).
+6. When finished:
+    - Update `CHANGELOG.md` bumping the version.
+    - Update `master-game-plan.md` and `development-queue.md`.
+    - Document changes: `git commit -m "feat: add [game-id]"`.
+7. **Delivery**:
+    - Push: `git push origin feature/[game-id]`.
+    - Request merge to master.
+    - Once in master, push changes (`git push origin master`).
+```
+
+Notice what's missing: no creativity prompts, no "think step by step," no fluff. Just instructions and file references.
+
+## The File Structure That Makes It Work
+
+The repo isn't complicated. Here's what the agent needs:
+
+```
+bugs/                    # Bug reports go here
+development-queue.md     # Games with [NEXT] marker
+game-design-rules.md     # Technical constraints
+games-backlog/           # Individual game specs
+public/games/[id]/       # Where games live
+public/js/games-list.json # Central registry
+CHANGELOG.md
+master-game-plan.md
+```
+
+The agent reads these files, follows the rules, writes to the right places. The structure *is* the coordination mechanism.
+
+## Why This Works (And Where It Doesn't)
+
+This approach works because the games are constrained. Pure HTML5. No complex state management. No multiplayer. No persistent data. Each game is self-contained in a folder.
+
+The moment you need a build step, a database, or complex asset pipelines, this gets harder fast.
+
+But for prototyping? For content that follows a template? For "I need 40 variations of the same basic pattern"? This is the right tool.
+
+The Round Robin selection across age groups is also smart. Instead of building all the toddler games first, it rotates. The backlog stays balanced.
+
+## What You'd Need to Replicate This
+
+Honestly, not much:
+
+- A Git repo with the file structure above
+- A clear design-rules document (this is where most of your actual work goes)
+- Game specs in your backlog that are specific enough for an LLM to implement
+- An LLM with file access and terminal capabilities
+- The patience to iterate on your prompt until the agent stops breaking things
+
+The real insight: the prompt isn't doing the heavy lifting. The *structure* is. The prompt just tells the agent where to look and what order to follow.
+
+## The Result
+
+The site is live at [elbebe.co](https://elbebe.co/). The repo is public on GitHub. 40+ games, built by an agent, while a dad grabbed coffee and watched his kids.
+
+Not bad for a static site and a system prompt.
+
+---
+
+If you're building something that needs this kind of autonomous pipeline — games, content sites, template-generated apps — we write about these patterns over at [papayaclaw.com](https://papayaclaw.com). No fluff, just what actually works.

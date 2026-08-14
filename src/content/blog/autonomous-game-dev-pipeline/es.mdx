@@ -1,0 +1,143 @@
+---
+title: "Dejé que una IA construyera un juego completo mientras tomaba café"
+date: "2026-08-14"
+summary: "Cómo un pipeline autónomo con agentes de IA genera un juego educativo cada 7 minutos sin frameworks ni intervención humana."
+---
+
+# Dejé que una IA construyera un juego completo mientras tomaba café
+
+Un padre "LANero de la vieja escuela" quería un portal de juegos seguro para sus hijas. Sin anuncios agresivos, sin dark patterns, sin basura.
+
+El sitio limpio fue lo fácil. Lo difícil: llenarlo con **40+ juegos educativos** adaptados a distintas edades (0-15 años). Sin equipo. Sin presupuesto. Solo un desarrollador solo contra un backlog que no paraba de crecer.
+
+La solución no fue trabajar más horas. Fue enseñarle a una IA a hacer el trabajo entero.
+
+## El problema real de escalar contenido
+
+Cuando armás un prototipo, todo va rápido. Cuando tenés que repetir ese proceso 40 veces manteniendo coherencia, se vuelve una pesadilla.
+
+Cada juego necesita:
+- Estructura de carpetas consistente
+- Lógica específica según la edad objetivo
+- Registro en el JSON central para que aparezca en el home
+- Documentación actualizada
+- Git workflow limpio
+
+Hacer eso a mano para un juego toma horas. Para cuarenta, toma meses.
+
+El creador de [El Bebe Games](https://elbebe.co/) resolvió esto con un **Game Developer Agent**: un pipeline autónomo que produce **1 juego o bugfix cada 7 minutos**.
+
+Sí, leíste bien. Siete minutos.
+
+## Cómo funciona el pipeline
+
+La clave no es un prompt suelto. Es un sistema de instrucciones que convierte al LLM en un desarrollador disciplinado que respeta la estructura del proyecto.
+
+El flujo es simple cuando no hay problemas:
+
+1. **Selecciona** el próximo juego de una cola (`development-queue.md`) usando estrategia "Round Robin" para balancear contenido por edad
+2. **Implementa** el código en HTML5/CSS3/JS puro (cero frameworks)
+3. **Registra** el juego en `games-list.json`
+4. **Documenta** cambios en `CHANGELOG.md` y `master-game-plan.md`
+5. **Despliega** mediante Git: branch, commit, merge
+
+Pero hay una regla que cambia todo.
+
+## La política "Bugs First"
+
+Antes de tocar una sola línea de nuevo código, el agente debe checkear la carpeta `bugs/`.
+
+Si hay archivos ahí, su única tarea es arreglar **el primer bug en orden alfabético**. Nada más. No intenta arreglar varios a la vez. No avanza al siguiente juego. Fixea ese bug, mergea, y recién después mira la cola.
+
+Esto evita que los errores se acumulen mientras el agente sigue generando contenido nuevo.
+
+## El prompt que lo hace funcionar
+
+Acá está el núcleo del sistema, adaptado del original en es-419:
+
+```text
+Actúa como Experto en Desarrollo de Juegos Web y UX Infantil.
+Tu objetivo es desarrollar el próximo juego en la cola de producción.
+
+Lee y analiza los siguientes archivos de contexto antes de empezar:
+
+1. CONTEXTO DE BUGS (Prioridad Máxima - CRÍTICO):
+@[bugs/]
+(Revisa esta carpeta. Si hay archivos, TU TAREA ES ARREGLAR SOLO EL PRIMER ARCHIVO (orden alfabético). Ignora el resto de bugs y la cola de juegos por ahora).
+
+2. CONTEXTO DE COLA (Qué juego sigue):
+@[development-queue.md]
+(Identificá el juego marcado como [NEXT] en la sección "Next Games". SOLO si no hay bugs).
+
+3. REGLAS DE DISEÑO (Estándares Técnicos):
+@[game-design-rules.md]
+(Seguí estrictamente estas reglas: HTML/CSS/JS puro, estructura de carpetas, mobile first)
+
+4. ESPECIFICACIONES DEL JUEGO (Mecánicas y Assets):
+(Identificá el archivo correspondiente en games-backlog/ según el game ID)
+
+5. REGISTRO CENTRAL (Integración):
+@[public/js/games-list.json]
+(Archivo donde DEBES registrar el juego nuevo para que aparezca en el home)
+
+TAREA:
+0. ¡BUGS PRIMERO!: Si la carpeta bugs/ tiene contenido, tu única prioridad es arreglar el primer bug en orden alfabético. Creá un branch fix/..., resolvé ESE bug, actualizá el estado y mergeá. No intentes arreglar múltiples bugs a la vez.
+- SI NO HAY BUGS, proseguí con el próximo juego:
+
+1. Sincronización: git fetch && git pull origin master (CRÍTICO).
+2. Creá un nuevo branch: git checkout -b feature/[game-id].
+3. Creá la carpeta y archivos en 'public/games/[game-id]/'.
+4. Implementá lógica y diseño según el backlog y reglas de diseño.
+5. Registrá el juego en 'games-list.json' (CRÍTICO).
+6. Al terminar:
+   - Actualizá CHANGELOG.md subiendo la versión.
+   - Actualizá master-game-plan.md y development-queue.md.
+   - Documentá cambios: git commit -m "feat: add [game-id]".
+7. Entrega:
+   - Push: git push origin feature/[game-id].
+   - Request merge a master.
+   - Una vez en master, push changes (git push origin master).
+```
+
+Nada de magia. Solo instrucciones claras, contexto estructurado, y un flujo de trabajo definido.
+
+## Lo que me gusta de esta arquitectura
+
+Tres decisiones técnicas que hacen que esto funcione en la práctica:
+
+**1. HTML/CSS/JS puro, sin frameworks**
+
+Suena contraintuitivo en 2025. Pero para juegos educativos simples que deben cargar rápido en dispositivos viejos, es la opción correcta. El agente no necesita lidiar con build steps, dependencias, ni version conflicts. Escribe código, y funciona.
+
+**2. Round Robin por edad**
+
+La cola no es FIFO. Alterna entre grupos etarios para que no termines con 20 juegos para niños de 3 años y cero para los de 12. El agente lee la marca `[NEXT]` y avanza.
+
+**3. Un solo bug por ciclo**
+
+La tentación es decirle "arreglá todos los bugs". Pero eso genera commits gigantes, conflictos de merge, y errores secundarios. Un bug por ciclo significa trazabilidad total.
+
+## Lo que necesitas para replicarlo
+
+La lista es más corta de lo que parece:
+
+- **Git**: branchs, commits, merges. Nada fancy.
+- **Archivos de contexto**: `development-queue.md`, `game-design-rules.md`, `games-list.json`, carpeta `bugs/`
+- **Un LLM con acceso a archivos**: que pueda leer tu repo y ejecutar comandos.
+- **Disciplina**: no cambiar las reglas a mitad de camino.
+
+El resultado final está [vivo en elbebe.co](https://elbebe.co/) y el [código es público en GitHub](https://github.com/duberblockito/elbebe/tree/master).
+
+## Mi opinión
+
+Este no es un caso de "la IA reemplaza a los desarrolladores". Es un caso de "la IA hace el trabajo repetitivo para que los humanos piensen en lo que importa".
+
+El padre detrás de este proyecto no delegó el diseño del sistema. No delegó la definición de las reglas de UX infantil. Delegó la *ejecución* de un proceso que él mismo diseñó con precisión.
+
+Esa es la diferencia entre un pipeline útil y un experimento que se rompe en producción.
+
+---
+
+Si estás construyendo algo que requiere repetición sin variación —juegos, componentes, plantillas— este patrón de "agente con contexto estructurado + reglas estrictas + git workflow" es el camino.
+
+En [papayaclaw.com](https://papayaclaw.com/) ayudamos a equipos pequeños a diseñar este tipo de pipelines sin la frustración de probar prompts al azar. Vení a ver cómo funciona.
