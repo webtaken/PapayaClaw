@@ -1,0 +1,102 @@
+---
+title: "I Finally Stopped Doomscrolling Reddit — Thanks to This AI Digest"
+date: "2026-08-17"
+summary: "Get the actual signal from your favorite subreddits without losing hours of your life."
+---
+
+# I Finally Stopped Doomscrolling Reddit — Thanks to This AI Digest
+
+I used to open Reddit "for five minutes" and lose an hour. Maybe two.
+
+You know the loop. Check r/programming. See an interesting thread. Fall into the comments. Notice a linked post in r/webdev. Thirty minutes later I'm reading about someone's home lab setup in r/homelab and I have no idea how I got there.
+
+The problem isn't Reddit. It's that Reddit has no filter. Everything gets the same layout, the same weight. A 4,000-upvote deep dive on database indexing sits next to a meme about CSS that got lucky.
+
+I needed the signal. Not the noise.
+
+## The actual fix isn't a better app
+
+I tried all the alternatives. Apollo (RIP). Relay. Sync. Different clients, same problem — they still show you everything and let you scroll.
+
+Then I set up something that doesn't even let me scroll.
+
+It just sends me a digest. Once a day. The posts that actually matter, based on what I've told it I care about.
+
+Here's how it works.
+
+## The setup takes two minutes
+
+I use OpenClaw with a skill called [reddit-readonly](https://clawhub.ai/buksan1950/reddit-readonly). That's literally what it does — read-only access to Reddit. No posting, no voting, no commenting. It pulls data and that's it.
+
+No API keys. No OAuth dance. No Reddit app registration. You install the skill and it works.
+
+Here's the exact prompt I gave my OpenClaw:
+
+```text
+I want you to give me the top performing posts from the following subreddits:
+r/programming
+r/selfhosted
+r/SaaS
+r/indiehackers
+r/webdev
+
+Create a separate memory for the reddit processes, about the type of posts I like to see and every day ask me if I liked the list you provided. Save my preference as rules in the memory to use for a better digest curation. (e.g. do not include memes.)
+Every day at 5pm, run this process and give me the digest.
+```
+
+That's it. That's the whole setup.
+
+## What I actually get
+
+Every weekday at 5pm, a message lands with 8-12 posts. Not 50. Not a firehose. A manageable list I can actually read through.
+
+The first few days were fine. Standard top posts, nothing special.
+
+But then the feedback loop kicked in.
+
+I told it: "Skip the 'who's hiring' threads, I check those manually." It stopped including them.
+
+I told it: "I liked that deep dive on Postgres partitioning — more technical content like that." It started weighting long-form technical posts higher.
+
+I told it: "No memes, no screenshot-of-a-tweet posts." Gone.
+
+After about two weeks, the digest felt genuinely curated. Not perfectly curated — it's not a human editor. But significantly better than raw Reddit. Maybe 80% of the posts are things I'd actually want to read.
+
+## What the skill actually does under the hood
+
+The reddit-readonly skill handles four things:
+
+- **Browsing subreddits** — pulls hot, new, or top posts from any subreddit
+- **Searching by topic** — finds posts matching specific keywords or themes
+- **Pulling comment threads** — grabs context from discussions when a post looks interesting
+- **Building shortlists** — compiles posts for you to review or reply to later
+
+It's all read-only. Your Reddit account stays untouched. If you want to reply to something, you open Reddit and do it manually. The digest just tells you what's worth opening Reddit for.
+
+## Why this beats "just using Reddit less"
+
+Willpower doesn't scale. I know I should close the tab. Knowing doesn't help when the next comment thread is *right there*.
+
+This approach removes the friction point entirely. I don't open Reddit until I have a reason. The digest gives me reasons. Five or six good reasons per day, instead of infinite ambient reasons to keep scrolling.
+
+For community managers, this is even more useful. You can track multiple subreddits where your product gets mentioned, where your ICP hangs out, where competitors are being discussed — without living in the Reddit app.
+
+Set up a digest for your monitoring list. Review it in five minutes. Move on with your day.
+
+## The one limitation
+
+It's not real-time. If something blows up at 10am, you won't see it until 5pm.
+
+For most of us, that's fine. You're not a news organization. You're a developer or founder who wants to stay informed without sacrificing your morning to the infinite scroll.
+
+If you need real-time alerts, that's a different setup. This is for daily digestion. Know the difference and pick the right tool.
+
+## Get your time back
+
+If you're spending 30+ minutes daily on Reddit and retaining maybe 10% of what you read, this is the fix. Not a productivity hack. Not a browser blocker. Just a daily email-style digest that learns what you actually care about.
+
+The reddit-readonly skill is free, needs no auth, and takes two minutes to configure.
+
+Set up your digest at [papayaclaw.com](https://papayaclaw.com). Pick your subreddits. Let it learn your preferences.
+
+Then close the Reddit tab. For real this time.

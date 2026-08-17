@@ -1,0 +1,119 @@
+---
+title: "Dejé de Hacer Doomscrolling en Reddit — Gracias a Este Digest con IA"
+date: "2026-08-17"
+summary: "Cómo monté un digest diario de Reddit con OpenClaw que me entrega solo los posts que importan, sin abrir la app."
+---
+
+# Dejé de Hacer Doomscrolling en Reddit — Gracias a Este Digest con IA
+
+Me pasé tres años abriendo Reddit "solo cinco minutos" antes de dormir.
+
+Cincuenta minutos después, estaba leyendo un hilo de 400 comentarios sobre la historia del plástico en Japón.
+
+No es exageración. Mi Screen Time lo confirmaba: Reddit era mi app número dos después de Slack. Y a diferencia de Slack, nada de lo que consumía ahí era urgente.
+
+El problema no es Reddit. El problema es que Reddit está diseñado para retener, no para informar.
+
+## Lo que intenté antes
+
+Primero: quitar la app del teléfono. Duró dos días.
+
+Después: usar la versión web con un bloqueador. Funcionó hasta que encontré formas de esquivarlo.
+
+Luego: RSS feeds con Feedly. Mejor, pero perdía el contexto de los comentarios, que es donde está el valor real de muchos posts.
+
+Ninguna solución atacaba el problema de fondo: yo no quería dejar de leer Reddit. Quería dejar de *buscar* cosas en Reddit.
+
+La diferencia es enorme.
+
+## La solución que sí funcionó
+
+Monté un digest diario automático que me llega a las 5pm con los mejores posts de mis subreddits favoritos.
+
+Sin abrir Reddit. Sin algoritmo. Sin doomscrolling.
+
+Lo armé con OpenClaw y un skill de lectura de Reddit que no necesita autenticación. Es de solo lectura: no postea, no vota, no comenta. Simplemente extrae lo que le pides.
+
+El skill se llama `reddit-readonly` y lo puedes instalar directo desde Clawhub.
+
+## Cómo funciona por debajo
+
+La arquitectura es más simple de lo que suena:
+
+1. **OpenClaw** corre como el orquestador
+2. **reddit-readonly skill** hace las peticiones a la API pública de Reddit
+3. **Memory** guarda tus preferencias y las refina cada día
+
+El truco real no es la extracción. Es el loop de feedback.
+
+Cada día, después de recibir el digest, OpenClaw me pregunta si la selección fue buena. Si le digo "demasiados memes" o "necesito más posts técnicos", guarda esa regla en memoria y la aplica al día siguiente.
+
+Después de una semana, el digest sabe exactamente lo que quiero ver.
+
+## El setup concreto
+
+Primero, instala el skill:
+
+```text
+https://clawhub.ai/buksan1950/reddit-readonly
+```
+
+No necesita OAuth ni tokens. Reddit permite lecturas anónimas desde su API pública.
+
+Luego, pega este prompt en tu OpenClaw:
+
+```text
+I want you to give me the top performing posts from the following subreddits.
+<paste the list here>
+Create a separate memory for the reddit processes, about the type of posts I like to see and every day ask me if I liked the list you provided. Save my preference as rules in the memory to use for a better digest curation. (e.g. do not include memes.)
+Every day at 5pm, run this process and give me the digest.
+```
+
+Obviamente, reemplaza `<paste the list here>` con tus subreddits. El mío se ve así:
+
+```
+r/programming
+r/selfhosted
+r/localLLaMA
+r/SaaS
+r/indiehackers
+```
+
+## Qué puedes hacer con esto
+
+El skill soporta más que solo "top posts". Estas son las operaciones que puedes pedirle:
+
+- **Browsing**: traer posts por hot, new o top
+- **Búsqueda**: filtrar posts por topic o keyword
+- **Hilos de comentarios**: extraer un thread completo para leer el contexto
+- **Shortlists**: armar listas de posts que quieres revisar o responder después
+
+Eso último es útil si manejas comunidades. Puedes pedirle que te arme una lista de posts donde mencionan tu producto, o hilos donde alguien hizo una pregunta que puedes responder.
+
+Todo sin abrir Reddit.
+
+## Lo que cambió en mi rutina
+
+Mi Screen Time de Reddit bajó de ~45 minutos diarios a menos de 10.
+
+No porque me restringiera, sino porque ahora recibo exactamente lo que buscaba: los posts que valen la pena. El resto del ruido simplemente no llega.
+
+Leo el digest a las 5pm. Si hay algo que quiero comentar, abro Reddit directamente en ese hilo, comento, y cierro la app. Promedio 2-3 interacciones al día, todas intencionales.
+
+Para contexto de comunidad managers: imagina empezar tu mañana con un resumen de los posts más relevantes en los subreddits que monitoreas, ya filtrados por lo que te interesa. Sin scrolling. Sin distracciones.
+
+## Un detalle importante
+
+Esto es solo lectura.
+
+No puedes postear, votar ni comentar desde OpenClaw. El skill está diseñado explícitamente así.
+
+Para mí es una feature, no un bug. Si pudiera interactuar, volvería al mismo problema de antes: la herramienta me arrastraría a participar en cosas que no importan.
+
+El digest te da información. La decisión de actuar sigue siendo tuya.
+
+## Si quieres probarlo
+
+El skill es gratis y el setup toma menos de cinco minutos. El valor real llega después de una semana, cuando la memoria de OpenClaw ya aprendió tus preferencias.
+
+En [papayaclaw.com](https://papayaclaw.com) tenemos más guías como esta para automatizar cosas que te roban tiempo sin darte valor. Suscríbete si quieres recibir las próximas directo en tu inbox.
