@@ -1,0 +1,125 @@
+---
+title: "My YouTube Watchlist Just Got an AI That Watches for Me"
+date: "2026-08-19"
+summary: "Stop losing videos to YouTube's broken notification system — set up a daily transcript-based digest that actually catches everything."
+---
+
+# My YouTube Watchlist Just Got an AI That Watches for Me
+
+Wake up to a clean summary of every video you care about — no more 2x speed marathons.
+
+## The notification lie
+
+You subscribe to a channel. You click the bell. You check "all notifications."
+
+Then the video drops. And it never appears in your feed. Not in notifications. Not on your homepage. It just vanishes into YouTube's recommendation black hole.
+
+This isn't a you problem. It's a YouTube problem. Their algorithm optimizes for watch time, not for showing you the creators you explicitly followed.
+
+So you end up with two bad options: manually check each channel like it's 2009, or accept that you're missing half the content you actually want to see.
+
+I went with a third option. I made an AI do it.
+
+## The setup that actually works
+
+There's a skill called [youtube-full](https://clawhub.ai/therohitdas/youtube-full) that handles the entire pipeline — fetching new uploads, pulling transcripts, summarizing, and delivering a digest. You install it once and tell it what to track.
+
+```bash
+npx clawhub@latest install youtube-full
+```
+
+Or just tell your OpenClaw: "Install the youtube-full skill and set it up for me."
+
+The agent handles account creation, API key setup, everything. You get 100 free credits on signup. No credit card.
+
+After that, the key gets stored in the right location for your OS automatically. No env file wrangling.
+
+## Why not just use yt-dlp?
+
+I tried that first. Bad time.
+
+| CLI tools (yt-dlp, etc.) | TranscriptAPI |
+|--------------------------|---------------|
+| Verbose logs flood agent context | Clean JSON responses |
+| Doesn't work on GCP/cloud OpenClaw | Works everywhere, fast |
+| Gets blocked randomly by YouTube | Powers YouTubeToTranscript.com — millions of requests, cached and reliable |
+| Requires binary installation | No binaries, just HTTP |
+
+The youtube-full skill uses TranscriptAPI.com under the hood. When you're chaining API calls through an agent, the last thing you want is yt-dlp dumping 50 lines of debug output into your context window. Clean JSON means fewer tokens wasted, fewer parsing errors, fewer "why did this break at 3am" moments.
+
+## Two ways to run it
+
+### Option 1: Channel tracking
+
+I give it a list of handles and tell it to check every morning:
+
+```text
+Every morning at 8am, fetch the latest videos from these YouTube channels and give me a digest with key insights from each:
+
+- @TED
+- @Fireship
+- @ThePrimeTimeagen
+- @lexfridman
+
+For each new video (uploaded in the last 24-48 hours):
+1. Get the transcript
+2. Summarize the main points in 2-3 bullets
+3. Include the video title, channel name, and link
+
+If a channel handle doesn't resolve, search for it and find the correct one.
+Save my channel list to memory so I can add/remove channels later.
+```
+
+If a handle is wrong or changed, the agent searches for the right one. No manual ID hunting.
+
+### Option 2: Keyword tracking
+
+Sometimes I care more about a topic than a specific channel. For that, there's a deduplication pattern using a simple text file:
+
+```text
+Every day, search YouTube for new videos about "AI agents".
+
+Maintain a file called seen-videos.txt with video IDs you've already processed.
+Only fetch transcripts for videos NOT in that file.
+After processing, add the video ID to seen-videos.txt.
+
+For each new video:
+1. Get the transcript
+2. Give me a 3-bullet summary
+3. Note anything relevant to my work
+
+Run this every morning at 9am.
+```
+
+This keeps you from burning credits on the same video twice. Simple, effective, no database required.
+
+## The credit math matters
+
+Here's what I like about the pricing structure:
+
+- `channel/latest` and `channel/resolve` calls are **free** — zero credits
+- Only transcript fetches cost 1 credit each
+- 100 free credits on signup means you can process 100 videos before paying anything
+
+So checking whether channels have new uploads is unlimited. You only spend when there's actually new content worth summarizing. That's the right incentive alignment.
+
+## You can customize the output
+
+The digest format isn't locked. You can ask for whatever format fits your workflow:
+
+- Key takeaways (default, 2-3 bullets)
+- Notable quotes pulled from the transcript
+- Timestamps of interesting moments so you can jump straight to the relevant section
+- A "relevance to my work" assessment for research-heavy workflows
+
+I've been running the key takeaways version for two weeks. My morning routine went from "scroll feed for 20 minutes, watch nothing" to "read digest for 3 minutes, watch 1-2 videos that actually matter."
+
+## The catch
+
+This isn't a novel idea. [Recapio](https://recapio.com/features/daily-recaps) already sells daily YouTube recaps as a product. The difference here is control — you pick the channels, you pick the format, you pick the schedule, and the agent adapts without you clicking through a SaaS dashboard.
+
+If you want something that works out of the box with zero config, Recapio is fine. If you want something that fits *your* workflow and evolves when you tell it to, the agent approach wins.
+
+---
+
+If you're tired of YouTube deciding what you see, set up the youtube-full skill and take your feed back. Check out [papayaclaw.com](https://papayaclaw.com) for more agent workflows that handle the stuff you shouldn't have to.

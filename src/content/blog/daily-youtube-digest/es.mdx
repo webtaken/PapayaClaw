@@ -1,0 +1,138 @@
+---
+title: "Mi lista de YouTube ahora tiene una IA que ve los videos por mí"
+date: "2026-08-19"
+summary: "Cómo automatizar un resumen diario de tus canales favoritos de YouTube sin depender del algoritmo ni de las notificaciones."
+---
+
+# Mi lista de YouTube ahora tiene una IA que ve los videos por mí
+
+Te suscribes a un canal. Te gusta su contenido. Quieres ver todo lo que publican.
+
+Pasan semanas. Un día, por casualidad, entras al canal y descubres que publicaron ocho videos que nunca viste. No estaban en tu feed. No llegaron como notificación. Simplemente desaparecieron.
+
+No es que no quieras ver ese contenido. Es que el algoritmo de YouTube decidió que no lo verías.
+
+## El problema real de las notificaciones de YouTube
+
+YouTube prioriza lo que genera más tiempo en pantalla, no lo que tú elegiste seguir. Las notificaciones llegan solo cuando el algoritmo calcula que vas a interactuar. Si un canal publicó algo "menos popular" ese día, nadie te avisa.
+
+La solución obvia sería abrir cada canal manualmente. Pero cuando sigues a 20, 30 o 50 creadores, eso no escala.
+
+Lo que necesitas no es otro feed. Necesitas algo que revise por ti y te entregue lo importante.
+
+## Qué hace exactamente este setup
+
+Fetch los últimos videos de una lista de canales que tú defines. Extrae el transcripto de cada video. Te entrega un resumen con los puntos clave.
+
+Cada mañana, sin que abras YouTube, tienes un digest con lo que publicaron tus creadores favoritos. Nada de scroll infinito. Nada de algoritmos decidiendo por ti.
+
+## La arquitectura detrás
+
+Se usa el skill [youtube-full](https://clawhub.ai/therohitdas/youtube-full) con OpenClaw. La instalación es directa:
+
+```text
+"Install the youtube-full skill and set it up for me"
+```
+
+O vía terminal:
+
+```bash
+npx clawhub@latest install youtube-full
+```
+
+El agente se encarga de todo: crear la cuenta, generar la API key, almacenarla en el lugar correcto según tu OS. Te da **100 créditos gratis al registrarte**, sin tarjeta de crédito.
+
+### Por qué TranscriptAPI.com en vez de yt-dlp
+
+Si eres dev, tu primer instinto es usar yt-dlp. Tiene sentido. Es gratis, lo conoces, lo has usado.
+
+El problema aparece cuando lo metes en un contexto de agente de IA:
+
+| Herramientas CLI (yt-dlp, etc.) | TranscriptAPI |
+|--------------------------------|---------------|
+| Logs verbosos inundan el contexto del agente | Respuestas JSON limpias |
+| No funciona en GCP/cloud OpenClaw | Funciona en todas partes, rápido |
+| YouTube lo bloquea de forma aleatoria | Muestra [YouTubeToTranscript.com](https://youtubetotranscript.com), millones de transcripciones servidas. Cacheado y confiable. |
+| Requiere instalar binarios | Sin binarios, solo HTTP |
+
+Cuando un agente está procesando 10 videos, no quieres que los logs de yt-dlp se coman la mitad del contexto. JSON limpio significa menos tokens, menos costo, menos errores de parsing.
+
+## Dos formas de configurarlo
+
+### Opción 1: Digest por canales
+
+Le das a OpenClaw una lista de canales y le pides un resumen diario:
+
+```text
+Every morning at 8am, fetch the latest videos from these YouTube channels and give me a digest with key insights from each:
+
+- @TED
+- @Fireship
+- @ThePrimeTimeagen
+- @lexfridman
+
+For each new video (uploaded in the last 24-48 hours):
+1. Get the transcript
+2. Summarize the main points in 2-3 bullets
+3. Include the video title, channel name, and link
+
+If a channel handle doesn't resolve, search for it and find the correct one.
+Save my channel list to memory so I can add/remove channels later.
+```
+
+El agente resuelve los handles que no encuentra, guarda tu lista en memoria para futuras modificaciones, y te entrega bullets concisos con link incluido.
+
+### Opción 2: Digest por keywords
+
+Ideal si lo que te interesa es un tema, no un canal específico:
+
+```text
+Every day, search YouTube for new videos about "OpenClaw" (or "Claude Code", "AI agents", etc).
+
+Maintain a file called seen-videos.txt with video IDs you've already processed.
+Only fetch transcripts for videos NOT in that file.
+After processing, add the video ID to seen-videos.txt.
+
+For each new video:
+1. Get the transcript
+2. Give me a 3-bullet summary
+3. Note anything relevant to my work
+
+Run this every morning at 9am.
+```
+
+El truco aquí es `seen-videos.txt`. Sin ese archivo, estarías gastando créditos transcribiendo los mismos videos cada día. Con el archivo, solo pagas por contenido nuevo.
+
+## Optimización de costos
+
+No todo cuesta lo mismo en esta API:
+
+- `channel/latest` y `channel/resolve` son **gratis** (0 créditos) — revisar si hay uploads nuevos no cuesta nada
+- Solo los transcripts cuestan 1 crédito cada uno
+
+Si sigues 20 canales y revisas cada mañana, la verificación de uploads es gratuita. Solo pagas cuando efectivamente hay videos nuevos y quieres el resumen.
+
+Con 100 créditos gratis, puedes procesar 100 videos nuevos antes de pensar en pagar. Para la mayoría de personas, eso dura semanas.
+
+## Variaciones que puedes pedirle al agente
+
+El formato del digest es configurable. Algunos ejemplos:
+
+- "Dame solo timestamps de los momentos más interesantes"
+- "Extrae las citas más notables del video"
+- "Enfócate solo en puntos técnicos, ignora las introducciones"
+- "Si el video es un tutorial, dame los pasos clave en orden"
+
+El agente adapta el output al estilo que le pidas. No estás limitado al formato default.
+
+## Un detalle que vale la pena mencionar
+
+Este patrón ya existe como producto: [Recapio - Daily YouTube Recap](https://recapio.com/features/daily-recaps). Si no quieres configurar nada y prefieres SaaS puro, está esa opción.
+
+La diferencia con hacerlo vía agente es el control. Tú defines los canales, el formato, el horario, el estilo de resumen. No estás limitado a lo que el producto decida ofrecerte.
+
+---
+
+Si estás cansado de que YouTube decida qué ves y qué no, este setup te devuelve el control. Un digest cada mañana, solo con lo que tú elegiste seguir, sin abrir la app.
+
+En [papayaclaw.com](https://papayaclaw.com) exploramos más patterns como este: agentes que hacen el trabajo tedioso para que tú te enfoques en lo que importa.
