@@ -1,0 +1,150 @@
+---
+title: "Construí una IA que rastrea earnings calls para no perderme nada"
+date: "2026-08-24"
+summary: "Cómo automatizar el seguimiento de reportes de ganancias de tech companies usando OpenClaw, cron jobs y Telegram."
+---
+
+# Construí una IA que rastrea earnings calls para no perderme nada
+
+Temporada de earnings. Dos palabras que provocan ansiedad en cualquiera que siga más de cinco empresas de tecnología.
+
+Yo seguíaNVDA, MSFT, GOOGL, META, AMZN, TSLA, AMD y algunas más. Cada semana revisaba calendarios dispersos, anotaba fechas en mi sistema, y cuando llegaba el momento abría múltiples pestañas para ver si había beat o miss.
+
+Perdía horas. Me perdía detalles.
+
+Hace un mes me dije: esto tiene que ser automático. Y lo construí.
+
+## El problema real
+
+No es solo recordar las fechas. Cualquier calendario te da eso.
+
+El problema es el workflow completo:
+
+- Domingo: necesito saber qué empresas reportan esta semana
+- Lunes: decido cuáles me interesan
+- Martes/jueves a las 4 PM: el reporte cae
+- 4:05 PM: quiero un resumen con beat/miss, revenue, EPS, y qué dijeron sobre AI
+- 4:10 PM: quiero eso en mi Telegram, no en 15 pestañas del navegador
+
+Hacer esto a mano para 8-10 empresas cada semana no es sostenible.
+
+## La solución que armé
+
+Usé OpenClaw con tres piezas clave:
+
+1. **`web_search`** (built-in) para buscar calendarios y resultados
+2. **Cron jobs** para programar tareas puntuales
+3. **Un topic de Telegram** llamado "earnings" para recibir todo
+
+La lógica es simple:
+
+Cada domingo a las 6 PM, OpenClaw escanea el calendario de earnings de la semana que viene. Filtra las empresas que me interesan y me manda la lista a Telegram. Yo le respondo con las que quiero rastrear. Y OpenClaw programa cron jobs individuales para cada fecha de reporte.
+
+Cuando el reporte cae, busca los resultados, los formatea, y me los manda.
+
+## Cómo lo configuré
+
+### Paso 1: Crear el topic en Telegram
+
+Nada fancy. Creé un topic llamado "earnings" dentro de mi grupo/personal de Telegram donde OpenClau ya tenía acceso.
+
+### Paso 2: El prompt principal
+
+Esto es todo lo que necesitaba darle a OpenClaw:
+
+```text
+Every Sunday at 6 PM, run a cron job to:
+1. Search for the upcoming week's earnings calendar for tech and AI companies
+2. Filter for companies I care about (NVDA, MSFT, GOOGL, META, AMZN, TSLA, AMD, etc.)
+3. Post the list to my Telegram "earnings" topic
+4. Wait for me to confirm which ones I want to track
+
+When I reply with which companies to track:
+1. Schedule one-shot cron jobs for each earnings date/time
+2. After each report drops, search for earnings results
+3. Format a summary including: beat/miss, revenue, EPS, key metrics, AI-related highlights, guidance
+4. Post to Telegram "earnings" topic
+
+Keep a memory of which companies I typically track so you can auto-suggest them each week.
+```
+
+Ese prompt es todo el sistema. No hay código que mantener, no hay APIs que conectar, no hay webhooks que configurar.
+
+### Paso 3: Dejar que funcione
+
+El primer domingo recibí esto en Telegram:
+
+```
+📊 EARNINGS SEMANA DEL 13-17 ENERO
+
+Martes 14:
+• NVDA (after market)
+• TSLA (after market)
+
+Miércoles 15:
+• MSFT (after market)
+
+Jueves 16:
+• (nada de mi lista)
+
+¿Cuáles quieres rastrear?
+```
+
+Respondí "NVDA y MSFT". OpenClaw programó los cron jobs automáticamente.
+
+A las 4:05 PM del martes, cuando NVDA reportó, recibí:
+
+```
+🟢 NVDA Q4 FY2025 — BEAT
+
+Revenue: $39.3B (est. $37.8B)
+EPS: $0.89 (est. $0.84)
+
+Key Metrics:
+• Data center revenue: $35.6B (+98% YoY)
+• Gross margin: 73.5%
+
+AI Highlights:
+• Blackwell shipment ramp ahead of schedule
+• Demand exceeds supply "by a significant margin"
+• New inference optimization reducing costs 3x
+
+Guidance:
+• Q1 revenue est. $43B ± 2% (consensus $41.2B)
+```
+
+Exactamente lo que necesitaba saber. Sin abrir una sola pestaña.
+
+## Lo que me convenció
+
+Dos detalles del sistema que no esperaba:
+
+**One-shot cron jobs.** No es un cron que se repite cada semana sin sentido. OpenClaw programa un job puntual para la fecha exacta del reporte y después desaparece. Limpio.
+
+**Memoria contextual.** La última línea del prompt dice que recuerde qué empresas típicamente rastreo. Después de tres semanas, el mensaje dominical ya no me pregunta "¿cuáles quieres?". Me dice "Voy a rastrear NVDA, MSFT, GOOGL esta semana. ¿Quieres agregar o quitar alguna?".
+
+Eso reduce la fricción a casi cero.
+
+## Para quién tiene sentido esto
+
+Si sigues 2-3 empresas, no lo necesitas. Un calendario de Yahoo Finance te basta.
+
+Pero si eres:
+- Fund manager con cobertura de 15+ tech stocks
+- Analista que escribe research notes post-earnings
+- Indie hacker que invierte en tech y quiere estar informado sin dedicarle horas
+- Alguien que tradea alrededor de earnings
+
+...entonces recuperar esas 3-5 horas por temporada de earnings tiene un valor real.
+
+## Una nota sobre limitaciones
+
+El sistema depende de que los resultados estén disponibles en la web cuando OpenClaw busca. Normalmente a los 5-10 minutos del cierre de mercado ya hay cobertura. Pero si reportas a las 4 PM y a las 4:01 OpenClaw busca, quizás no encuentre nada todavía.
+
+En la práctica, programé los cron jobs para 10-15 minutos después del horario de reporte. Funciona bien.
+
+Tampoco reemplaza leer la transcripción completa si necesitas granularidad. Pero para el 90% de los casos, el resumen es suficiente para tomar decisiones rápidas o saber si vale la pena profundizar.
+
+---
+
+Si estás construyendo algo similar—automatización de research, seguimiento de datos, workflows que requieren buscar + formatear + entregar—echale un vistazo a [papayaclaw.com](https://papayaclaw.com). Ahí explico cómo armé este tipo de sistemas sin mantener infraestructura.
