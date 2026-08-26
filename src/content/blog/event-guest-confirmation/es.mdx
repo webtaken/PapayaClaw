@@ -1,0 +1,139 @@
+---
+title: "Mis RSVPs de eventos ahora son automáticos (y la gente sí va)"
+date: "2026-08-26"
+summary: "Cómo automatizar llamadas de confirmación de asistencia a eventos con OpenClaw y SuperCall, sin volverte loco marcando números."
+---
+
+# Mis RSVPs de eventos ahora son automáticos (y la gente sí va)
+
+Organizar un evento tiene mil dolores de cabeza. Pero el peor no es encontrar el lugar ni armar la lista de música. Es confirmar quién va.
+
+Tienes tu lista de 20, 30, 50 personas. Les escribes por WhatsApp. Algunos responden. Otros no. Les mandas un correo. Nada. Al final terminas marcando uno por uno, dejando mensajes de voz, y perdiendo el hilo de quién dijo qué.
+
+Y ahí nomás se te escapa que María es vegana o que Juan va a llevar a su pareja.
+
+## Las llamadas funcionan, pero te matan
+
+Aquí está la verdad incómoda: una llamada telefónica tiene una tasa de respuesta mucho mayor que cualquier mensaje de texto. La gente contesta. O al menos escucha el mensaje de voz.
+
+El problema es tu tiempo. Llamar a 25 personas, esperar que contesten, tomar notas de cada conversación, organizar todo después... eso te come una tarde entera.
+
+Yo encontré una salida que suena futurista pero funciona hoy: que una IA llame por mí.
+
+## Cómo funciona esto en la práctica
+
+Uso OpenClaw con el plugin [SuperCall](https://clawhub.ai/xonder/supercall). La idea es directa: le das tu lista de invitados con nombres y números, y el sistema llama a cada uno.
+
+La IA se presenta como tu coordinadora de eventos. Confirma fecha, hora y lugar. Pregunta si asisten. Anota restricciones alimentarias, acompañantes, comentarios.
+
+Cuando termina con todos, te entrega un resumen limpio: quién confirmó, quién declinó, quién no contestó, y todas las notas.
+
+Nada de hojas de cálculo manuales. Nada de "creo que Juan dijo que sí pero no estoy seguro".
+
+## Por qué SuperCall y no cualquier solución de voz
+
+Ojo aquí porque esto es importante. SuperCall no es lo mismo que hacer una llamada con un agente de IA genérico.
+
+SuperCall es un agente de voz **aislado**. La IA en la llamada solo tiene acceso al contexto que tú le das: el nombre de la persona, el objetivo de la llamada, y cómo abrir la conversación. No puede acceder a tu agente principal, tus archivos, tus herramientas, ni a nada más.
+
+Esto parece una limitación, pero es exactamente lo que quieres por tres razones:
+
+**Seguridad**: La persona al otro lado de la línea no puede manipular tu agente ni acceder a tus datos. Cero riesgo de prompt injection o fuga de información.
+
+**Conversaciones más naturales**: Como la IA tiene un único objetivo (confirmar asistencia), se mantiene en tema. No se va por las ramas como haría un agente de propósito general.
+
+**Ideal para llamadas por lotes**: Haces muchas llamadas a personas distintas. Un persona aislado que se reinicia en cada llamada es lo correcto. No hay filtración entre conversaciones.
+
+## Lo que necesitas antes de empezar
+
+Nada loco, pero sí necesitas cuentas reales configuradas:
+
+- **SuperCall** instalado en OpenClaw: `openclaw plugins install @xonder/supercall`
+- **Una cuenta de Twilio** con un número de teléfono (para hacer las llamadas salientes)
+- **Una API key de OpenAI** (para GPT-4o Realtime, que es el modelo de voz)
+- **ngrok** (para tunneling de webhooks — el tier gratis funciona)
+
+El README de [SuperCall en GitHub](https://github.com/xonder/supercall) tiene las instrucciones completas de configuración. Síguelas al pie de la letra antes de intentar tu primera llamada.
+
+## Cómo lo configuro yo
+
+Primero, preparo mi lista de invitados. Puede ser un archivo de texto o lo pego directo en el chat:
+
+```text
+Lista de invitados — BBQ de verano, sábado 14 de junio, 4 PM, 23 Oak Street
+
+- Sarah Johnson: +15551234567
+- Mike Chen: +15559876543
+- Rachel Torres: +15555551234
+- David Kim: +15558887777
+```
+
+Luego le doy este prompt a OpenClaw:
+
+```text
+Necesito que confirmes la asistencia a mi evento. Estos son los detalles:
+
+Evento: BBQ de verano
+Fecha: sábado 14 de junio a las 4 PM
+Lugar: 23 Oak Street
+
+Aquí está mi lista de invitados:
+<pegas tu lista aquí>
+
+Para cada invitado, usa supercall para llamarlo. Usa el persona "Jamie,
+coordinadora de eventos para [tu nombre]". El objetivo de cada llamada es
+confirmar si asisten, y anotar cualquier restricción alimentaria,
+acompañantes u otros comentarios.
+
+Después de cada llamada, registra el resultado. Cuando termines todas,
+dame un resumen completo:
+- Quién confirmó
+- Quién declinó
+- Quién no contestó
+- Notas o pedidos especiales de cada invitado
+```
+
+OpenClaw llama a cada invitado uno por uno. Puedes pedirle un update de progreso en cualquier momento mientras trabaja.
+
+## Cosas que aprendí a la mala
+
+**Empieza pequeño**: Antes de lanzarte con 20 personas, prueba con 2 o 3. Escucha cómo suena el persona, si el tono es adecuado, si la apertura funciona. Ajusta antes de escalar.
+
+**Cuida los horarios**: No programes llamadas a las 8 de la mañana ni a las 10 de la noche. Puedes decirle a OpenClaw que solo llame en cierto rango horario.
+
+**Revisa las transcripciones**: SuperCall guarda transcripciones en `~/clawd/supercall-logs`. Tómate 10 minutos después de la primera tanda para leer cómo fueron las conversaciones. Te da ideas para ajustar el prompt.
+
+**Qué hacer con los que no contestan**: Si alguien no levanta, OpenClaw lo anota. Tú decides si reintentas después o sigues por texto. No dejes eso al azar.
+
+**Las llamadas cuestan dinero real**: Cada llamada consume minutos de Twilio. Ponle límites razonables en tu cuenta, especialmente si tu lista es grande. No es caro, pero sorprende si no lo controlas.
+
+## El resultado final
+
+Después de correr esto la última vez, recibí algo así:
+
+```text
+RESUMEN DE ASISTENCIA — BBQ de verano
+
+CONFIRMADOS (3):
+- Sarah Johnson: Asiste. Trae a su esposo. Sin restricciones.
+- Mike Chen: Asiste. Vegano. Llega 30 min tarde.
+- David Kim: Asiste. Sin notas adicionales.
+
+DECLINADOS (1):
+- Rachel Torres: No puede, conflicto de agenda.
+
+NO CONTESTARON (0):
+(ninguno)
+
+NOTAS ESPECIALES:
+- Preparar opción vegana para Mike
+- Esperar a Mike hasta las 4:30 PM aprox.
+```
+
+Limpio. Accionable. Sin tener que marcar un solo número.
+
+---
+
+Si organizas eventos con alguna regularidad — cenas, meetups, offsites, bodas — esto te devuelve horas. Horas que puedes usar en todo lo demás que sí requiere tu atención humana.
+
+En [papayaclaw.com](https://papayaclaw.com) exploramos más automatizaciones como esta para equipos pequeños que necesitan hacer más con menos. Échale un vistazo.
