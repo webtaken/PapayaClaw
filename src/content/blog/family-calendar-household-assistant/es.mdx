@@ -1,0 +1,129 @@
+---
+title: "Nuestro calendario familiar por fin dejó de ser una pesadilla"
+date: "2026-08-28"
+summary: "Cómo monté un asistente doméstico con OpenClaw que agrega cinco calendarios, detecta citas en mensajes de texto automáticamente y lleva el inventario de la nevera."
+---
+
+# Nuestro calendario familiar por fin dejó de ser una pesadilla
+
+Cada mañana hacía lo mismo: abrir Google Calendar (trabajo), luego el calendario familiar compartido, después el de mi pareja, revisar si había llegado algún PDF del cole por email, y buscar en los mensajes si había novedades de las actividades extraescolares.
+
+Todo eso en cinco minutos de prisa antes de salir.
+
+Y aún así, se me colaban cosas. Una confirmación de dentista que quedó enterrada en iMessage. Un cambio de horario de fútbol que llegó por WhatsApp y no vi hasta el día antes. El típico "¿pero no te dije que el viernes había reunión?" que te hace dudar de tu propia cordura.
+
+El problema no es la falta de herramientas. Es la fragmentación.
+
+## Lo que realmente pasa con los calendarios familiares
+
+Un hogar con dos adultos y un par de hijos genera fácilmente cinco fuentes distintas de eventos:
+
+- Calendario laboral (con restricciones de seguridad que impiden compartirlo)
+- Calendario personal
+- Calendario familiar compartido
+- Calendarios del colegio (suelen llegar en PDF o webs mal hechas)
+- Campamentos y extraescolares (vía email, normalmente)
+
+Copiar eventos entre calendarios funciona hasta que se te olvida una vez. Y una vez es suficiente para que alguien llegue sin recoger al niño.
+
+Pero hay un problema igual de molesto: la coordinación del día a día. "¿Queda leche?" requiere ir a la nevera, luego al pantry, luego escribir a tu pareja. Multiplícalo por las cincuenta preguntas de ese tipo en una semana.
+
+## La solución: un agente que actúa sin que le pidas nada
+
+Monté OpenClaw en un Mac Mini en casa y lo configuré como coordinador doméstico siempre activo. La diferencia clave no es la agregación de calendarios — eso existe desde hace años. Es el monitoreo pasivo de mensajes.
+
+El agent revisa los iMessages cada 15 minutos. Cuando detecta un patrón de cita ("tu cita está confirmada para...", "¿podemos vernos el viernes a las 5?"), hace tres cosas automáticamente:
+
+1. Crea el evento en el calendario
+2. Añade bloques de 30 minutos antes y después para tiempo de conducción
+3. Manda confirmación al canal de Telegram familiar
+
+Sin que nadie le pida nada. Eso es lo que lo hace útil.
+
+## Configuración de la agregación de calendarios
+
+El primer paso es conectar todas las fuentes. Esto va en la configuración de OpenClaw:
+
+```text
+## Calendar Sources
+
+On morning briefing (8:00 AM):
+
+1. Fetch my Google Work Calendar (read-only OAuth)
+2. Fetch shared Family Google Calendar
+3. Fetch partner's calendar (shared view)
+4. Check ~/Documents/school-calendars/ for any new PDFs → OCR and extract events
+5. Check recent emails for calendar attachments or event invitations
+
+Compile into a single briefing:
+- Today's events (all calendars, color-coded by source)
+- Upcoming 3-day lookahead for conflicts
+- Any new events added since yesterday
+- Weather context for outdoor events
+
+Deliver via Telegram/Slack family channel.
+```
+
+A las 8:00 AM llega un resumen al Telegram familiar con todo el día. Color-coded por fuente, así sabes de un vistazo si algo es del trabajo, del cole o de actividades.
+
+El paso 4 es más útil de lo que suena: los colegios siguen mandando calendarios en PDF. El agente los procesa con OCR y extrae los eventos automáticamente.
+
+## El monitoreo pasivo de mensajes
+
+Esta es la parte que más valor añade. Va en el HEARTBEAT.md:
+
+```text
+## Message Monitoring (HEARTBEAT.md)
+
+Every 15 minutes:
+1. Check new iMessages across all conversations
+2. Detect appointment-like patterns:
+   - "Your appointment is confirmed for..."
+   - "Can we meet on [date] at [time]?"
+   - "Practice moved to Saturday at 3pm"
+3. When detected:
+   - Create calendar event with details
+   - Add 30-minute driving buffer before AND after
+   - Send confirmation to family Telegram: "Created: Dentist appointment, Tue 2pm. Added drive time 1:30-2:00 and 3:00-3:30."
+   - If relevant to partner, add invite
+4. Detect promise/commitment patterns:
+   - "I'll send that over by Friday"
+   - "Let's do dinner next week"
+   → Create calendar hold or reminder
+```
+
+El caso real que inspiró esto: la mujer de un usuario recibe un SMS de confirmación de cita dental. OpenClaw la detecta, crea el evento con buffers de conducción, y notifica. Sin intervención.
+
+## Inventario doméstico por Telegram
+
+El mismo setup gestiona el inventario de la casa. Se mantiene en `~/household/inventory.json` con nombre, cantidad, ubicación (nevera/pantry/sótano) y umbral de stock bajo.
+
+Tres formas de actualizarlo:
+
+- **Foto**: mandas foto de la nevera, el modelo de visión extrae los items
+- **Texto**: "se acabaron los huevos" o "compré 2 litros de leche"
+- **Ticket**: foto del ticket del supermercado, actualiza automáticamente
+
+Consultas desde cualquier sitio por Telegram:
+
+- "¿Queda mantequilla?" → te dice ubicación y cantidad
+- "¿Qué está por acabarse?" → lista items bajo el umbral
+- "Genera lista de la compra" → compila lo que falta + ingredientes de recetas planificadas
+
+## Por qué Mac Mini y no un VPS
+
+El iMessage solo funciona nativamente en macOS. Si quieres monitorear mensajes de texto, necesitas un Mac corriendo en casa. El Mac Mini es el punto dulce: poco consumo, siempre encendido, acceso a iMessage y Apple Calendar.
+
+El canal de Telegram compartido cumple otra función: da visibilidad a ambos padres de lo que el agente está haciendo. Si crea un evento erróneo, lo ves en tiempo real y lo corriges. Construye confianza.
+
+## Empezar en modo lectura
+
+Mi recomendación: empieza solo leyendo. Configura la agregación de calendarios y el monitoreo de mensajes, pero sin permisos de escritura al principio. Observa una semana qué detecta, qué se equivoca, qué patrones se le escapan.
+
+Cuando confíes en lo que ve, activa la creación automática de eventos.
+
+La entrada por foto está infravalorada. Hacer una foto del calendario del colegio pegado en la nevera o del contenido del congelador es más rápido que escribir — y el modelo de visión lo maneja bien.
+
+---
+
+Si estás montando algo parecido con OpenClaw o quieres ver cómo configuramos estos patrones de agentes domésticos, pásate por [papayaclaw.com](https://papayaclaw.com). Tenemos guías técnicas y plantillas listas para copiar.

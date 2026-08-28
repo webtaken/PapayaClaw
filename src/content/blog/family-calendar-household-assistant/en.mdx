@@ -1,0 +1,148 @@
+---
+title: "Our Family Calendar Finally Stopped Being a Nightmare"
+date: "2026-08-28"
+summary: "How one always-on agent aggregates five fragmented calendars, watches text messages for appointments, and maintains household inventory without anyone asking it to."
+---
+
+# Our Family Calendar Finally Stopped Being a Nightmare
+
+Every morning used to look the same. I'd check my work calendar in Google. Then the shared family calendar. Then my partner's calendar. Then the school website — because that one still comes as a PDF on some random WordPress page. Then I'd scroll through recent emails looking for camp schedule attachments.
+
+Five calendars. Five different formats. Zero consolidated view.
+
+And the worst part? The system "worked" right up until it didn't. One missed appointment confirmation text buried in iMessage, and suddenly I'm scrambling to find coverage for a kid pickup.
+
+Here's what I built instead.
+
+## The real problem isn't calendars — it's the gaps between them
+
+HN user `angiolillo` described this exact pain in a thread about calendar tools: checking work, personal, family, and kids' school calendars separately each morning is unsustainable. "Copying events across calendars works well until I forget and one slips through the cracks."
+
+But calendar fragmentation is only half the issue. The other half is everything else that never makes it *into* a calendar at all.
+
+Appointment confirmations arrive via text and sit there. No calendar event gets created. No driving time buffer. No reminder. Just a message you *might* remember to check.
+
+Then there's the household coordination overhead. "How much milk do we have?" requires physically checking the fridge, then the basement pantry, then texting back. Multiply that across a week of grocery runs.
+
+As HN user `dns_snek` put it: "I forget where I put things down 5 seconds ago... It's genuinely a big problem for me because I let things expire."
+
+## What an always-on household agent actually does
+
+I run OpenClaw on a home Mac Mini. It sits there 24/7 and handles three categories of work: calendar aggregation, ambient message monitoring, and household inventory.
+
+The Mac Mini is the sweet spot for this. You get native iMessage integration, Apple Calendar access via EventKit, and always-on availability. No cloud API proxying your text messages through a third party.
+
+### Morning briefing: one view to rule them all
+
+At 8:00 AM, OpenClaw pulls from every calendar source and compiles a single briefing:
+
+```text
+## Calendar Sources
+
+On morning briefing (8:00 AM):
+
+1. Fetch my Google Work Calendar (read-only OAuth)
+2. Fetch shared Family Google Calendar
+3. Fetch partner's calendar (shared view)
+4. Check ~/Documents/school-calendars/ for any new PDFs → OCR and extract events
+5. Check recent emails for calendar attachments or event invitations
+
+Compile into a single briefing:
+- Today's events (all calendars, color-coded by source)
+- Upcoming 3-day lookahead for conflicts
+- Any new events added since yesterday
+- Weather context for outdoor events
+
+Deliver via Telegram/Slack family channel.
+```
+
+The school calendar part matters more than you'd think. Schools still send PDFs. Camp schedules live in emails. The vision model reads these and extracts structured events without me manually typing "Spring Concert, May 15, 6:30 PM" into Google Calendar.
+
+The briefing lands in a shared Telegram channel. Both partners see it. Both partners can flag conflicts.
+
+### Ambient message monitoring: the part that feels like magic
+
+This is the feature that changed how I think about AI assistants. The agent doesn't wait to be asked. It watches passively and acts when it recognizes something actionable.
+
+```text
+## Message Monitoring (HEARTBEAT.md)
+
+Every 15 minutes:
+1. Check new iMessages across all conversations
+2. Detect appointment-like patterns:
+   - "Your appointment is confirmed for..."
+   - "Can we meet on [date] at [time]?"
+   - "Practice moved to Saturday at 3pm"
+3. When detected:
+   - Create calendar event with details
+   - Add 30-minute driving buffer before AND after
+   - Send confirmation to family Telegram: "Created: Dentist appointment, Tue 2pm. Added drive time 1:30-2:00 and 3:00-3:30."
+   - If relevant to partner, add invite
+4. Detect promise/commitment patterns:
+   - "I'll send that over by Friday"
+   - "Let's do dinner next week"
+   → Create calendar hold or reminder
+```
+
+Sparkry AI documented a nearly identical pattern: when a spouse received a dental appointment text, OpenClaw automatically created a calendar event with 30-minute driving buffers — without being asked. As `@theaaron` put it on the OpenClaw Showcase, this kind of chat-based calendar management is "one of the best uses of an LLM I've ever experienced."
+
+The driving buffers alone save me. I used to forget to account for travel time to the pediatrician across town. Now a 2:00 PM appointment shows up as a 1:30-2:00 drive block, the appointment itself, and a 3:00-3:30 buffer. My partner sees the whole thing in Telegram.
+
+### Household inventory without the spreadsheet misery
+
+Brandon Wang's "Clawdbot Linguini" runs a similar setup — processing freezer inventory photos and coordinating household logistics via iMessage and Slack. I stole the pattern and adapted it.
+
+```text
+## Pantry Tracking
+
+Maintain ~/household/inventory.json with:
+- Item name, quantity, location (fridge/pantry/basement)
+- Last updated timestamp
+- Low-stock threshold
+
+Update methods:
+- Photo: User sends photo of fridge/pantry → vision model extracts items
+- Text: "We're out of eggs" / "Bought 2 gallons of milk"
+- Receipt: Photo of grocery receipt → update inventory
+
+Query: Either partner can ask via Telegram:
+- "Do we have butter?" → Check inventory, respond with location and quantity
+- "What's running low?" → List items below threshold
+- "Generate grocery list" → Compile low-stock items + any recipe ingredients needed
+```
+
+Three input methods matter here. Typing "we're out of eggs" works when you notice. Snapping a photo of the fridge works when you're doing a weekly scan. Photographing the grocery receipt works as a passive update after shopping.
+
+The query interface lives in the same Telegram channel as the morning briefing. No new app to open. No shared spreadsheet nobody remembers to update.
+
+## Start read-only, then earn write access
+
+Here's my actual advice: don't start by letting an AI create calendar events or send messages.
+
+Begin with read-only operations. Pull calendars. Generate the morning briefing. Let the agent *suggest* actions without taking them. Watch it for a week. See where it misinterprets a text message or hallucinates an event from a blurry PDF.
+
+Once you trust the reads, enable writes one at a time. Calendar creation first. Then message sending. Keep the shared Telegram channel active throughout — it gives both partners visibility into what the agent is doing and catches errors early.
+
+The photo input is underrated for this trust-building phase. When you snap a photo of a school calendar and see exactly what the agent extracted, you develop intuitions about where it fails. Blurry text? Handwritten notes? Weird table formatting? You learn the edges fast.
+
+## What you need to build this
+
+- A Mac Mini running OpenClaw (for iMessage and EventKit access)
+- Google Calendar API credentials (read-only OAuth to start)
+- A Telegram or Slack channel for family communication
+- The OpenClaw iMessage skill enabled
+- File system access for `~/household/inventory.json` and `~/Documents/school-calendars/`
+
+The whole thing runs locally. Your calendar data doesn't leave your machine except through the standard Google OAuth flow. Text messages stay on your Mac.
+
+## The upside
+
+I haven't manually created a calendar event from a text message in three months. I haven't checked five separate calendar sources in the morning. I haven't stood in front of an open fridge texting my partner about whether we have butter.
+
+The agent handles it. Not because I asked it to in the moment — but because it was configured to watch for exactly these patterns and act on them.
+
+That's the shift. From "AI assistant I command" to "AI coordinator that runs in the background." Different mental model, different value prop, different result.
+
+---
+
+Want to set up something like this for your own household? We walk through the full OpenClaw configuration — calendar sources, message monitoring rules, inventory tracking, and the read-to-write trust progression — over at [papayaclaw.com](https://papayaclaw.com).
