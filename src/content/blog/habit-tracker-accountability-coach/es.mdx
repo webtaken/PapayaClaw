@@ -1,0 +1,119 @@
+---
+title: "Esta IA no solo registra mis hábitos — me exige cuentas"
+date: "2026-09-02"
+summary: "Cómo convertí OpenClaw en un coach de accountability que me escribe por Telegram cada día, sigue mis rachas y adapta su tono cuando me descarrilo."
+---
+
+# Esta IA no solo registra mis hábitos — me exige cuentas
+
+He probado todas las apps de hábitos que existen. Streaks, Habitica, Loop, la nativa de Apple, tres más cuyo nombre ya ni recuerdo.
+
+Todas siguen el mismo guion: entusiasmo el día uno, cero aperturas el día nueve.
+
+Y aquí está la cosa: el problema nunca fue la app. Es que registrar hábitos es pasivo. La app se queda quieta esperando que tú llegues, y las notificaciones push son tan fáciles de ignorar que tu cerebro las filtra sin consultarte.
+
+Lo que sí funciona para cambiar conducta es la accountability activa: alguien que te pregunta directo, celebra tus rachas y te empuja cuando te caes. Normalmente ese alguien es un amigo. Pero muy pocos amigos aguantan ese papel más de dos semanas sin que la relación se vuelva incómoda.
+
+Así que le pasé el trabajo a un agente de OpenClaw.
+
+## Qué hace este agente
+
+La idea suena simple, pero es lo que ninguna app de hábitos hace:
+
+- **Check-ins diarios** por Telegram o SMS en los horarios que yo defino (7:30 AM para el entrenamiento, 9:00 PM para el cierre del día)
+- **Seguimiento de mis hábitos** — ejercicio, lectura, meditación, agua, código, lo que a mí me importe
+- **Rachas reales** — sabe en qué número voy con cada hábito y lo menciona en los mensajes
+- **Tono adaptativo** — celebra cuando soy constante, insiste con suavidad cuando fallo
+- **Reportes semanales** — tasas de finalización, rachas más largas y patrones ("tiendes a saltarte el gimnasio los miércoles")
+
+El punto clave es la dirección de la comunicación. La app no espera a que yo abra nada. Me escribe ella.
+
+## Lo que necesitas
+
+Nada exótico:
+
+- Integración con Telegram (Bot API) o SMS con Twilio
+- Scheduling con cron para los horarios de check-in
+- Acceso al sistema de archivos para guardar los datos de hábitos
+- Opcional: Google Sheets si quieres un dashboard visual
+
+Si ya tienes un agente de OpenClaw corriendo, tienes todo menos quizás el bot de Telegram, que se configura en minutos.
+
+## La configuración completa
+
+Todo esto se hace con instrucciones en lenguaje natural. Sin código. Sin YAML. Empecé definiendo mis hábitos y horarios:
+
+```text
+Quiero que seas mi coach de accountability. Lleva el registro de estos
+hábitos diarios:
+
+1. Entrenamiento matutino (check-in a las 7:30 AM)
+2. Leer 30 minutos (check-in a las 8:00 PM)
+3. Sin redes sociales antes del mediodía (check-in a las 12:30 PM)
+4. Beber 8 vasos de agua (check-in a las 6:00 PM)
+
+Envíame un mensaje de Telegram en cada horario preguntando si completé
+el hábito. Guarda mis rachas en un archivo local.
+```
+
+La segunda parte es la importante: definir el tono y las reglas de escape.
+
+```text
+Cuando confirme un hábito, responde con un mensaje corto de ánimo y
+menciona mi racha actual. Ejemplo: "Día 12 de entrenamientos. Sólido."
+
+Cuando falle un hábito, no me hagas sentir culpable. Solo reconócelo y
+recuérdame por qué empecé. Si fallo 3 días seguidos, envía un mensaje
+motivacional más largo y pregúntame si quiero ajustar la meta.
+
+Si no respondo a un check-in en 2 horas, envía un solo follow-up.
+No me satures después de eso.
+```
+
+Ese ejemplo — "Día 12 de entrenamientos. Sólido." — hace más por mí que cualquier gráfica de racha en una app. Y la regla anti-spam es crítica: sin ella, el agente se convierte en ese amigo insistente y lo bloqueas en tres días. Un follow-up tras 2 horas de silencio, y ya.
+
+La tercera pieza es el reporte semanal, que terminó siendo mi función favorita:
+
+```text
+Cada domingo a las 10 AM, envíame un resumen semanal:
+- Tasa de finalización de cada hábito
+- Rachas actuales
+- Mejor día y peor día
+- Un patrón que hayas notado (ej. "Siempre dejas de leer los viernes")
+- Una sugerencia para la próxima semana
+
+Guarda todos los datos en ~/habits/log.json para poder revisar el
+historial cuando quiera.
+```
+
+Si quieres algo visual, le agregué una capa opcional con Google Sheets:
+
+```text
+Al final de cada día, actualiza una hoja de Google Sheets con los datos
+del día. Columnas: Fecha, Entrenamiento, Lectura, Sin Redes, Agua, Notas.
+Marca los hábitos completados con ✓ y los fallados con ✗.
+```
+
+Listo. Cuatro bloques de texto y tienes un coach que no se cansa, no te juzga y no se ofende cuando le mientes.
+
+## Lo que aprendí
+
+**El tono adaptativo es lo que separa esto de un cron job.** Un recordatorio estático se ignora al tercer día. Un mensaje que dice "Día 15, no lo rompas ahora" sí motiva, porque demuestra que algo está prestando atención.
+
+**Mantén la lista corta: 3 a 5 hábitos.** Trackear diez cosas suena productivo, pero produce fatiga de check-in. Empiezas a ignorar los mensajes y volvemos al punto de partida: otra app muerta en tu teléfono.
+
+**El análisis de patrones vale más de lo que parece.** Cosas como "nunca entreno los días que tengo reuniones tempranas" no las ves cuando vives dentro de la semana. Pero el agente ve tus datos de un mes completo y te las sirve en el resumen dominical. Puedes planear alrededor de eso en vez de culparte.
+
+**El archivo local importa.** Todo queda en `~/habits/log.json`, así que tu historial es tuyo y portable. No está en la base de datos de una startup que puede cerrar el servicio o ponerte un paywall en tu propia racha.
+
+Si quieres ir más lejos, esto se combina muy bien con un registro de salud y síntomas: correlacionar "qué días dormí bien" con "qué días cumplí mis hábitos" revela cosas que ni Google Fit te va a contar.
+
+## Mi conclusión después de usarlo
+
+La diferencia entre un tracker y un coach es quién toma la iniciativa.
+
+Pasé años esperando que una app me convenciera de abrir la app. El truco fue invertir la dirección: que el sistema venga a mí, con contexto de mi historia y un tono que cambia según cómo voy.
+
+No es magia. Es un bot de Telegram, un archivo JSON y cuatro prompts bien pensados. Pero después de una década de apps de hábitos abandonadas, es lo primero que sigue vivo más allá de la semana dos.
+
+Si quieres ver más casos de uso de agentes como este — con guías de configuración paso a paso — date una vuelta por [papayaclaw.com](https://papayaclaw.com).
