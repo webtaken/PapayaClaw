@@ -1,0 +1,106 @@
+---
+title: "I Let AI Hunt Through Hugging Face Papers So I Can Focus on Building"
+date: "2026-09-04"
+summary: "A two-skill OpenClaw setup that turns the daily Hugging Face Papers scroll into a conversational triage pipeline — trending digests, keyword search, community comments, and full-paper deep reads."
+---
+
+# I Let AI Hunt Through Hugging Face Papers So I Can Focus on Building
+
+Every morning, Hugging Face Papers drops dozens of new entries on its trending page. If you follow ML research, you know the ritual: refresh, scan titles, open three tabs, skim abstracts, promise yourself you'll read the rest "later."
+
+Later never comes.
+
+The problem isn't access. It's triage. Most trending papers have nothing to do with your stack — but finding the few that do means clicking into each one, reading the abstract, checking for a GitHub repo, and making a call. Every single day.
+
+That's thirty minutes of context-switching before you write a line of code. And by Friday, you can't reconstruct what Monday's papers even were.
+
+I hit this wall enough times that I handed the whole loop to OpenClaw. Now my mornings look different: I get a ranked digest of what matters, ask follow-ups in plain English, and only open a full paper when one actually earns it.
+
+## Two skills, seven tools
+
+The setup combines two skills into one research pipeline.
+
+**hf-papers** handles discovery. It ships four tools:
+
+- `hf_daily_papers` — today's trending papers, sortable by upvotes or date
+- `hf_search_papers` — keyword search across HF Papers
+- `hf_paper_detail` — full metadata: abstract, authors, GitHub repos, community upvotes, AI-generated summaries
+- `hf_paper_comments` — the community discussion on any paper
+
+**arxiv-source** handles depth. Three tools, keyed off a paper's arXiv ID:
+
+- `arxiv_fetch` — the full LaTeX source of a paper
+- `arxiv_sections` — targeted sections when you don't need everything
+- `arxiv_abstract` — quick abstract lookup
+
+Both run on public APIs with local caching. No Docker, no API keys, no auth dance. Install takes under a minute.
+
+## The setup
+
+Two commands:
+
+```bash
+clawhub install hf-papers
+clawhub install arxiv-source
+```
+
+Then describe your workflow to the agent. Here's the prompt I use, nearly verbatim:
+
+```text
+I want to stay on top of ML research. Here's my daily workflow:
+
+1. Every morning, show me the top 10 trending papers on Hugging Face (sorted by upvotes)
+   - For each paper, show: title, upvotes, GitHub repo (if any), and 1-line AI summary
+
+2. When I say "search [topic]":
+   - Search HF Papers and show the most relevant results
+   - Highlight papers with linked GitHub repos or high upvote counts
+
+3. When I pick a paper (by ID):
+   - Show the full abstract, authors, and linked resources
+   - Show community comments if any
+   - Ask if I want a deep read
+
+4. For deep reads:
+   - Fetch the full paper via arxiv-source
+   - Summarize key contributions, methodology, and results
+   - Note any linked code repos I should check out
+
+Keep a running list of papers I've reviewed today with one-line takeaways.
+```
+
+That last line matters more than it looks. I'll come back to it.
+
+## What a morning actually looks like
+
+I open with: "What's trending on Hugging Face Papers today?"
+
+Back comes the top 10 by upvotes — title, upvote count, repo link if one exists, and a one-line AI summary for each. Two minutes in, I've triaged what used to eat half an hour of tab-juggling.
+
+Most days, eight of the ten get a shrug. Two get a follow-up.
+
+If something specific is on my mind, I type "search speculative decoding" or "search KV cache eviction." The agent runs `hf_search_papers`, surfaces the most relevant results, and flags anything with a repo or heavy upvotes. This is where I'm no longer scanning a feed — I'm querying it.
+
+Then I pick a paper by ID. `hf_paper_detail` pulls the full abstract, authors, and linked resources. If the community has discussed it, `hf_paper_comments` brings that in too. HF Papers comments are underrated — authors sometimes show up in the thread and answer methodology questions directly. That context never makes it into the PDF.
+
+If I want the whole thing: "Deep read this one." `arxiv_fetch` pulls the LaTeX source, and the agent returns the key contributions, the methodology, the results, and any linked code repos worth checking. If I only care about the experiments, `arxiv_sections` grabs just that section instead of dumping the entire paper into context.
+
+## The running list is the sleeper feature
+
+Because the prompt asks the agent to keep a running list with one-line takeaways, I end every day with a log: every paper I touched, what I thought of it, in one place.
+
+Friday me doesn't have to reconstruct the week from browser history. The log is right there — and it's written in my own triage vocabulary, because I set the format.
+
+## My take: triage was always the bottleneck
+
+Here's my honest opinion after running this for a while: reading papers was never the hard part. Deciding which of sixty papers deserve your attention was the hard part. Breadth is exactly what an agent is good at. Depth is still yours.
+
+One caution worth building into your workflow: trending does not mean important. Upvotes skew toward flashy demos and big-lab releases. If you're fine-tuning a 7B model on a single GPU, the paper with 12 upvotes and a working repo beats the 300-upvote frontier announcement for your actual work. That's why I keep the "highlight papers with linked GitHub repos" line in the prompt — a repo means I can try it this week. An upvote count means other people were curious.
+
+Repos measure usability. Upvotes measure hype. Weigh accordingly.
+
+## Start with the scroll
+
+If your mornings currently start with a trending-page scroll and a pile of open tabs, hand the scroll to the agent. Two installs, one prompt, and the discovery loop runs itself while you keep your attention on the build.
+
+We break down workflows like this every week — skills, prompts, and the reasoning behind them — over at papayaclaw.com. Come grab this one and make your mornings quieter.
