@@ -1,0 +1,119 @@
+---
+title: "My Company Knowledge Base Finally Became Actually Searchable"
+date: "2026-09-07"
+summary: "How I turned a Slack channel and an OpenClaw agent into a searchable company brain — drop in URLs, ask questions, get answers with sources in seconds."
+---
+
+# My Company Knowledge Base Finally Became Actually Searchable
+
+"Where's that doc about the pricing change?"
+
+Someone asks this in Slack every week. Someone else pastes a Notion link. The link is three months stale and half the page was rewritten since.
+
+I got tired of it. So I built a different setup: a Telegram topic, an OpenClaw agent, and one skill.
+
+Now I ask "what do we have about onboarding flows?" and get ranked answers with sources in seconds.
+
+Here's the whole thing.
+
+## The problem was never storage. It's retrieval.
+
+Every team I know has the same stack: a Notion workspace, a Drive folder, and a few hundred Slack threads where decisions go to die.
+
+And every search experience in that stack is bad in the same way.
+
+Notion search is keyword matching. Search "why are users leaving" and it won't find the doc titled "Q2 churn analysis." Slack search is worse — you need to remember the exact channel, the exact week, and the exact phrasing someone used at 4pm on a Tuesday.
+
+So we compensate by organizing. Folders, tags, databases, templates. It feels productive.
+
+It isn't. The bottleneck is retrieval, not filing. You don't have a storage problem — you have a "find the thing" problem, and semantic search fixes that in a way no folder structure ever will.
+
+That's my actual opinion after running this for a while: stop organizing, start ingesting. One pipe, everything goes in, search later. It beats any meticulously maintained wiki, mostly because wikis rot and this doesn't.
+
+## The setup: one channel, one agent, one skill
+
+The architecture is almost embarrassingly simple.
+
+You create a Telegram topic called `knowledge-base` — or a Slack channel, if that's where your team already lives. When anyone drops a URL into it, OpenClaw fetches the content and ingests it into a knowledge base with metadata: title, URL, date, type.
+
+It handles articles, tweets, YouTube transcripts, and PDFs. The PDF support matters more than it sounds — a huge chunk of internal knowledge lives in PDFs that nobody has opened since the quarter they were made.
+
+Then the same topic doubles as your search interface. Ask a question, get semantic results with sources and excerpts.
+
+Semantic, not keyword. Ask "what did we save about agent memory?" and it finds the stuff titled "long-term context for LLM apps." That's the entire value proposition.
+
+One detail I insist on: if there are no good matches, the agent says so instead of confidently making something up. That's a prompt choice, not magic. Steal it.
+
+## Building it, step by step
+
+**1. Install the knowledge-base skill from ClawdHub.** If you'd rather roll your own, custom RAG with embeddings works too — but the skill gets you running in minutes.
+
+**2. Create the ingestion channel.** A Telegram topic named `knowledge-base`, or a Slack channel. Pick whatever your team actually uses daily. A research repo nobody visits is just a landfill with extra steps.
+
+**3. Prompt OpenClaw.** This is the entire config:
+
+```text
+When I drop a URL in the "knowledge-base" topic:
+1. Fetch the content (article, tweet, YouTube transcript, PDF)
+2. Ingest it into the knowledge base with metadata (title, URL, date, type)
+3. Reply with confirmation: what was ingested and chunk count
+
+When I ask a question in this topic:
+1. Search the knowledge base semantically
+2. Return top results with sources and relevant excerpts
+3. If no good matches, tell me
+
+Also: when other workflows need research (e.g., video ideas, meeting prep),
+automatically query the knowledge base for relevant saved content.
+```
+
+That's it. No pipeline code, no vector database admin, no cron jobs. The fetching runs on `web_fetch`, which is built in.
+
+**4. Test it.** Drop in a few URLs and ask real questions.
+
+A drop gives you a confirmation like this:
+
+```text
+Ingested: "Why RAG systems fail in production" (article)
+Source: https://example.com/rag-failures
+Chunks: 24
+```
+
+And a question gets you ranked results with excerpts and the original URL attached:
+
+```text
+Q: What do I have about LLM memory?
+
+1. "Memory systems for long-running agents" — saved 2025-04-12
+   "...hierarchical memory with periodic summarization holds up
+   better than raw transcript storage..."
+   source: https://example.com/agent-memory
+```
+
+Don't skip the chunk count in that confirmation prompt. It looks like a nice-to-have. It's actually your smoke test. If a 40-page PDF comes back as 3 chunks, ingestion glitched and your search results will be garbage. If it comes back as 60, you know the thing is genuinely indexed.
+
+## The part that made it stick
+
+A searchable archive is nice. It's not why this survived on my team past week two.
+
+The last line of that prompt is the real feature: other workflows can query the knowledge base automatically. My video idea pipeline pulls relevant saved content when it builds research cards. Meeting prep pulls context the same way.
+
+Once everything you save lives behind a semantic search that any workflow can call, the knowledge base stops being a graveyard and becomes shared infrastructure. Every new automation you build inherits your entire research layer for free.
+
+That's the compounding part. Most bookmarking tools are a dead end. This is a dependency.
+
+## Honest notes before you build it
+
+**Garbage in, garbage out.** It indexes exactly what gets dropped into the channel. If your team never posts, you have an empty brain. The fix is cultural, not technical: make it the default "dump it here" spot for anything worth keeping.
+
+**One channel means discipline.** The system works because there's exactly one ingestion point. The moment people start saving to three different places, you're back to Notion.
+
+**Sources are non-negotiable.** Every answer comes back with the URL and an excerpt, so anyone can verify before repeating it in a meeting. This is what makes it trustworthy enough for team use — you're not asking people to trust the model, you're asking them to trust a link they can click.
+
+## Try it this week
+
+Total setup time is under an hour, and most of that is picking which Slack channel to sacrifice.
+
+Install the knowledge-base skill from ClawdHub, make the channel, paste the prompt, drop in five URLs your team references constantly, then ask a question you'd normally ask in `#general`. The first time it answers correctly in four seconds, you'll get it.
+
+If you want more workflows like this — practical agent setups you can ship in an afternoon, written by people who run them daily — head over to [papayaclaw.com](https://papayaclaw.com). That's where this whole playbook lives.
