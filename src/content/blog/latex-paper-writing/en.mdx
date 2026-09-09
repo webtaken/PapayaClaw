@@ -1,0 +1,104 @@
+---
+title: "Writing LaTeX Papers Just Got 10x Less Painful"
+date: "2026-09-09"
+summary: "Set up an AI writing assistant with a built-in LaTeX compiler: generate sections, compile to PDF, auto-fix errors, and handle BibTeX with zero local TeX install."
+category: "development"
+---
+
+# Writing LaTeX Papers Just Got 10x Less Painful
+
+Most AI tools treat LaTeX like broken Python. You paste in a compile error, they hand back a fix, and you go right back to fighting the document alone. None of them know what a paper *is*.
+
+That's the gap I kept hitting. I don't need help balancing braces. I need something that understands sections, floats, cross-references, and a bibliography — and can actually see the PDF it's producing.
+
+That exists now. This post walks through the setup: an agent with a `latex-compiler` skill that writes LaTeX with you, compiles it instantly, previews the PDF inline, and fixes its own errors. No local TeX install required.
+
+## The loop that kills your writing flow
+
+If you write papers, you know the loop. Write a paragraph in your editor. Tab to the terminal. Run `pdflatex`. Tab to your PDF viewer. Notice the table overflowed the column. Tab back. Fix. Repeat two hundred times per paper.
+
+The setup cost alone is brutal. A full TeX Live install eats gigabytes before you've typed a single `\section`. And LaTeX error logs are hostile — "Undefined control sequence at line 47" when the real problem is a missing brace on line 12.
+
+AI copilots didn't fix any of this. They complete snippets in your editor or fix errors you paste into a chat window. But they never see the compiled output. They can't tell you that your figure placement looks wrong or that citation \[12\] resolved to a question mark. They're linters, not coauthors.
+
+The difference between a linter and a coauthor is the feedback loop. If the model can compile its own output, read the log, and look at the result — it iterates on itself. That's what this setup does.
+
+## What the setup actually is
+
+The core is the [latex-compiler](https://github.com/Prismer-AI/Prismer/tree/main/skills/latex-compiler) skill running inside a Prismer workspace container. The container runs a LaTeX server on port 8080 with **full TeX Live** preinstalled — which means you skip the gigabyte-long local install entirely.
+
+The skill gives the agent four tools:
+
+- `latex_compile` — runs your `.tex` through `pdflatex`, `xelatex`, or `lualatex`
+- `latex_preview` — renders the compiled PDF inline, right in your chat
+- `latex_templates` — lists the starter templates: article, IEEE, beamer, and a Chinese article template
+- `latex_get_template` — fetches one so you start from structure, not a blank file
+
+So the workflow becomes conversational. You describe what you want — "write the related work section comparing these three approaches, with citations" — and the agent generates the source, compiles it, and shows you the PDF. If compilation fails, it reads the log and fixes the error itself before showing you anything.
+
+The bibliography works the same way. Paste your `.bib` entries into the chat. The agent adds them, runs BibTeX/BibLaTeX, recompiles, and your citations resolve. No juggling a separate `.bib` file editor.
+
+## Setting it up
+
+Three steps. The first one is the only "installation" you do.
+
+**1. Clone Prismer and start it with Docker.** The LaTeX server with full TeX Live starts automatically:
+
+```bash
+git clone https://github.com/Prismer-AI/Prismer.git && cd Prismer
+docker compose -f docker/docker-compose.dev.yml up
+```
+
+**2. Hand this workflow prompt to OpenClaw.** The `latex-compiler` skill is built in, so there's nothing to install — the prompt just tells the agent how you want to work:
+
+```text
+Help me write a research paper in LaTeX. Here's my workflow:
+
+1. Start from the IEEE template (or article/beamer depending on what I need)
+2. When I describe a section, generate the LaTeX source for it
+3. After each major edit, compile and preview the PDF so I can check formatting
+4. If there are compilation errors, read the log and fix them automatically
+5. When I provide BibTeX entries, add them to the bibliography and recompile
+
+Use xelatex if I need Chinese/CJK support, otherwise default to pdflatex.
+Always run 2 passes for cross-references.
+```
+
+That last line matters more than it looks. Cross-references and citations need two compile passes to resolve — the agent handles that automatically instead of you wondering why every `\ref` shows as "??".
+
+**3. Test it with a real prompt:**
+
+```text
+Start a new IEEE paper titled "A Survey of LLM Agents". Give me the
+template with abstract and introduction sections filled in, then compile it.
+```
+
+You get an IEEE-formatted PDF with a drafted abstract and introduction, compiled and previewed inline. From a blank machine, in under a minute of setup.
+
+## What a working session looks like
+
+Once you're rolling, the loop looks like this:
+
+- **Drafting.** "Write the methodology section describing a two-stage retrieval pipeline." The agent generates the LaTeX, compiles, and you review the rendered PDF — not raw source.
+- **Formatting checks.** After every major edit it recompiles so you catch overflow, bad floats, and broken tables while the change is fresh.
+- **Compile errors.** Something breaks — underspecified column spec, missing `\$`, whatever. The agent reads the log, fixes it, recompiles. You never open the log yourself.
+- **References.** Paste BibTeX entries as you find papers. It drops them into the bibliography and reruns with two passes so every `\cite` resolves.
+- **Compiler choice.** Default is `pdflatex`. Writing in Chinese or need CJK fonts? It switches to `xelatex` without you touching config.
+
+The templates cover the common cases so you skip boilerplate: `article` for general papers, IEEE for conferences, `beamer` for slides. That last one is underrated — same conversational loop for your conference talk, with instant PDF previews of every slide.
+
+## Why the closed loop matters
+
+Here's my honest take: the compilation is the feature. Not the templates, not the bib support — those are table stakes for any LaTeX tool.
+
+Every other AI writing assistant works blind. It emits LaTeX and hopes for the best, and you find out at 2 AM the night before the deadline that the table doesn't fit the column. When the agent compiles after every edit and reads its own error logs, mistakes get caught in seconds instead of at submission time.
+
+That's the shift from "AI that fixes my syntax" to "AI that writes the paper with me." You stay at the level of content and structure — arguments, sections, figures — and the agent handles the machinery underneath.
+
+And because the TeX Live install lives in the container, your laptop stays clean. Spin it up when you're writing, tear it down when you're done.
+
+## Try it on your next paper
+
+The whole setup is one Docker command and one prompt. The [latex-compiler skill](https://github.com/Prismer-AI/Prismer/tree/main/skills/latex-compiler) ships built into Prismer, and the full walkthrough with the workflow prompt lives at [papayaclaw.com](https://papayaclaw.com).
+
+Clone the repo, run the compose file, and start your next paper with a compile loop instead of a compile ritual. Your deadline self will thank you.
