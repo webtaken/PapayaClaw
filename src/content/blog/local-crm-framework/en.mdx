@@ -1,0 +1,114 @@
+---
+title: "I Built a Fully Local CRM That Doesn't Leak My Data"
+date: "2026-09-11"
+summary: "DenchClaw turns OpenClaw into a local-first CRM backed by DuckDB — one command to install, your pipeline stays on your machine."
+---
+
+# I Built a Fully Local CRM That Doesn't Leak My Data
+
+My CRM knows things I wouldn't put in a Slack message. Pricing negotiations. Which deals stalled and why. The actual state of every relationship I have.
+
+For years the default move was handing all of that to a SaaS CRM. Pay per seat, trust their servers, export on their terms. I stopped.
+
+A CRM that lives on your machine can still give you everything the big platforms give you. I've been running one with DenchClaw, an open-source framework that turns OpenClaw into a fully local CRM — one command to install, running entirely on my hardware.
+
+Here's the setup and why it finally stuck.
+
+## The problem with both options
+
+SaaS CRMs are the obvious choice, and that's the problem. Your pipeline, outreach drafts, and enrichment data sit in someone else's database. For a privacy-conscious founder, that's a real cost, not a hypothetical one.
+
+The DIY route is worse. Point OpenClaw at your sales workflow and you quickly discover you need a database, a UI, browser automation, messaging integrations, and a way to teach the agent your schema. Most people quit halfway and settle for a half-working Notion integration.
+
+I didn't want another integration. I wanted Cursor-level UX for business operations — not a pile of shell scripts.
+
+## The install is genuinely one command
+
+```bash
+npx denchclaw
+```
+
+That's it. No Docker, no env files, no dependency hell.
+
+The command installs the full stack: a DuckDB database, a web UI, a dedicated OpenClaw profile, browser automation, and the skills the agent needs. An onboarding wizard walks you through the rest. It creates an OpenClaw profile called `dench` and starts a gateway on port 19001.
+
+Open `localhost:3100` and you're in. On Safari, add it to your Dock as a PWA so it behaves like a native app.
+
+## Three design decisions that sold me
+
+This is the part I actually care about, because the architecture is why the privacy angle works.
+
+**1. Everything is a file.** Table filters, views, column toggles, calendar settings — every piece of UI state lives as a YAML or markdown file. Two consequences. First, the agent can modify your interface as naturally as it edits code. No API wrappers, no brittle glue. Second, your entire CRM is a folder you own. Back it up, grep it, drop it in git. There is no vendor holding your data because there is no vendor.
+
+**2. DuckDB is the storage layer.** It's an embedded database with full SQL support and no server process. No credentials, no network — just a file on disk. Your pipeline is a file, and files don't phone home.
+
+**3. Chrome profile cloning instead of OAuth.** Instead of fighting OAuth flows and API rate limits, DenchClaw copies your browser's auth state into its own Chromium instance. The agent sees what you see and does what you do. Say "import everything from my HubSpot" and it logs in like you would, exports, and imports. No API keys to rotate, no paid API tiers, no integration to maintain.
+
+That last one is quietly the biggest deal. Most legacy CRMs have APIs that are either terrible or paywalled. Browser-level access sidesteps all of it.
+
+## What daily use looks like
+
+You build the CRM by describing it:
+
+```text
+Hey, create a "Leads" object with fields: Name, Email, Company,
+Status (New/Contacted/Qualified/Won/Lost), and Notes. Import this
+CSV of leads I downloaded from Apollo.
+```
+
+Then you manage it the same way:
+
+```text
+Show me all leads where Status is "Contacted" and sort by last
+updated. Switch to Kanban view grouped by Status.
+```
+
+The view updates live. No clicking through filter builders.
+
+It handles the actual sales work too:
+
+```text
+Draft a personalized outreach email to each lead in "New" status
+based on their company's recent news. Save the drafts in a new
+"Outreach Drafts" document.
+```
+
+Or enrichment:
+
+```text
+Go to my LinkedIn, find the last 20 people who viewed my profile,
+and add them as leads with their company info enriched.
+```
+
+The view options cover what you'd expect from a real CRM: Table, Kanban, Calendar, Timeline (Gantt), Gallery, and List.
+
+There's also an app builder — the agent constructs dashboards and internal tools that run inside the workspace with direct access to your database. And since it ships a full file tree browser and code editor, it doubles as a coding agent. DenchClaw was built with DenchClaw, which is a decent dogfooding signal.
+
+Away from your desk? Connect Telegram or another messaging platform and manage the pipeline from your phone.
+
+## Who this is for (and who it isn't)
+
+I'd push back on one thing before you copy my setup: this is a local, single-operator tool. It's built for founders and small teams where one person runs the pipeline. If you need a 20-rep sales org with shared pipelines and admin controls, this isn't that — and pretending otherwise would waste your weekend.
+
+Also, Chrome profile cloning cuts both ways. The agent acts with your logged-in sessions, which is convenient and means you should be deliberate about what you ask it to do inside your accounts.
+
+But if you're an indie operator who wants CRM capability without shipping your lead data to a third party, this is the cleanest path I've found.
+
+## Setup checklist
+
+1. Run `npx denchclaw`
+2. Complete the onboarding wizard (creates the `dench` profile, starts the gateway on port 19001)
+3. Open `localhost:3100` — add it as a PWA if you're on Safari
+4. Start prompting
+
+Every skill the agent needs — CRM, app builder, browser automation — comes bundled. Nothing extra to install or configure.
+
+Useful links:
+
+- [DenchClaw on GitHub](https://github.com/DenchHQ/DenchClaw) — MIT licensed
+- [Demo video](https://www.youtube.com/watch?v=pfACTbc3Bh4#t=43) — full walkthrough from install to a live pipeline
+- [Discord community](https://discord.gg/PDFXNVQj9n) and the [skills store](https://skills.sh) if you want to extend it
+
+---
+
+Your sales data is your most sensitive business asset. There's no reason it has to live on someone else's servers to be useful. If you're building local-first workflows like this, we collect more setups, guides, and honest tooling writeups at [papayaclaw.com](https://papayaclaw.com).
