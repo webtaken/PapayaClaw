@@ -1,0 +1,112 @@
+---
+title: "Construí un CRM 100% local que no filtra mis datos"
+date: "2026-09-11"
+summary: "Cómo convertir OpenClaw en un CRM completo con DenchClaw: DuckDB, automatización de navegador y todo tu pipeline corriendo en tu propia máquina."
+---
+
+# Construí un CRM 100% local que no filtra mis datos
+
+Piensa en lo que hay dentro de tu CRM.
+
+Quién está a punto de firmar. Cuánto paga cada cliente. A qué leads dijiste que no, y por qué. Esa información es más sensible que tu código fuente. Y lo más probable es que viva en el cloud de un SaaS, en servidores que no controlas.
+
+Yo lo tenía en HubSpot. Hasta que me hice una pregunta: ¿por qué mi pipeline no puede vivir en mi propio disco?
+
+## El problema: OpenClaw es una primitiva, no un producto
+
+Hace un tiempo intenté montar mi propio CRM con OpenClaw. La idea era buena: un agente que gestiona leads, redacta outreach y actualiza el pipeline cuando le hablas.
+
+La realidad era otra. Para un workflow de ventas de verdad necesitas pegar con cinta adhesiva una docena de piezas: una base de datos, una UI, acceso a navegador, integraciones de mensajería, gestión de ficheros. Cada integración nueva significa más credenciales que gestionar, más configuración manual y más cosas que se rompen.
+
+La mayoría abandonamos a mitad de camino y acabamos con una integración de Notion a medias.
+
+DenchClaw ataca exactamente ese problema. Es un framework open source (licencia MIT) que convierte OpenClaw en un CRM local con automatización de ventas incluida. Se instala con un solo comando y corre por completo en tu máquina.
+
+## Qué hace, en concreto
+
+- **Instalación con un comando**: `npx denchclaw` instala todo — base de datos DuckDB, web UI, perfil de OpenClaw, automatización de navegador y skills — y arranca en `localhost:3100`.
+- **CRM en lenguaje natural**: le pides "muéstrame las empresas con más de 5 empleados" y la vista se actualiza en vivo. Sin filtros manuales.
+- **Automatización de navegador completa**: clona tu perfil de Chrome, así que el agente hereda tus sesiones. Le dices "importa todo desde mi HubSpot" y entra, exporta e importa.
+- **Vistas múltiples**: tabla, Kanban, calendario, timeline (Gantt), galería y lista. Todas configurables por el agente vía YAML.
+- **Constructor de apps**: OpenClaw crea web apps autocontenidas (dashboards, herramientas) que corren dentro del workspace con acceso a tus datos.
+- **Todo son ficheros**: filtros, vistas, columnas, ajustes del calendario. Cada configuración es un fichero que el agente puede leer y modificar directamente.
+- **También es agente de código**: de hecho, DenchClaw construyó DenchClaw. Incluye explorador de ficheros y editor de código para tu Mac.
+
+## Instalación: menos de cinco minutos
+
+1. Un comando:
+
+```bash
+npx denchclaw
+```
+
+2. Completas el asistente de onboarding. DenchClaw crea un perfil de OpenClaw dedicado llamado `dench` y arranca un gateway en el puerto 19001.
+
+3. Abres `localhost:3100` en el navegador. Si usas Safari, lo añades al Dock como PWA y queda como una app más de tu escritorio.
+
+4. Empiezas a hablarle. Esto fue lo primero que le pedí:
+
+```text
+Crea un objeto "Leads" con los campos: Nombre, Email, Empresa,
+Estado (Nuevo/Contactado/Cualificado/Ganado/Perdido) y Notas.
+Importa este CSV de leads que descargué de Apollo.
+```
+
+Y después, trabajando el pipeline a diario:
+
+```text
+Muéstrame todos los leads con Estado "Contactado", ordenados por
+última actualización. Cambia a vista Kanban agrupada por Estado.
+```
+
+También le puedes pasar tareas de prospección directa:
+
+```text
+Ve a mi LinkedIn, encuentra las últimas 20 personas que vieron
+mi perfil y añádelas como leads con la info de su empresa.
+```
+
+5. Bonus: funciona desde Telegram o cualquier plataforma de mensajería conectada. Revisas el pipeline desde el móvil, en el tren, sin abrir el portátil.
+
+No hay que instalar skills aparte ni tocar configuración. DenchClaw trae todo lo necesario:
+
+- **CRM Skill** — gestión de datos estructurados sobre DuckDB, con objetos, campos, entradas y varios tipos de vista.
+- **App Builder Skill** — apps web que corren dentro del workspace con acceso a la base de datos.
+- **Browser Automation Skill** — navegador Chromium con tu estado de autenticación de Chrome para scraping, importaciones y outreach.
+
+## Por qué esta arquitectura me convenció
+
+Aquí va mi opinión después de trastear con ello.
+
+**El sistema de ficheros como UI nativa del agente.** La mayoría de "CRMs con IA" ponen un LLM delante de una API SaaS. Aquí no: cada filtro, cada vista y cada ajuste es un fichero YAML o markdown. El agente modifica la interfaz igual que edita código. Sin wrappers de API, sin capas de abstracción frágiles. Es la decisión de diseño más interesante de todo el proyecto.
+
+**DuckDB es el punto dulce.** La base de datos embebida más pequeña que soporta SQL completo. Sin proceso servidor, sin credenciales, sin red. Tu pipeline entero es un fichero en el disco. ¿Backup? Un `rsync` y listo. ¿Cifrarlo? Te lo llevas donde quieras.
+
+**Clonar el perfil de Chrome es pragmático y ligeramente aterrador.** En lugar de pelearse con flujos OAuth y rate limits de API, DenchClaw copia el estado de autenticación de tu navegador. El agente ve lo que tú ves y hace lo que tú haces. Funciona muy bien, pero seamos honestos: le estás dando tus sesiones a un agente. Trátalo como darle tu contraseña a un becario muy eficiente, que trabaja en tu misma máquina.
+
+**Un `npx` vale más que un fin de semana de setup.** Todo el stack — base de datos, web UI, perfil de OpenClaw, gateway, navegador, skills — se instala y configura solo. Sin Docker, sin ficheros `.env`, sin infierno de dependencias.
+
+## Lo que hay que asumir
+
+Local-first significa que los backups son cosa tuya. Si borras el fichero de DuckDB sin copia, no hay ningún botón de "restaurar versión anterior" en ningún dashboard.
+
+Y como el agente navega con tu identidad, revisa bien qué le pides que automatice. La comodidad de tener tus sesiones es también la responsabilidad de vigilar qué hace con ellas.
+
+Nada de esto me parece motivo para no usarlo. Es el precio de tener los datos donde deben estar: en tu disco.
+
+## Verlo en acción
+
+Hay un vídeo demo que muestra el flujo completo, desde la instalación hasta gestionar un pipeline en vivo con lenguaje natural: [míralo aquí](https://www.youtube.com/watch?v=pfACTbc3Bh4#t=43).
+
+Si quieres probarlo:
+
+- [DenchClaw en GitHub](https://github.com/DenchHQ/DenchClaw) — MIT, open source
+- [denchclaw.com](https://denchclaw.com)
+- [Discord de la comunidad](https://discord.gg/PDFXNVQj9n)
+- [Skills Store](https://skills.sh)
+
+## El resultado
+
+Mi pipeline ya no vive en el cloud de nadie. Vive en un fichero DuckDB en mi Mac, y el agente que lo gestiona no envía nada a ningún servidor que yo no controle.
+
+Si vas a montar algo parecido — o ya tienes OpenClaw haciendo cosas raras y útiles en tu negocio — pásate por [papayaclaw.com](https://papayaclaw.com). Publicamos recetas y casos reales de agentes para founders, sin humo.
