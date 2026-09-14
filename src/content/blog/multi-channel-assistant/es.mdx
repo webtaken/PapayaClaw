@@ -1,0 +1,125 @@
+---
+title: "Un asistente de IA que vive en todos mis canales de chat"
+date: "2026-09-14"
+summary: "Cómo centralizar Telegram, Slack, Google Workspace, Todoist y Asana en un solo asistente de IA con enrutamiento por topics."
+---
+
+# Un asistente de IA que vive en todos mis canales de chat
+
+Ayer programé una reunión desde Telegram, asigné una tarea desde Slack y busqué un contacto para preparar una llamada.
+
+Sin abrir Gmail. Sin abrir Calendar. Sin tocar Asana.
+
+Un solo asistente hizo todo el trabajo de mensajería. Yo solo escribí.
+
+## El problema real: el cambio de contexto
+
+Cuenta tus apps: Telegram para lo personal, Slack para el equipo, Gmail para el correo, Calendar para las citas, Todoist para capturar tareas, Asana para los proyectos.
+
+Seis ventanas. Seis flujos distintos para hacer lo mismo: escribir algo y que llegue a donde debe.
+
+El costo no es abrir la app. Es el cambio de contexto. Estás concentrado, recuerdas que tenías que agendar una llamada, saltas a Calendar, te distraes con dos correos, y vuelves quince minutos después sin saber dónde estabas.
+
+## La solución: un asistente, muchas rutas
+
+Monté un asistente de IA que vive en el chat y enruta cada pedido a la herramienta correcta.
+
+Telegram es la interfaz principal. Slack queda para el equipo. Todo lo de Google (Gmail, Calendar, Drive) pasa por el CLI `gog`. Todoist captura tareas rápidas. Asana maneja proyectos.
+
+Y aquí va mi conclusión después de usarlo: la clave no es un modelo más listo. Es que cada conversación tiene un destino fijo. El asistente no adivina a dónde va cada cosa — el contexto se lo dice.
+
+Así se arma.
+
+## Paso 1: Telegram con topics
+
+Telegram permite dividir un canal en topics. Cada topic es un contexto:
+
+- `config` — ajustes del bot y debugging
+- `updates` — resúmenes diarios, recordatorios y calendario
+- `video-ideas` — pipeline de contenido
+- `personal-crm` — gestión de contactos
+- `earnings` — seguimiento financiero
+- `knowledge-base` — guardar y consultar contenido (con RAG)
+
+Escribes en el topic correcto y el asistente ya sabe qué hacer con eso. Cero ambigüedad.
+
+## Paso 2: Conecta las herramientas en OpenClaw
+
+La config cubre cuatro frentes: Google OAuth (que da acceso a Gmail, Calendar y Drive de una vez), Slack con token de bot y de usuario, y un API token para Todoist y otro para Asana:
+
+```yaml
+google:
+  oauth:
+    scopes:
+      - gmail
+      - calendar
+      - drive
+slack:
+  bot_token: "xoxb-tu-token"
+  user_token: "xoxp-tu-token"
+todoist:
+  api_token: "tu-token-todoist"
+asana:
+  api_token: "tu-token-asana"
+```
+
+Nada exótico. Lo que toma tiempo es generar los tokens, no escribir la config.
+
+## Paso 3: El prompt que hace el enrutamiento
+
+Este es el corazón del sistema:
+
+```text
+Eres mi asistente multi-canal. Enruta cada pedido según el contexto:
+
+Topics de Telegram:
+- "config" → ajustes del sistema, debugging
+- "updates" → resúmenes diarios, recordatorios, calendario
+- "video-ideas" → pipeline de contenido e investigación
+- "personal-crm" → consultas de contactos y preparación de reuniones
+- "earnings" → seguimiento financiero
+- "knowledge-base" → guardar y buscar contenido
+
+Cuando te pida:
+- "Agrega [tarea] a mi todo" → usa Todoist
+- "Crea una tarjeta para [tema]" → usa el proyecto Video Pipeline de Asana
+- "Agenda [evento]" → usa gog calendar
+- "Escríbele a [persona] sobre [tema]" → redacta el correo con gog gmail
+- "Sube [archivo] a Drive" → usa gog drive
+
+Configura recordatorios automáticos:
+- Lunes 6 PM: "🗑️ Mañana sale la basura"
+- Viernes 3 PM: "✍️ Hora de escribir la carta semanal de la empresa"
+```
+
+Fíjate que los comandos son frases naturales. "Agenda café con Marta el jueves a las 10" y listo. Nada de abrir Calendar, crear el evento, copiar el enlace, pegarlo de vuelta en el chat.
+
+## Paso 4: Recordatorios que llegan solos
+
+No todo requiere que tú pidas algo. Los dos recordatorios fijos — la basura los lunes a las 6 PM y la carta semanal los viernes a las 3 PM — caen en el topic `updates`.
+
+Suena a detalle menor. Era exactamente lo que más olvidaba, y ahora el sistema lo maneja sin que yo exista en el proceso.
+
+## Slack para el equipo
+
+La parte de Telegram es personal. Slack es donde vive el equipo.
+
+Con los tokens de bot y usuario, el asistente también opera ahí: asigna tareas, guarda cosas en la knowledge base y dispara ideas de video desde un hilo. Alguien suelta un link en `#contenido`, tú le dices al asistente "guárdalo en la knowledge base", y ya está.
+
+## Prueba en este orden
+
+No conectes todo y cruces los dedos. Primero prueba cada integración por separado: crea una tarea en Todoist, agenda un evento, sube un archivo a Drive. Si algo falla, sabes exactamente qué parte de la config rompió.
+
+Después prueba los flujos cruzados. El mejor ejemplo: guarda un link de Slack en la knowledge base y luego úsalo dentro de una tarjeta de investigación de video en Asana. Ahí es donde el sistema deja de ser una curiosidad — las herramientas empiezan a hablar entre ellas a través del asistente.
+
+## Mi opinión después de usarlo
+
+El secreto no es la IA. Es el enrutamiento.
+
+Los topics le dan a cada conversación un destino fijo, y eso hace que los resultados sean consistentes. El modelo es bueno, pero es la arquitectura lo que evita que esto sea un juguete.
+
+Lo segundo: el chat le gana al dashboard para capturar cosas. Un dashboard exige que tú vayas a él. El chat ya está abierto.
+
+Si tu equipo vive entre Telegram, Slack y Google Workspace, este setup se arma en una tarde. Los tokens de Google toman lo más largo; el resto es config y un prompt bien escrito.
+
+En [papayaclaw.com](https://papayaclaw.com) tienes la guía completa de este workflow y más como este: soporte, ventas, contenido. Nos leemos ahí.
