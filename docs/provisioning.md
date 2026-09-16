@@ -46,9 +46,22 @@ The setup script then:
 - Uploads SSH public key to Hetzner
 - Creates a server with:
   - Image: Ubuntu 24.04
-  - Server type: varies by plan
-  - Location: auto-selected
+  - Server type: varies by plan (`basic` → `cx23`, `pro` → `cx33`, see `PLAN_SERVER_TYPE` in `src/lib/polar.ts`)
+  - Location: first location with stock, in preference order (see below)
   - User data: the cloud-init YAML
+
+#### Location fallback
+
+`createServer` in `src/lib/hetzner.ts` never hardcodes a location. It walks the preference list from `HETZNER_LOCATIONS` (default `hel1,nbg1,fsn1`) and keeps the server type fixed:
+
+1. **Pre-check** — `GET /v1/server_types?name=<type>` returns `locations[].available`. Locations reported `false` are skipped (logged as `[createServer] skipping <loc>: … (pre-check)`). If the pre-check request itself fails, all locations are tried in order — the pre-check is advisory. (The older `datacenters[].server_types.available` field is deprecated by Hetzner; it is not used.)
+2. **Create** — `POST /v1/servers` with `location: <loc>`. If Hetzner answers `412 resource_unavailable` (its out-of-stock code), the next location is tried (`[createServer] <loc> out of stock … trying next location`). Any other error is rethrown unchanged.
+3. **Success** — logged as `[createServer] Server <id> created in <loc> (pre-check | fallback after <prev>: resource_unavailable)`. The chosen location is stored on the instance row as `provider_location`.
+4. **No stock anywhere** — throws `HetznerNoCapacityError` ("No Hetzner capacity for server type <type> in any configured location (…)"). `POST /api/instances` returns it as **503** with that message so the deploy dialog shows it; the Polar webhook logs it under `[Polar Webhook] Provisioning failed for order …`.
+
+Cloudflare tunnel and DNS setup do not depend on the location.
+
+Follow-ups (not implemented): server-type fallback (e.g. `cx23` → `cpx22`) when the whole CX line is out of stock; treating `placement_error` (422) as retriable; persisting failed provisioning attempts so paid-but-unprovisioned orders are visible to staff instead of only in logs.
 
 ### 6. Database Record
 - Saves the instance with status `deploying` and all metadata (server ID, IP, tunnel ID, SSH key, etc.)

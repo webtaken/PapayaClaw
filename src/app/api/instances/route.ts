@@ -10,7 +10,23 @@ import {
 } from "@/lib/polar";
 import { provisionInstance } from "@/lib/provision-instance";
 import { assertProvisioningCapacity } from "@/lib/hetzner-limits";
+import { HetznerNoCapacityError } from "@/lib/hetzner";
 import { getSessionContext } from "@/lib/auth-context";
+
+function provisionErrorResponse(err: unknown) {
+  if (err instanceof HetznerNoCapacityError) {
+    console.error(
+      "[instances] provisioning failed: no capacity —",
+      err.message,
+    );
+    return NextResponse.json({ error: err.message }, { status: 503 });
+  }
+  console.error("[instances] provisioning failed:", err);
+  return NextResponse.json(
+    { error: "Failed to provision server" },
+    { status: 500 },
+  );
+}
 
 export async function GET() {
   const ctx = await getSessionContext(await headers());
@@ -68,7 +84,8 @@ export async function POST(request: Request) {
     // Staff who skip the plan step still get at least the basic tier (cx23),
     // not the bare OSS-dev default (cx22).
     const serverType =
-      (validation.data.planType && PLAN_SERVER_TYPE[validation.data.planType]) ||
+      (validation.data.planType &&
+        PLAN_SERVER_TYPE[validation.data.planType]) ||
       "cx23";
     try {
       const created = await provisionInstance({
@@ -78,11 +95,8 @@ export async function POST(request: Request) {
         ...stripPlanType(validation.data),
       });
       return NextResponse.json(created, { status: 201 });
-    } catch {
-      return NextResponse.json(
-        { error: "Failed to provision server" },
-        { status: 500 },
-      );
+    } catch (err) {
+      return provisionErrorResponse(err);
     }
   }
 
@@ -108,11 +122,8 @@ export async function POST(request: Request) {
         ...stripPlanType(validation.data),
       });
       return NextResponse.json(created, { status: 201 });
-    } catch {
-      return NextResponse.json(
-        { error: "Failed to provision server" },
-        { status: 500 },
-      );
+    } catch (err) {
+      return provisionErrorResponse(err);
     }
   }
 
@@ -124,11 +135,8 @@ export async function POST(request: Request) {
       ...stripPlanType(validation.data),
     });
     return NextResponse.json(created, { status: 201 });
-  } catch {
-    return NextResponse.json(
-      { error: "Failed to provision server" },
-      { status: 500 },
-    );
+  } catch (err) {
+    return provisionErrorResponse(err);
   }
 }
 
@@ -161,8 +169,7 @@ function validateBody(
   const name = typeof b.name === "string" ? b.name.trim() : "";
   const model = typeof b.model === "string" ? b.model.trim() : "";
   const channel = typeof b.channel === "string" ? b.channel : "";
-  const modelApiKey =
-    typeof b.modelApiKey === "string" ? b.modelApiKey : null;
+  const modelApiKey = typeof b.modelApiKey === "string" ? b.modelApiKey : null;
   const botToken = typeof b.botToken === "string" ? b.botToken : undefined;
   const channelPhone =
     typeof b.channelPhone === "string" ? b.channelPhone : undefined;
@@ -180,6 +187,14 @@ function validateBody(
   }
   return {
     ok: true,
-    data: { name, model, modelApiKey, channel, botToken, channelPhone, planType },
+    data: {
+      name,
+      model,
+      modelApiKey,
+      channel,
+      botToken,
+      channelPhone,
+      planType,
+    },
   };
 }

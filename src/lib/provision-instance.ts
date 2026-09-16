@@ -122,6 +122,7 @@ export async function provisionInstance(input: ProvisionInput) {
       .set({
         providerServerId: server.id,
         providerServerIp: server.public_net.ipv4.ip,
+        providerLocation: server.location,
         providerSshKeyId: hetznerKey.id,
         sshPrivateKey,
         cfTunnelId,
@@ -156,7 +157,7 @@ export async function provisionInstance(input: ProvisionInput) {
 
     await db.delete(instance).where(eq(instance.id, newInstance.id));
 
-    console.error("Instance provisioning failed:", error);
+    console.error("[provision] Instance provisioning failed:", error);
     throw error;
   }
 }

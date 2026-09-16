@@ -37,6 +37,8 @@ cp .env.example .env.development.local
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `HETZNER_API_TOKEN` | Yes | API token from [Hetzner Cloud Console](https://console.hetzner.cloud/) > Security > API Tokens |
+| `HETZNER_SERVER_LIMIT` | No | Account-wide instance cap (default `5`). Provisioning is rejected once this many instances exist. |
+| `HETZNER_LOCATIONS` | No | Comma-separated location preference for new servers (default `hel1,nbg1,fsn1`). Locations without stock for the plan's server type are skipped; on `resource_unavailable` the next one is tried. |
 
 Create a token with **Read & Write** permissions.
 

@@ -13,6 +13,63 @@ dns.setDefaultResultOrder("ipv4first");
 
 const HETZNER_API_BASE = "https://api.hetzner.cloud/v1";
 
+const DEFAULT_LOCATIONS = ["hel1", "nbg1", "fsn1"];
+
+/** Hetzner error code returned (HTTP 412) when a location is out of stock. */
+const STOCK_ERROR_CODE = "resource_unavailable";
+
+/**
+ * Non-2xx response from the Hetzner API. `code` is the machine-readable
+ * `error.code` from the response body (null if the body wasn't JSON).
+ */
+export class HetznerApiError extends Error {
+  readonly status: number;
+  readonly code: string | null;
+  readonly apiMessage: string | null;
+
+  constructor(
+    message: string,
+    status: number,
+    code: string | null,
+    apiMessage: string | null,
+  ) {
+    super(message);
+    this.name = "HetznerApiError";
+    this.status = status;
+    this.code = code;
+    this.apiMessage = apiMessage;
+  }
+}
+
+/** Thrown when no configured location has stock for the requested server type. */
+export class HetznerNoCapacityError extends Error {
+  readonly serverType: string;
+  readonly locations: string[];
+
+  constructor(serverType: string, locations: string[]) {
+    super(
+      `No Hetzner capacity for server type ${serverType} in any configured location (${locations.join(", ")}). Retry later or contact support.`,
+    );
+    this.name = "HetznerNoCapacityError";
+    this.serverType = serverType;
+    this.locations = locations;
+  }
+}
+
+/**
+ * Location preference order for server creation.
+ * Reads HETZNER_LOCATIONS (comma-separated) at call time; defaults to hel1,nbg1,fsn1.
+ */
+export function getLocationPreference(): string[] {
+  const raw = process.env.HETZNER_LOCATIONS;
+  if (!raw) return [...DEFAULT_LOCATIONS];
+  const parsed = raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return parsed.length ? parsed : [...DEFAULT_LOCATIONS];
+}
+
 export function getApiToken(): string {
   const token = process.env.HETZNER_API_TOKEN;
   if (!token) {
@@ -58,8 +115,24 @@ async function hetznerFetch(
           `[hetznerFetch] API Error ${res.status} on ${method} ${path}:`,
           body,
         );
-        throw new Error(
+        let code: string | null = null;
+        let apiMessage: string | null = null;
+        try {
+          const parsed = JSON.parse(body);
+          code =
+            typeof parsed?.error?.code === "string" ? parsed.error.code : null;
+          apiMessage =
+            typeof parsed?.error?.message === "string"
+              ? parsed.error.message
+              : null;
+        } catch {
+          // non-JSON body (e.g. HTML from a proxy) — leave code null
+        }
+        throw new HetznerApiError(
           `Hetzner API error ${res.status} on ${method} ${path}: ${body}`,
+          res.status,
+          code,
+          apiMessage,
         );
       }
 
@@ -153,6 +226,36 @@ interface SSHKeyResponse {
   ssh_key: { id: number; name: string; public_key: string };
 }
 
+interface ServerTypesResponse {
+  server_types: Array<{
+    id: number;
+    name: string;
+    locations?: Array<{ id: number; name: string; available: boolean }>;
+  }>;
+}
+
+// ─── Availability ───────────────────────────────────────────────────────────
+
+/**
+ * Per-location stock for a server type, from GET /server_types?name=<type>
+ * (`server_types[].locations[].available`). Locations Hetzner doesn't list
+ * are absent from the map. Empty map if the type is unknown.
+ */
+export async function getServerTypeAvailability(
+  serverType: string,
+): Promise<Record<string, boolean>> {
+  const res = await hetznerFetch(
+    `/server_types?name=${encodeURIComponent(serverType)}`,
+  );
+  const data: ServerTypesResponse = await res.json();
+  const type = data.server_types.find((t) => t.name === serverType);
+  const result: Record<string, boolean> = {};
+  for (const loc of type?.locations ?? []) {
+    result[loc.name] = loc.available;
+  }
+  return result;
+}
+
 // ─── SSH Keys ───────────────────────────────────────────────────────────────
 
 /**
@@ -190,6 +293,12 @@ export async function deleteSSHKey(keyId: number): Promise<void> {
  *
  * Server type is determined by plan: Basic → cx23, Pro → cx33.
  * The user_data is a cloud-init script that provisions OpenClaw.
+ *
+ * Location: tries `getLocationPreference()` in order. Locations the
+ * availability pre-check reports as out of stock are skipped; if
+ * POST /servers still fails with `resource_unavailable`, the next location
+ * is tried. Throws HetznerNoCapacityError when none has stock.
+ * The returned object carries the location actually used.
  */
 export async function createServer(
   name: string,
@@ -197,39 +306,98 @@ export async function createServer(
   sshKeyNames?: string[],
   imageId?: string,
   serverType: string = "cx23",
-): Promise<HetznerServer> {
-  const body: Record<string, unknown> = {
-    name,
-    server_type: serverType,
-    image: imageId || "ubuntu-24.04",
-    location: "hel1",
-    start_after_create: true,
-    user_data: userData,
-    labels: {
-      managed_by: "papayaclaw",
-    },
-    public_net: {
-      enable_ipv4: true,
-      enable_ipv6: false,
-    },
-  };
+): Promise<HetznerServer & { location: string }> {
+  const preference = getLocationPreference();
 
-  if (sshKeyNames?.length) {
-    body.ssh_keys = sshKeyNames;
+  // Advisory pre-check: skip only locations explicitly reported unavailable.
+  let availability: Record<string, boolean> = {};
+  try {
+    availability = await getServerTypeAvailability(serverType);
+  } catch (error) {
+    console.warn(
+      `[createServer] availability pre-check failed for ${serverType}, trying all locations in order:`,
+      error instanceof Error ? error.message : error,
+    );
   }
 
-  const res = await hetznerFetch("/servers", {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
+  const candidates: string[] = [];
+  for (const loc of preference) {
+    if (availability[loc] === false) {
+      console.warn(
+        `[createServer] skipping ${loc}: ${serverType} reported unavailable (pre-check)`,
+      );
+    } else {
+      candidates.push(loc);
+    }
+  }
 
-  const data: CreateServerResponse = await res.json();
+  if (candidates.length === 0) {
+    console.error(
+      `[createServer] no location has stock for ${serverType} (pre-check): ${preference.join(", ")}`,
+    );
+    throw new HetznerNoCapacityError(serverType, preference);
+  }
 
-  console.log(
-    `[createServer] Server ${data.server.id} created — status: ${data.server.status}, action: ${data.action.status}`,
+  let previousFailure: string | null = null;
+
+  for (const location of candidates) {
+    const body: Record<string, unknown> = {
+      name,
+      server_type: serverType,
+      image: imageId || "ubuntu-24.04",
+      location,
+      start_after_create: true,
+      user_data: userData,
+      labels: {
+        managed_by: "papayaclaw",
+      },
+      public_net: {
+        enable_ipv4: true,
+        enable_ipv6: false,
+      },
+    };
+
+    if (sshKeyNames?.length) {
+      body.ssh_keys = sshKeyNames;
+    }
+
+    let res: Response;
+    try {
+      res = await hetznerFetch("/servers", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+    } catch (error) {
+      if (error instanceof HetznerApiError && error.code === STOCK_ERROR_CODE) {
+        console.warn(
+          `[createServer] ${location} out of stock for ${serverType} (${STOCK_ERROR_CODE}), trying next location`,
+        );
+        previousFailure = location;
+        continue;
+      }
+      throw error;
+    }
+
+    const data: CreateServerResponse = await res.json();
+
+    const reason =
+      location === preference[0]
+        ? "pre-check"
+        : previousFailure
+          ? `fallback after ${previousFailure}: ${STOCK_ERROR_CODE}`
+          : "pre-check skipped earlier locations";
+
+    console.log(
+      `[createServer] Server ${data.server.id} created in ${location} (${reason}) — status: ${data.server.status}, action: ${data.action.status}`,
+    );
+
+    return { ...data.server, location };
+  }
+
+  console.error(
+    `[createServer] every location returned ${STOCK_ERROR_CODE} for ${serverType}: ${candidates.join(", ")}`,
   );
-
-  return data.server;
+  throw new HetznerNoCapacityError(serverType, preference);
 }
 
 /**
