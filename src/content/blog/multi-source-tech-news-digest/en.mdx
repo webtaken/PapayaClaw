@@ -1,0 +1,135 @@
+---
+title: "My Tech News Feed Just Got Way Smarter (and Way Less Noisy)"
+date: "2026-09-16"
+summary: "A four-layer pipeline pulls 109+ tech sources, scores them, and drops one clean daily digest into your Discord, email, or Telegram."
+---
+
+# My Tech News Feed Just Got Way Smarter (and Way Less Noisy)
+
+Every morning used to start the same way. Open Hacker News. Open Twitter. Open three or four GitHub release pages. Check the OpenAI blog and MIT Tech Review "just in case."
+
+Forty-five minutes later, I'd have read half of it and missed the important stuff anyway.
+
+Now I get one digest at 9am. Discord and email. It covers everything I care about, ranks it, and throws out the repeats.
+
+Here's the setup that got me there.
+
+## The Problem Isn't Access. It's Curation.
+
+Signal isn't scarce anymore. Every lab posts, every maintainer ships changelogs, every researcher threads.
+
+The problem is that the good stuff lives in four different places:
+
+- RSS feeds (Hacker News, MIT Tech Review, company blogs)
+- Twitter/X, where half of real AI commentary happens
+- GitHub releases, where actual shipping happens
+- Regular web search, for the long tail
+
+Each channel needs a different tool. An RSS reader, a Twitter account you actually check, watch-notifications you mute after a week, search queries you never run.
+
+Manual curation works for about a week. Then you take a vacation, come back to 400 unread items, and give up.
+
+Most aggregation tools I tried either dump everything on you (noise wins) or hide configuration behind YAML files I'd have to babysit.
+
+## Four Layers, One Pipeline
+
+The `tech-news-digest` skill runs a scheduled, four-layer pipeline:
+
+1. **RSS feeds** — 46 sources. OpenAI, Hacker News, MIT Tech Review, that tier.
+2. **Twitter/X KOLs** — 44 accounts. @karpathy, @sama, @VitalikButerin.
+3. **GitHub releases** — 19 repos. vLLM, LangChain, Ollama, Dify.
+4. **Web search** — 4 topic queries through the Brave Search API.
+
+That's 109+ sources. But the raw count isn't the interesting part.
+
+The interesting part is what happens after merging.
+
+## The Scoring Is the Actual Product
+
+Aggregation is a solved problem. Filtering isn't. This is where the digest earns its keep.
+
+First, dedup by title similarity. When Hacker News, a KOL, and a company blog all cover the same launch, you see it once.
+
+Then every article gets a quality score:
+
+- **Priority source: +3** — sources flagged as high-value
+- **Multi-source coverage: +5** — multiple layers picked it up
+- **Recency: +2** — fresh beats stale
+- **Engagement: +1** — people are actually talking about it
+
+The multi-source signal is the smart one, in my opinion. If a vLLM release shows up on GitHub, on HN, AND in Karpathy's feed, that's a real event. If only one layer catches it, maybe it can wait. The scoring bakes that judgment in automatically.
+
+The output reads like a briefing a competent analyst wrote. Not a firehose.
+
+## Setup: Two Minutes, Three Sentences
+
+Install the skill:
+
+```bash
+clawhub install tech-news-digest
+```
+
+Then tell your agent what you want:
+
+```text
+Install tech-news-digest from ClawHub. Set up a daily tech digest at 9am
+to Discord #tech-news channel. Also send it to my email at
+myemail@example.com.
+```
+
+That's the whole setup. No YAML, no cron edits, no webhook plumbing.
+
+Delivery goes to Discord, email, or Telegram — whichever you already live in. For Gmail specifically, the optional `gog` skill handles email delivery:
+
+```bash
+clawhub install gog
+```
+
+### Optional API Keys
+
+Three environment variables extend coverage:
+
+- `X_BEARER_TOKEN` — Twitter/X API bearer token, for the KOL monitoring layer
+- `BRAVE_API_KEY` — Brave Search API key, for the web search layer
+- `GITHUB_TOKEN` — GitHub token for higher API rate limits
+
+None are required to start. But if you want the full 109-source setup, grab these. The Twitter and search layers are where a lot of the unique signal comes from.
+
+## Customizing Sources Takes 30 Seconds
+
+The default list is good. The real value is adding your own. Say you want your company blog, a favorite researcher, and an internal framework tracked:
+
+```text
+Add these to my tech digest sources:
+- RSS: https://my-company-blog.com/feed
+- Twitter: @myFavResearcher
+- GitHub: my-org/my-framework
+```
+
+One message. Done.
+
+And when a big launch drops and you don't want to wait until tomorrow's 9am run:
+
+```text
+Generate a tech digest for the past 24 hours and send it here.
+```
+
+I run this after every major AI announcement. Waiting a full day for the scheduled digest feels like an eternity in this industry.
+
+## Who This Is For
+
+If you're an engineer trying to keep a pulse on AI and open-source without doomscrolling, this is the cleanest setup I've found. It also works well for tech leads who want a daily briefing to forward to the team — the scoring means the top of the digest is what actually matters that day.
+
+Two honest caveats.
+
+First, the default source list skews toward AI and frontier tech. If your beat is something else, budget ten minutes to swap sources.
+
+Second, digest quality tracks source-list quality. Garbage feeds in, garbage digest out. That's a feature, not a bug — but it means you should curate.
+
+## Try It
+
+The whole thing lives as a skill: [tech-news-digest on ClawHub](https://clawhub.ai/skills/tech-news-digest), with source code [on GitHub](https://github.com/draco-agent/tech-news-digest).
+
+Install it, paste one sentence about your schedule and channels, let it run. The first morning you get a single scored digest instead of forty browser tabs, you won't go back.
+
+Want more automations you configure in plain English and then forget about? Check out [papayaclaw.com](https://papayaclaw.com).
