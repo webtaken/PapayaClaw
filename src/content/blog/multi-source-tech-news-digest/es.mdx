@@ -1,0 +1,107 @@
+---
+title: "Mi feed de noticias tech ahora es mucho más inteligente (y mucho menos ruidoso)"
+date: "2026-09-16"
+summary: "Cómo agregué 109+ fuentes de noticias tech —RSS, Twitter/X, GitHub y búsqueda web— en un pipeline con puntuación de calidad que entrega un digest diario sin ruido a Discord, correo o Telegram."
+---
+
+# Mi feed de noticias tech ahora es mucho más inteligente (y mucho menos ruidoso)
+
+Mi rutina de cada mañana era un desastre silencioso: Hacker News, un par de listas de Twitter/X, notificaciones de GitHub y algún newsletter que nunca terminaba de leer.
+
+Cuarenta minutos después tenía una pestaña con 30 artículos "para leer más tarde" que jamás leía más tarde.
+
+El problema no era la falta de información. Era todo lo demás.
+
+## El problema real: filtrar, no agregar
+
+Armarse un feed con 50 fuentes RSS lo hace cualquiera. Lo difícil es que de los ~300 artículos que caen cada día, solo te importen 10.
+
+Las herramientas que probé fallaban siempre en el mismo punto. O no filtraban nada —el firehose completo, sin piedad— o te obligaban a configurar reglas, palabras clave y umbrales hasta que mantener el filtro se convertía en otro trabajo.
+
+Ahí está mi criterio para juzgar este tipo de herramientas: agregar es un problema resuelto; filtrar es donde todo se rompe. Por eso me llamó la atención tech-news-digest: un pipeline de cuatro capas que corre programado y viene con puntuación de calidad incluida.
+
+## La arquitectura: cuatro capas, 109+ fuentes
+
+- **RSS (46 fuentes):** OpenAI, Hacker News, MIT Tech Review y compañía. La base clásica.
+- **Twitter/X (44 cuentas):** @karpathy, @sama, @VitalikButerin... la capa que captura lo que todavía no llegó a los blogs.
+- **GitHub Releases (19 repos):** vLLM, LangChain, Ollama, Dify. Enterarte de versiones nuevas sin revisar repos a mano.
+- **Búsqueda web (4 búsquedas temáticas):** vía Brave Search API, para temas que no encajan en las otras capas.
+
+Luego el pipeline hace lo que ningún feed manual hace bien: une todo, elimina duplicados por similitud de títulos y puntúa cada artículo.
+
+El scoring es simple, y por eso me gusta:
+
+- Fuente prioritaria: **+3**
+- Aparece en varias fuentes: **+5**
+- Recencia: **+2**
+- Engagement: **+1**
+
+Mi parte favorita es el +5 por multi-source. Si Karpathy tuiteó algo y además salió en Hacker News y en un blog, probablemente importa. Si solo aparece en un feed aleatorio, probablemente no.
+
+No es magia: es una heurística tonta que funciona. Y "tonta que funciona" le gana casi siempre a "sofisticada que hay que mantener".
+
+El resultado viaja a donde ya estés: Discord, correo o Telegram.
+
+## El setup: un comando y una frase
+
+```bash
+clawhub install tech-news-digest
+```
+
+Y después le hablas al agente en lenguaje natural:
+
+```text
+Instala tech-news-digest desde ClawHub. Configura un digest diario de tech a las 9am para el canal de Discord #tech-news. También envíalo a mi correo en miemail@ejemplo.com.
+```
+
+Eso es todo. No hay YAML, no hay cron que configurar a mano, no hay documento de 40 pasos.
+
+Si quieres la entrega por Gmail, añades el skill opcional [gog](https://clawhub.ai/skills/gog) y listo.
+
+## Las API keys: opcionales (y ese es el punto)
+
+El sistema corre sin ninguna credencial: RSS y GitHub funcionan de entrada. Si quieres subir el techo, exportas tres variables:
+
+```bash
+export X_BEARER_TOKEN="tu-token-de-twitter"
+export BRAVE_API_KEY="tu-clave-de-brave-search"
+export GITHUB_TOKEN="tu-token-de-github"
+```
+
+- `X_BEARER_TOKEN` activa la capa de KOLs en Twitter/X.
+- `BRAVE_API_KEY` activa la búsqueda web.
+- `GITHUB_TOKEN` sube los rate limits de la API de GitHub.
+
+Poder empezar sin registrarte en ningún sitio es, honestamente, el detalle que me hizo instalarlo el mismo día que lo encontré.
+
+## Personalizarlo toma literalmente 30 segundos
+
+¿Tu blog de empresa, tu investigador favorito, el framework de tu org? Una frase:
+
+```text
+Añade estas fuentes a mi digest de tech:
+- RSS: https://mi-blog-empresa.com/feed
+- Twitter: @investigadorFavorito
+- GitHub: mi-org/mi-framework
+```
+
+¿Y cuando sospechas que algo se te escapó y no quieres esperar a las 9am?
+
+```text
+Genera un digest de tech de las últimas 24 horas y envíalo aquí.
+```
+
+## Qué cambió en mi día a día
+
+Ahora leo un digest de 10-15 ítems bien puntuados en vez de scrollear 300 titulares. A las 9am, directo a Discord y al correo.
+
+Siendo honesto: no es perfecto. El scoring es heurístico y alguna vez algo relevante se queda fuera. Pero el trade-off me parece claro —95% de cobertura con el 5% del esfuerzo— y siempre puedo pedir un digest bajo demanda cuando algo huele a noticia grande.
+
+Los links, por si quieres verlo tú mismo:
+
+- Repositorio: [github.com/draco-agent/tech-news-digest](https://github.com/draco-agent/tech-news-digest)
+- Página del skill: [clawhub.ai/skills/tech-news-digest](https://clawhub.ai/skills/tech-news-digest)
+
+Si tu problema también es el ruido y no la falta de fuentes, este es el tipo de pipeline que deberías montar esta semana: un comando, tres variables opcionales y una frase en lenguaje natural.
+
+En [papayaclaw.com](https://papayaclaw.com) seguimos documentando setups como este — concretos, sin humo y listos para copiar. El feed ruidoso no se arregla con más fuentes; se arregla con mejor filtrado.
