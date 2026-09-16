@@ -1,0 +1,140 @@
+---
+title: "Despierta con una mini app funcional que no programaste"
+date: "2026-07-31"
+summary: "Cómo configurar un agente de IA que genere tareas autónomas cada mañana y te construya MVPs mientras duermes."
+---
+
+# Despierta con una mini app funcional que no programaste
+
+Te acuestas. Duermes ocho horas. Te levantas, abres el navegador, y ahí está: un MVP funcional de esa idea que mencionaste por casualidad hace tres días.
+
+No es magia. Es un agente de IA que trabaja de noche.
+
+La mayoría de los agentes son reactivos. Tú escribes un prompt, ellos responden. Fin del ciclo. Pero si configuras las cosas correctamente, tu agente puede convertirse en un empleado autónomo que se pone a trabajar solo cada mañana — investigando, escribiendo, construyendo features, o armándote una mini app sorpresa.
+
+## El problema real
+
+Tienes metas. Un montón.
+
+Lanzar el SaaS en Q3. Llegar a 100k en YouTube. Automatizar el workflow. Leer dos libros al mes.
+
+El problema no son las metas. Es el abismo entre "tengo la meta" y "qué hago exactamente hoy a las 9 AM para avanzar un milímetro hacia ella".
+
+Incluso si logras descomponer las metas en tareas diarias, ejecutarlas te come todo el día. Este sistema te quita de encima las dos partes: la planificación y la ejecución.
+
+## Cómo funciona
+
+Usando OpenClaw con sesiones autónomas (`sessions_spawn` / `sessions_send`), le haces un brain dump de todo lo que quieres lograr. El agente genera 4-5 tareas ejecutables cada mañana, las ejecuta él mismo en tu máquina, y las trackea en un Kanban que él mismo construye.
+
+Las tareas no son solo "escribir código". Puede investigar competidores, redactar scripts de video, analizar tendencias, o — lo que más me gusta — construirte un MVP sorpresa mientras duermes.
+
+## Configuración paso a paso
+
+### Paso 1: El brain dump
+
+Este es el paso que más gente saltea y es el más importante. Sin contexto, el agente genera tareas genéricas. Con contexto, genera tareas que te pegan donde duele.
+
+Mándale un mensaje así:
+
+```text
+Aquí están mis metas y misiones. Recuerda todo esto:
+
+Carrera:
+- Llegar a 100k suscriptores en YouTube
+- Lanzar mi producto SaaS para Q3
+- Construir una comunidad alrededor de educación en IA
+
+Personal:
+- Leer 2 libros por mes
+- Aprender español
+
+Negocio:
+- Escalar ingresos a $10k/mes
+- Construir alianzas con 5 empresas en mi nicho
+- Automatizar la mayor parte de mi workflow posible
+
+Usa este contexto para todo lo que hagas de ahora en adelante.
+```
+
+No te contengas. Cuanto más contexto, mejores tareas.
+
+### Paso 2: Activar las tareas autónomas diarias
+
+```text
+Cada mañana a las 8:00 AM, piensa 4-5 tareas que puedas completar
+en mi computadora hoy que me acerquen a mis metas.
+
+Luego programa y completa esas tareas tú mismo. Ejemplos:
+- Investigar competidores y escribir análisis
+- Redactar scripts de video basados en temas trending
+- Construir nuevas features para mis apps
+- Escribir y programar contenido para redes sociales
+- Investigar posibles alianzas de negocio
+- Construirme un mini-app MVP sorpresa que me acerque a una de mis metas
+
+Trackea todas las tareas en un Kanban. Actualiza el tablero según las completes.
+```
+
+Fíjate en ese último punto: "mini-app MVP sorpresa". Si no lo pides explícitamente, el agente va a favorecer tareas seguras como investigación. Si lo pides, te va a sorprender.
+
+### Paso 3: El Kanban board (opcional pero recomendado)
+
+```text
+Constrúyeme un Kanban board en Next.js donde pueda ver todas las tareas
+en las que estás trabajando. Muestra columnas para To Do, In Progress
+y Done. Actualízalo en tiempo real según las completes.
+```
+
+Esto convierte tu agente en un empleado rastreable. Ves exactamente qué hizo, qué está haciendo, y puedes corregir el rumbo si se desvía.
+
+## El error que te va a romper todo
+
+Si ejecutas este workflow con sub-agentes, vas a chocar con un race condition silencioso.
+
+Imagina esto: tu sesión principal lee `AUTONOMOUS.md` para actualizar el estado de una tarea. Mientras tanto, un sub-agente también intenta editar el mismo archivo. El resultado: el `edit` de OpenClaw necesita un match exacto de `oldText`. Si el archivo cambió entre la lectura y la edición, el match falla. Silenciosamente. Sin error. Sin aviso.
+
+La tarea desaparece del radar.
+
+### La solución: separar responsabilidades
+
+Divide tu sistema de tracking en dos archivos con roles distintos:
+
+**`AUTONOMOUS.md`** — queda pequeño y limpio. Solo metas (una línea cada una) + backlog abierto. Solo la sesión principal lo toca. Los sub-agentes nunca lo editan.
+
+**`memory/tasks-log.md`** — log solo-append. Los sub-agentes solo agregan líneas al final. Nunca editan líneas existentes.
+
+```markdown
+# tasks-log.md — Tareas Completadas (solo-append)
+# Sub-agentes: siempre agregar al FINAL. Nunca editar líneas existentes.
+
+### 2025-07-10
+- ✅ TASK-001: Investigar competidores → research/competitors.md
+- ✅ TASK-002: Redactar blog post → drafts/post-1.md
+- ✅ TASK-003: Construir MVP calculator → apps/quick-calc/
+```
+
+Es el mismo patrón de Git: nunca reescribes historia, solo agregas commits. Esto elimina el race condition por completo y tiene un bonus: `AUTONOMOUS.md` queda pequeño, así que gasta menos tokens cada vez que se carga en un heartbeat.
+
+**Regla de oro para tus sub-agentes:** en las instrucciones de spawn, siempre incluye:
+
+> "Cuando termines, agrega una línea ✅ al final de `memory/tasks-log.md`. Nunca edites `AUTONOMOUS.md` directamente."
+
+### Mantén AUTONOMOUS.md liviano
+
+Este archivo se carga en cada heartbeat. Si crece sin control con tareas completadas, quemas tokens al viento.
+
+Mantén `AUTONOMOUS.md` por debajo de ~50 líneas: metas en una línea + backlog abierto nada más. Archiva todo lo completado en un archivo separado que solo se lee bajo demanda.
+
+## Qué pasa después de una semana
+
+Los primeros dos o tres días, las tareas del agente van a ser un poco obvias. Es normal — está aprendiendo tu contexto.
+
+Pero hacia el final de la primera semana, algo interesante pasa: el agente empieza a conectar puntos que tú no veías. Encuentra un hilo entre tu meta de YouTube y tu meta de alianzas. Te propone una mini app que resuelve un problema que mencionaste en un mensaje de Telegram hace cinco días.
+
+Eso es cuando el sistema compone. No son tareas aisladas — es un sistema que entiende tus objetivos lo suficiente como para sorprenderte.
+
+La clave es el brain dump inicial. Si le das poco contexto, recibes poco valor. Si le abres la cabeza completa, recibes un empleado que de verdad entiende hacia dónde vas.
+
+---
+
+¿Quieres que tu agente de IA deje de esperar instrucciones y empiece a ejecutar? En [papayaclaw.com](https://papayaclaw.com) armamos setups como este para devs independientes que necesitan que su stack de IA haga más que chatear.

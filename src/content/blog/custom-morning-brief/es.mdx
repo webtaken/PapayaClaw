@@ -1,0 +1,145 @@
+---
+title: "Mi briefing matutino ahora se escribe solo (y de verdad sirve)"
+date: "2026-08-17"
+summary: "Cómo configurar un informe matutino automático con OpenClaw que te ahorra 30 minutos cada mañana."
+---
+
+# Mi briefing matutino ahora se escribe solo (y de verdad sirve)
+
+Te despiertas y lo primero que haces es abrir el portátil.
+
+Pestaña de noticias. Pestaña del calendario. Pestaña de Todoist. Pestaña de Slack.
+
+Treinta minutos después ya tienes algo de contexto, pero tu energía matutina — la más valiosa del día — se fue en scavenging, no en crear.
+
+Hay una alternativa mejor.
+
+## El problema real
+
+Tu agente de IA está ocioso toda la noche. Literalmente no hace nada entre las 11 de la noche y las 8 de la mañana. Nueve horas de inactividad.
+
+Mientras tanto, tú gastas tus primeras horas productivas solo intentando entender qué pasó y qué importa.
+
+La solución es simple: que el agente trabaje mientras duermes y te entregue el resultado cuando te despiertas.
+
+## Cómo funciona el morning brief
+
+La idea es directa. Un mensaje automático a las 8:00 AM (o la hora que elijas) con todo lo que necesitas para arrancar:
+
+- Noticias overnight relevantes a tus intereses
+- Tareas del día sacadas de tu task manager
+- Drafts completos de contenido (no solo ideas)
+- Recomendaciones de tareas que el agente puede hacer por ti
+
+El mensaje llega por Telegram, Discord o iMessage. Lo abres, lees, y ya tienes contexto. Sin pestañas.
+
+## Qué herramientas necesitas
+
+Nada exótico:
+
+- OpenClaw como el motor
+- Una integración de mensajería (Telegram es el más fácil)
+- Un task manager conectado (Todoist, Apple Reminders, o Asana)
+- Opcional: [x-research-v2](https://clawhub.ai) si quieres research de redes sociales
+
+## La configuración (literalmente un prompt)
+
+Conectas OpenClaw a tu messaging app y tu task manager. Luego le envías este mensaje:
+
+```text
+I want to set up a regular morning brief. Every morning at 8:00 AM,
+send me a report through Telegram.
+
+I want this report to include:
+1. News stories relevant to my interests (AI, startups, tech)
+2. Ideas for content I can create today
+3. Tasks I need to complete today (pull from my to-do list)
+4. Recommendations for tasks you can complete for me today
+
+For the content ideas, write full draft scripts/outlines — not just titles.
+```
+
+Eso es. OpenClaw programa la tarea automáticamente.
+
+Al día siguiente verificas que llegó el mensaje. Si todo está bien, ya funciona.
+
+## Ajustar sobre la marcha
+
+Lo mejor es que no necesitas ir a ningún dashboard para modificarlo.
+
+Le escribes al bot:
+
+```text
+Add weather forecast to my morning brief.
+Stop including general news, focus only on AI.
+Include a motivational quote each morning.
+```
+
+Y actualiza. Así de simple.
+
+Si ni siquiera sabes qué incluir, puedes decirle:
+
+```text
+I want this report to include things relevant to me.
+Think of what would be most helpful to put in this report.
+```
+
+OpenClaw infiere lo que tiene sentido para ti basándose en tu contexto.
+
+## El detalle que marca la diferencia
+
+Hay muchas formas de hacer un "morning brief". La mayoría fallan en lo mismo: te dan listas de títulos de noticias o ideas genéricas tipo "escribe un post sobre X".
+
+Este workflow es diferente por dos cosas.
+
+Primero, los drafts son completos. No te dice "idea: tutorial de React". Te dice "aquí tienes el outline completo del tutorial con los 5 puntos principales y el hook de apertura". Eso te ahorra el trabajo de traducir una idea en algo ejecutable.
+
+Segundo, la sección de recomendaciones. Aquí es donde el agente dice "puedo hacer estas tres cosas por ti hoy, ¿cuáles autorizas?". No espera instrucciones pasivas. Piensa proactivamente en cómo ayudarte.
+
+Esa sección sola cambia la dinámica. Pasas de pedirle cosas al agente a que el agente te ofrezca ayuda.
+
+## Un ejemplo real de qué llega
+
+Tu mensaje de las 8:00 AM se ve así:
+
+**📰 Noticias relevantes**
+- OpenAI lanza modelo nuevo con capacidades de reasoning mejoradas (impacto directo en tu producto)
+- Y Combinator lanza batch W25 con foco en AI-native apps
+
+**📝 Drafts listos para usar**
+- [Outline completo] "Por qué los founders deberían automatizar su mañana"
+- [Script draft] Video de 60 segundos para Twitter sobre morning routines
+
+**✅ Tareas de hoy**
+- Revisar PR #247 ( blocker para el release )
+- Llamada con investor a las 2 PM
+- Enviar propuesta a Client X
+
+**🤖 Puedo hacer esto por ti**
+- Resumir los 3 artículos largos que tienes guardados
+- Redactar el follow-up email de la reunión de ayer
+- Preparar talking points para la llamada de investor
+
+Lees. Eliges qué delegar. Empiezas a trabajar en lo que importa.
+
+## Funciona para cualquier industria
+
+No importa si eres founder de SaaS, consultor, o ejecutivo en empresa grande. La estructura se adapta.
+
+Cambia "AI, startups, tech" por "marketing, e-commerce, DTC" o "finanzas, regulación, compliance". El mecanismo es el mismo.
+
+Lo universal es esto: necesitas contexto matutino, tienes tareas que revisar, y hay trabajo creativo que puedes adelantar.
+
+## El costo de no hacerlo
+
+Treinta minutos al día. Cinco días a la semana. Cincuenta semanas al año.
+
+Son 125 horas al año gastadas en orientarte — no en producir. Para un founder, ese tiempo vale miles de dólares.
+
+El setup toma 10 minutos. El retorno es permanente.
+
+---
+
+Si estás construyendo cosas con IA pero todavía empezás el día manualmente, estás dejando valor sobre la mesa.
+
+En [papayaclaw.com](https://papayaclaw.com) documentamos workflows exactos como este — con prompts reales, integraciones reales, y sin marketing fluff. Suscríbete para recibir el siguiente directo en tu inbox.

@@ -1,0 +1,135 @@
+---
+title: "Turn One Prompt Into a Full Content Machine: The Multi-Agent Content Factory"
+date: "2026-07-20"
+summary: "Set up a team of AI agents in Discord that research, write, and generate visuals for your SaaS content — all while you sleep."
+---
+
+# Turn One Prompt Into a Full Content Machine: The Multi-Agent Content Factory
+
+You wake up, check Discord, and there it is: five researched content opportunities, a finished blog draft, and matching cover images.
+
+You didn't write a single prompt this morning.
+
+That's the multi-agent content factory. And it's not some theoretical framework — it's a setup you can build in about 15 minutes inside Discord using OpenClaw.
+
+## The content problem nobody talks about
+
+Here's what content creation actually looks like for most SaaS founders:
+
+You open ChatGPT. Prompt for topic ideas. Copy the best one. Open a new chat. Prompt for an outline. Then prompt for the draft. Then prompt for a LinkedIn version. Then head to Midjourney for an image.
+
+Each step requires you. Each step breaks your flow. Each step eats 20-30 minutes you don't have.
+
+Even with AI tools, you're still the bottleneck. You're manually moving output from one tool to the next, acting as the integration layer between specialized tasks.
+
+The fix isn't a better writing tool. It's chaining agents together so one's output becomes the next one's input.
+
+## How the content factory actually works
+
+The system runs three specialized agents, each in its own Discord channel:
+
+**Research Agent** (`#research`) — Scans trending stories, competitor content, and social media for the top 5 content opportunities in your niche. Posts them with sources every morning at 8 AM.
+
+**Writing Agent** (`#scripts`) — Takes the best research output and writes a full draft. Could be a blog post, tweet thread, newsletter, or LinkedIn post depending on your setup.
+
+**Thumbnail Agent** (`#thumbnails`) — Generates AI cover images for whatever the writing agent produced.
+
+The key detail: these agents are chained. Research feeds writing. Writing feeds thumbnails. You don't prompt each step. The pipeline runs automatically.
+
+And because everything lands in separate Discord channels, you can review each agent's work independently. If the research is off, you tell it. If the scripts run too long, you tell it. Feedback stays contextual to each agent's channel.
+
+## What you need to set this up
+
+A few things before we get to the prompt:
+
+- **Discord server** with dedicated channels (or just ask OpenClaw to create one for you)
+- **`sessions_spawn` / `sessions_send`** — this is how OpenClaw orchestrates multiple agents and passes data between them
+- **x-research-v2** skill from [clawhub.ai](https://clawhub.ai) — handles the social media and trend scanning
+- **Image generation** — either an API or a local model like Nano Banana (runs on a Mac Studio, keeps costs near zero)
+- **knowledge-base skill** (optional) — adds RAG-powered research if you want agents pulling from your existing content
+
+The whole thing hinges on `sessions_spawn` and `sessions_send`. That's the orchestration layer that lets one agent kick off another and pass its output downstream. Without it, you just have three disconnected bots.
+
+## The setup prompt
+
+Once your Discord server is ready with `#research`, `#scripts`, and `#thumbnails` channels, send this to OpenClaw:
+
+```text
+I want you to build me a content factory inside of Discord.
+Set up channels for different agents:
+
+1. Research Agent (#research): Every morning at 8 AM, research top trending
+   stories, competitor content, and what's performing well on social media
+   in my niche. Post the top 5 content opportunities with sources.
+
+2. Writing Agent (#scripts): Take the best idea from the research agent
+   and write a full script/thread/newsletter draft. Post it in #scripts.
+
+3. Thumbnail Agent (#thumbnails): Generate AI thumbnails or cover images
+   for the content. Post them in #thumbnails.
+
+Have all their work organized in different channels.
+Run this pipeline automatically every morning.
+```
+
+That single prompt spins up the entire pipeline. The agents spawn, get their channel assignments, and start working in sequence.
+
+## Adapting it for your actual format
+
+The default prompt is platform-agnostic. You'll want to narrow it for whatever you actually publish.
+
+For example, if you're a SaaS founder focused on X/Twitter:
+
+```text
+I focus on X/Twitter threads, not YouTube. Change the writing agent
+to produce tweet threads instead of video scripts.
+```
+
+Or for newsletter-first founders:
+
+```text
+Change the writing agent to produce newsletter sections with
+a hook, 3 key points, and a CTA. Keep each section under 150 words.
+```
+
+You can also tune the research agent for your niche:
+
+```text
+Research agent should focus on AI/developer tools niche specifically.
+Scan Hacker News, X/Twitter tech circles, and Product Hunt.
+Ignore consumer apps and generic tech news.
+```
+
+Each adjustment narrows the output quality without you having to manually intervene each morning.
+
+## Why Discord channels matter
+
+You could run all of this in a single chat thread. Don't.
+
+Separate channels give you something critical: isolated review and feedback loops.
+
+When the writing agent posts in `#scripts`, you can reply directly with "this reads too much like marketing, make it more technical" and the agent adjusts. That feedback stays in the writing context. It doesn't pollute what the research agent is doing in `#research`.
+
+Over a few weeks, each agent gets better at its specific job because your corrections are scoped to that agent's domain.
+
+## Cost and performance notes
+
+Running a local image model like Nano Banana on a Mac Studio keeps your thumbnail generation costs at essentially zero. If you're generating one cover image per day, API costs would be negligible anyway — but local gives you faster iteration when you want to regenerate something.
+
+The research agent is the heaviest API consumer since it's scanning multiple sources. With x-research-v2, you're mostly paying for the data fetching rather than LLM calls. Budget around $0.10-0.30 per day depending on how many sources it scans.
+
+## The real advantage
+
+Most founders I talk to aren't struggling with *writing*. They're struggling with the operational overhead of content — the research, the formatting, the repurposing, the assets.
+
+This setup removes that overhead. You go from "content creation takes 2 hours" to "content review takes 15 minutes." That's not a 10% improvement. It's a different category of time investment.
+
+You're not replacing your voice. You're replacing the manual pipeline that gets you to a draft.
+
+## Want to build this?
+
+If you're running content for your SaaS and tired of being the integration layer between AI tools, this is the setup that actually fixes it. One prompt, three agents, daily output.
+
+We walk SaaS founders through this exact architecture at [papayaclaw.com](https://papayaclaw.com) — including the `sessions_spawn` patterns, channel configurations, and niche-specific tuning that makes the output actually usable.
+
+Stop prompting in circles. Let the agents talk to each other.

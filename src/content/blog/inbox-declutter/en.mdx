@@ -1,0 +1,105 @@
+---
+title: "Finally Conquer Email Overload: AI Inbox Decluttering for Busy Founders"
+date: "2026-07-27"
+summary: "Stop manually triaging newsletters — set up an AI agent to read, summarize, and learn your preferences so you only see what matters."
+---
+
+# Finally Conquer Email Overload: AI Inbox Decluttering for Busy Founders
+
+You wake up, open Gmail, and see 47 new messages.
+
+Thirty-two of them are newsletters. You subscribed to each one with good intentions. Now they pile up unread, making it impossible to spot the one email from a customer who actually needs you right now.
+
+Most "inbox zero" advice tells you to unsubscribe from everything. That's not realistic. You subscribed for a reason — these newsletters contain signal, buried under noise. The problem isn't the subscriptions. The problem is you're doing the triage manually.
+
+Here's a different approach: let an AI agent do the reading for you.
+
+## What this actually looks like
+
+Every night at 8 p.m., an agent connects to your Gmail via OAuth. It pulls every newsletter from the past 24 hours. It reads them. It generates a digest of the most important bits, complete with links back to the full articles.
+
+Then it asks you a simple question: "Did I pick the right stuff?"
+
+Your answer trains it for tomorrow. Over time, the digest gets better because the agent remembers what you care about and what you skip.
+
+You never open the raw newsletters. You never mark 32 things as read. You just read one digest and get on with your evening.
+
+## The architecture is simpler than you'd think
+
+This runs on OpenClaw using a Gmail OAuth skill. No custom API wrangling. No browser automation scraping your inbox. OAuth gives the agent scoped read access to your mail, and a cron trigger handles the scheduling.
+
+The whole thing comes down to two pieces:
+
+1. **The Gmail OAuth Setup skill** from clawhub.ai/kai-jar/gmail-oauth — this handles the auth flow so the agent can read your mail
+2. **A single instruction** that tells the agent what to do, when to do it, and how to improve
+
+That's it. No middleware, no Zapier steps, no "connect 14 apps" configuration hell.
+
+## Step-by-step setup
+
+### 1. Decide on your email strategy
+
+You have two options here, and which one you pick depends on how messy your current inbox is.
+
+**Option A: Use your existing Gmail.** The agent reads newsletter emails and you just stop opening them manually. Simple, minimal setup.
+
+**Option B: Create a dedicated Gmail for newsletters.** This is the cleaner route if you're currently at 200+ unread messages and drowning. You unsubscribe from everything on your main email, then re-subscribe using the new address. The agent only monitors that new address. Your main inbox stays clean for actual conversations.
+
+Option B takes 30 minutes of unsubscribe-clicking up front. It saves you hours over the next year. Do the math.
+
+### 2. Install the Gmail OAuth skill
+
+Grab the Gmail OAuth Setup skill from clawhub.ai/kai-jar/gmail-oauth and install it in your OpenClaw instance.
+
+Walk through the OAuth flow. The agent will request permission to read your Gmail — specifically the `mail.google.com` scope for reading messages. This is read-only. The agent can't send emails, delete anything, or change your labels.
+
+Verify it works by having the agent pull a single recent email. If you see the subject line and body come back, you're good.
+
+### 3. Give the agent its instruction
+
+Here's the exact prompt from the setup guide:
+
+```txt
+I want you to run a cron job everyday at 8 p.m. to read all the newsletter emails of the past 24 hours and give me a digest of the most important bits along with links to read more. Then ask for my feedback on whether you picked good bits, and update your memory based on my preferences for better digests in the future jobs.
+```
+
+A few things worth noting about why this prompt works:
+
+- **"every day at 8 p.m."** — specific time, not "daily." The agent needs a concrete trigger.
+- **"newsletter emails"** — the agent uses heuristics to identify newsletters (sender patterns, mailing list headers, lack of direct conversation markers). It's not perfect, but it's good enough that you won't lose personal emails in the digest.
+- **"most important bits along with links"** — this forces the agent to summarize, not regurgitate. You get a few sentences per item, not a wall of text.
+- **"ask for my feedback" and "update your memory"** — this is the critical loop. Without this, you get a generic digest that never improves. With it, the agent learns that you always skip product launch announcements but always read technical deep dives. By week three, the digest is noticeably different from week one.
+
+### 4. Let it run for a week before judging
+
+The first digest will be okay. Maybe 60% relevant. That's normal — the agent has no context on your preferences yet.
+
+By digest three or four, you'll notice it's filtering differently. Stuff you would've skipped doesn't appear. Niche topics you care about get more space.
+
+This is the compound return of the feedback loop. The upfront instruction is small, but the agent's behavior drifts toward your actual interests over time.
+
+## What this doesn't do
+
+Let me be specific about the boundaries, because overpromising is everywhere in AI right now.
+
+This does not reply to emails for you. The OAuth scope is read-only, and the prompt doesn't ask for reply drafts. If you want AI-assisted replies, that's a separate workflow with different permissions and different risks.
+
+This does not delete or archive the original newsletters. They stay in your Gmail. The agent reads them and generates a digest — it doesn't modify your mailbox.
+
+This does not catch every newsletter perfectly. Some senders use unusual formats that don't trigger the newsletter heuristics. You'll occasionally see a non-newsletter in the digest or miss a newsletter that didn't get categorized. The error rate is low, but it's not zero.
+
+## The real ROI isn't time — it's attention
+
+You could argue that manually scanning 32 newsletter subject lines takes five minutes, so what's the big deal?
+
+The big deal isn't the five minutes. It's the attention residue. Every newsletter you open and close without reading costs you context-switching on whatever you were actually trying to do. Every time you check your inbox "just to clear the newsletters," you're interrupting real work.
+
+One digest at 8 p.m. means your inbox stays closed during work hours. You're not tempted to "just quickly check" because there's nothing to check. The agent already handled it.
+
+For solo founders, that attention protection matters more than any time savings.
+
+## Get started
+
+If you're running OpenClaw, you can set this up in under ten minutes with the steps above. The Gmail OAuth skill handles the hard part — you just write the instruction and let the feedback loop do its thing.
+
+If you want help setting up agent workflows like this — inbox decluttering, automated triage, or other routine tasks you shouldn't be doing manually — head over to [papayaclaw.com](https://papayaclaw.com). We build and configure agent systems for founders who'd rather ship product than babysit their inbox.

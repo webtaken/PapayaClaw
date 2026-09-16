@@ -1,0 +1,133 @@
+---
+title: "Construye una máquina de contenido para YouTube que se ejecuta sola"
+date: "2026-07-24"
+summary: "Cómo automatizar toda tu pipeline de investigación de contenido para YouTube con cron jobs, embeddings y Slack."
+---
+
+# Construye una máquina de contenido para YouTube que se ejecuta sola
+
+Publicar videos con frecuencia ya es bastante difícil. Pero lo que realmente te mata el tiempo es la investigación.
+
+Abrir pestañas, scrollear X/Twitter, revisar newsletters, intentar recordar si ya hablaste de ese tema hace dos meses. Antes de escribir un solo guion, ya gastaste tres horas.
+
+Yo me negué a seguir haciendo eso.
+
+## El problema real no es crear, es descubrir
+
+Como fundador o indie hacker, probablemente haces contenido sobre tu nicho. AI, SaaS, productividad, lo que sea. Las noticias cambian todos los días.
+
+Si no estás encima de las tendencias, tu contenido se vuelve irrelevante. Pero si dedicas horas a scrollear feeds, no estás construyendo tu producto.
+
+Necesitas un sistema que haga el trabajo sucio por ti.
+
+## La arquitectura que implementé
+
+Construí una pipeline que hace tres cosas:
+
+1. **Escanea cada hora** la web y X/Twitter buscando noticias recientes sobre AI
+2. **Verifica automáticamente** si ya cubrí ese tema en los últimos 90 días
+3. **Me manda las ideas frescas** directo a Telegram
+
+Y cuando encuentro algo que me interesa, comparto un link en Slack y el sistema me devuelve una tarjeta de Asana con el outline completo del video.
+
+Cero investigación manual.
+
+## La base de datos de pitches
+
+Lo más crítico de este sistema es evitar que te repita. No solo "ya hablé de GPT", sino evitar variaciones semánticas del mismo tema.
+
+Para eso uso SQLite con embeddings vectoriales:
+
+```sql
+CREATE TABLE pitches (
+  id INTEGER PRIMARY KEY,
+  timestamp TEXT,
+  topic TEXT,
+  embedding BLOB,
+  sources TEXT
+);
+```
+
+Cada pitch que se genera se guarda con su embedding. Cuando llega una nueva idea potencial, el sistema calcula la similitud semántica contra todos los pitches anteriores. Si es demasiado parecido a algo que ya te propuse, se descarta.
+
+Así nunca recibes la misma idea disfrazada de diferente.
+
+## El catálogo de 90 días
+
+Además de los pitches, el sistema consulta tu catálogo real de YouTube. Uso `gog`, un CLI para YouTube Analytics, para obtener los videos publicados en los últimos 90 días con sus view counts y análisis de tópicos.
+
+Si ya tienes un video sobre "Claude 3.5 Sonnet benchmarks" con 15K vistas, no tiene sentido que te proponga "Claude 3.5 rendimiento comparativo". El sistema lo detecta y lo filtra.
+
+## El flujo de Slack a Asana
+
+Aquí es donde se pone bueno.
+
+Tengo un canal `#ai_trends` en Slack. Cuando veo un link interesante (o cuando el sistema me manda uno), simplemente lo comparto ahí.
+
+Automáticamente, OpenClaw hace lo siguiente:
+
+1. Investiga el tema a fondo
+2. Busca posts relacionados en X/Twitter
+3. Consulta mi knowledge base para ver qué tengo escrito sobre eso
+4. Crea una tarjeta en Asana dentro del proyecto "Video Pipeline" con el outline completo
+
+Voy a Asana y tengo el esqueleto del video listo. Solo falta escribir.
+
+## Cómo setearlo tú mismo
+
+Necesitas estas piezas:
+
+- **web_search** (viene built-in con OpenClaw)
+- **x-research-v2** de Clawhub para buscar en X/Twitter
+- **knowledge-base** de Clawhub para RAG
+- **Integración de Asana** (o Todoist si prefieres)
+- **gog CLI** para YouTube Analytics
+- **Un topic en Telegram** para recibir los pitches
+
+El setup es así:
+
+**Paso 1:** Crea un topic en Telegram llamado "video ideas" y configúralo en OpenClaw.
+
+**Paso 2:** Instala los skills necesarios:
+```bash
+openclaw skill install x-research-v2
+openclaw skill install knowledge-base
+```
+
+**Paso 3:** Crea tu base de datos SQLite con el schema que te mostré arriba.
+
+**Paso 4:** Configura el prompt principal de OpenClaw:
+
+```text
+Run an hourly cron job to:
+1. Search web and X/Twitter for breaking AI news
+2. Check against my 90-day YouTube catalog (fetch from YouTube Analytics via gog)
+3. Check semantic similarity against all past pitches in the database
+4. If novel, pitch the idea to my Telegram "video ideas" topic with sources
+
+Also: when I share a link in Slack #ai_trends, automatically:
+1. Research the topic
+2. Search X for related posts
+3. Query my knowledge base
+4. Create an Asana card in Video Pipeline with a full outline
+```
+
+Eso es todo. El sistema arranca solo.
+
+## Lo que me dah de resultado
+
+Antes: 3-4 horas de investigación por video.
+
+Ahora: Abro Telegram, reviso 3-5 ideas que llegaron mientras dormía, comparto la que me gusta en Slack, y en 2 minutos tengo el outline en Asana.
+
+El tiempo que ahorré lo invierto en grabar, editar, o directamente en mi producto.
+
+## Un detalle importante
+
+Este sistema no escribe tus scripts. No reemplaza tu perspectiva ni tu voz.
+
+Lo que hace es quitarte la carga de descubrimiento. Tú sigues decidiendo qué vale la pena cubrir. Tú le das el ángulo único. Pero no pierdes horas buscando qué cubrir.
+
+---
+
+Si quieres automatizar tu pipeline de contenido sin ensuciarte las manos configurando integraciones, [papayaclaw.com](https://papayaclaw.com) tiene templates listos para este tipo de flujos. Conecta tus herramientas, pega el prompt, y funciona.

@@ -1,0 +1,103 @@
+---
+title: "Este agente lee papers de arXiv para que yo no tenga que hacerlo"
+date: "2026-08-12"
+summary: "Cómo configurar un asistente de lectura que descarga, parsea y resume papers de arXiv sin que salgas de tu terminal."
+---
+
+# Este agente lee papers de arXiv para que yo no tenga que hacerlo
+
+Descargo el PDF. Abro Acrobat. Veo que tiene 42 páginas. Cierro el PDF. Lo añado a la carpeta "para leer después" que nunca toco.
+
+Si haces investigación, ML o cualquier cosa que te obligue a seguir la literatura académica, te reconozco. El flujo típico de leer papers de arXiv está roto. Bajas un PDF, cambias de ventana, pierdes el contexto de lo que estabas haciendo, y cuando vuelves ya olvidaste por qué te interesaba ese paper en primer lugar.
+
+La notación LaTeX no ayuda. Los papers tienen apéndices interminables que te dispersan. Y cuando quieres comparar tres papers sobre el mismo tema, acabas con seis pestañas abiertas y ninguna conclusión clara.
+
+Hay otra forma.
+
+## Un lector de papers que vive en tu workspace
+
+La idea es simple: en lugar de descargar PDFs y leerlos tú, le das un ID de arXiv a tu agente y él hace el trabajo sucio.
+
+Descarga el paper. Descomprime el fuente LaTeX. Aplana los includes automáticamente. Te devuelve texto limpio que puedes analizar, resumir y comparar sin salir de donde estás trabajando.
+
+Y si vuelves a preguntar por el mismo paper? Instántaneo. Todo queda cacheado localmente.
+
+## Cómo funciona por dentro
+
+Todo corre sobre un solo skill: `arxiv-reader`, del repositorio de [Prismer](https://github.com/Prismer-AI/Prismer/tree/main/skills/arxiv-reader).
+
+El skill expone tres herramientas:
+
+- **`arxiv_fetch`** — descarga el paper completo y te devuelve el texto limpio
+- **`arxiv_sections`** — lista la estructura del paper para que decides qué leer
+- **`arxiv_abstract`** — obtiene solo el abstract para triage rápido
+
+Lo interesante es que no necesita Python ni Docker. Corre con los built-ins de Node.js. Baja directamente de arXiv, descomprime el source, y aplana los `\input{}` y `\include{}` del LaTeX por ti. Cero dependencias externas.
+
+## Configuración en dos minutos
+
+1. Copia el directorio `skills/arxiv-reader/` del repo de Prismer a tu carpeta de skills de OpenClaw.
+
+2. Listo. Así de simple.
+
+Pero el truco real está en cómo le pides las cosas al agente. Un prompt bien estructurado marca la diferencia entre obtener basura genérica y algo útil.
+
+Este es el prompt que uso:
+
+```text
+I'm researching [topic]. Here's my workflow:
+
+1. When I give you an arXiv ID (like 2301.00001):
+   - First fetch the abstract so I can decide if it's relevant
+   - If I say "read it", fetch the full paper (remove appendix by default)
+   - Summarize the key contributions, methodology, and results
+
+2. When I give you multiple IDs:
+   - Fetch all abstracts and give me a comparison table
+   - Rank them by relevance to my research topic
+
+3. When I ask about a specific section:
+   - List the paper's sections first
+   - Then fetch and explain the relevant section in detail
+
+Keep a running list of papers I've read and their key takeaways.
+```
+
+La clave aquí es el flujo de tres pasos para papers individuales: abstract primero, lectura completa solo si das permiso, y luego resumen estructurado. Así no desperdicias contexto en papers que al final no te sirven.
+
+## Los tres patrones que más uso
+
+**Triage de lectura list.** Le paso cinco o seis IDs de papers que acumulé durante la semana. El agente me devuelve una tabla comparativa con los abstracts y los rankea por relevancia. En 30 segundos sé qué vale la pena leer y qué puedo descartar.
+
+**Navegación por secciones.** Antes de pedirle que lea todo el paper, le pido que liste las secciones. Así veo si el paper tiene una sección de "Related Work" que me interesa o si quiero ir directo a "Experiments". No leo linealmente — voy a lo que necesito.
+
+**Deep dive puntual.** "Explícame la sección 3.2 de 2401.04088". El agente sabe exactamente qué traer, lo explica en contexto, y puedo hacer preguntas de seguimiento sin tener que explicar de qué paper hablo cada vez.
+
+## Lo que cambia en la práctica
+
+Antes: descargo PDF, lo abro, me pierdo en el apéndice, cierro, repito tres veces, acabo leyendo el abstract de verdad en Twitter.
+
+Ahora: le doy el ID, veo el abstract en dos segundos, decido si sigo, y si sigo el agente me da contribuciones clave, metodología y resultados estructurados. Cuando quiero comparar, le paso varios IDs y obtengo una tabla lado a lado.
+
+No es magia. Es simplemente tener el texto del paper en un formato que un LLM puede procesar bien, sin el ruido del PDF y sin tener que cambiar de contexto.
+
+## Un ejemplo real
+
+Le digo: "Read 2401.04088 — what's the main contribution?"
+
+El agente:
+1. Usa `arxiv_abstract` para verificar que es lo que creo que es
+2. Si confirmo, usa `arxiv_fetch` para bajar el texto completo (sin apéndice)
+3. Me devuelve un resumen con contribuciones, metodología y resultados
+
+La próxima vez que mencione ese mismo paper, el cache local hace que la respuesta sea inmediata.
+
+## Si estás ahogado en papers
+
+Este workflow no va a leerte los papers por ti — todavía tienes que pensar críticamente sobre lo que lees. Pero elimina toda la fricción mecánica: descargas, parsing de LaTeX, navegación de PDFs, cambio de ventanas.
+
+Para investigación seria, donde lees decenas de papers por semana y necesitas conectar ideas entre ellos, eso es medio día recuperado.
+
+---
+
+¿Quieres automatizar otras partes de tu flujo de trabajo? En [papayaclaw.com](https://papayaclaw.com) construímos agentes que hacen el trabajo aburrido para que tú te enfoques en lo que importa.

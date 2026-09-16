@@ -1,0 +1,120 @@
+---
+title: "One AI Assistant That Lives Across All My Chat Channels"
+date: "2026-09-14"
+summary: "How to wire a single AI assistant into Telegram, Slack, Google Workspace, Todoist, and Asana — so you stop app-hopping to get work done."
+---
+
+# One AI Assistant That Lives Across All My Chat Channels
+
+I used to run my day like a pinball. Slack for the team, Calendar for scheduling, Gmail for follow-ups, Todoist for tasks, Asana for the project board. Five tabs, five mental modes, and a dozen context switches before lunch.
+
+Now it's one chat window. And the assistant on the other end knows which tool to hit based on *where* I'm talking to it.
+
+Here's the setup.
+
+## The real cost isn't the tasks — it's the switching
+
+Every task itself takes 30 seconds. Getting to the right app, remembering where you left off, and re-loading context takes 3 minutes.
+
+You're in Slack, someone asks you to schedule a call. Now you're in Calendar. Then they mention a link worth saving. Now you're in your notes app. Multiply that by a day and you've burned an hour on navigation, not work.
+
+The fix isn't another productivity app. It's fewer front doors to the tools you already use.
+
+## The architecture: one assistant, many channels
+
+This workflow runs on OpenClaw with a simple idea: **context lives in the channel, not in the prompt.**
+
+- **Telegram** is the primary interface, split into topics — each topic maps to a type of work
+- **Slack** handles team collaboration: task assignment, saving links to the knowledge base, triggering content ideas
+- **Google Workspace** sits underneath: calendar events, email drafts, Drive uploads
+- **Todoist** catches quick tasks
+- **Asana** manages the project board
+
+You never open Calendar to schedule anything. You type "schedule a call with Sam Thursday 2pm" and it happens.
+
+## Step 1: Set up Telegram topics
+
+Create a Telegram channel with topics configured for each context:
+
+- `config` — bot settings and debugging
+- `updates` — status and notifications
+- `video-ideas` — content pipeline
+- `personal-crm` — contact management
+- `earnings` — financial tracking
+- `knowledge-base` — save and search content
+
+This is the part I care about most. When I post in `personal-crm`, the assistant already knows I'm asking about contacts or meeting prep. I don't re-explain myself. The topic *is* the prompt.
+
+## Step 2: Connect your tools
+
+Wire everything into OpenClaw:
+
+```
+Google OAuth    → Gmail, Calendar, Drive (via gog CLI)
+Slack           → app token + user token
+Todoist         → API token
+Asana           → API token
+```
+
+Two notes from running this:
+
+The `gog` CLI is what makes Google Workspace usable from chat — calendar, Gmail, and Drive all route through it. And for Slack, you want both tokens: the app token lets the bot post into channels, the user token lets it act on your behalf. That combo is what enables "assign this task to Dana" from your phone while you're in line for coffee.
+
+## Step 3: Give it the routing prompt
+
+This is the core of the setup:
+
+```text
+You are my multi-channel assistant. Route requests based on context:
+
+Telegram topics:
+- "config" → system settings, debugging
+- "updates" → daily summaries, reminders, calendar
+- "video-ideas" → content pipeline and research
+- "personal-crm" → contact queries and meeting prep
+- "earnings" → financial tracking
+- "knowledge-base" → save and search content
+
+When I ask you to:
+- "Add [task] to my todo" → use Todoist
+- "Create a card for [topic]" → use Asana Video Pipeline project
+- "Schedule [event]" → use gog calendar
+- "Email [person] about [topic]" → draft email via gog gmail
+- "Upload [file] to Drive" → use gog drive
+
+Set up automated reminders:
+- Monday 6 PM: "🗑️ Trash day tomorrow"
+- Friday 3 PM: "✍️ Time to write the weekly company update"
+```
+
+Notice the last bit. The recurring reminders you'd normally babysit in a separate calendar — trash day, the weekly company letter — just live here too. Friday at 3, it nudges you. You draft the letter in the same thread.
+
+## Step 4: Test each tool, then test the cross-workflows
+
+Don't skip this. First, test every integration on its own: schedule one event, draft one email, add one task. Confirm each pipe works before trusting it.
+
+Then test the combinations, because that's where this setup earns its keep. The example I use: drop a Slack link into the `knowledge-base` topic, then ask the assistant to pull it back in while it's researching a video idea card for Asana.
+
+If a link can travel from a team conversation to your knowledge base to a project card without you opening a second app, you've won.
+
+## What a day actually looks like
+
+Morning: check the `updates` topic. There's your daily summary and calendar.
+
+A teammate posts in Slack asking who owns a task. You tell the assistant to assign it — from Slack, no Todoist or Asana detour.
+
+An idea hits while you're out. Post it to `video-ideas`. It's in the pipeline.
+
+End of week: the Friday reminder fires, you draft the company update right in chat, and it's emailed through `gog gmail`.
+
+One interface. Every tool still exists underneath — you just stopped visiting them.
+
+## My honest take
+
+The single-bot-with-five-skills approach usually fails because you spend every conversation telling the bot *which* skill you mean. Topic-based routing fixes that: the channel carries the context so your messages can be lazy.
+
+That's the whole trick. Not a smarter model — smarter routing.
+
+If your team is spread across Slack, email, and a chat app, and you're tired of being the middleware between your own tools, this setup takes an afternoon to wire and pays for itself the first week.
+
+Full setup guides, the OpenClaw config reference, and more workflows are over at [papayaclaw.com](https://papayaclaw.com). Go collapse those five tabs into one.

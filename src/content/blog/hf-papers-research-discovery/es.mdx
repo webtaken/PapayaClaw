@@ -1,0 +1,112 @@
+---
+title: "Dejé que la IA rastree los papers de Hugging Face para poder concentrarme en construir"
+date: "2026-09-04"
+summary: "Cómo montar un pipeline de descubrimiento de investigación con dos skills de OpenClaw: papers en tendencia, búsqueda por tema y lectura profunda del LaTeX completo desde arXiv."
+---
+
+# Dejé que la IA rastree los papers de Hugging Face para poder concentrarme en construir
+
+Son las 7:40 de la mañana. Café en mano, pestaña de Hugging Face Papers abierta.
+
+Cuarenta y pico papers nuevos. La mitad de los títulos podrían ser relevantes para lo que estás construyendo. Abres tres en pestañas distintas, lees dos abstracts, te distraes con un hilo de Twitter sobre el tercero, y veinte minutos después todavía no sabes cuál merece tu atención.
+
+Conoces la rutina. Todos la conocemos.
+
+## El problema no es la falta de papers
+
+Es todo lo que hay *alrededor* de cada paper.
+
+Refrescar la lista diaria es lo fácil. Lo caro es el triaje: abrir cada uno para leer el abstract, cruzar los dedos por un enlace a GitHub, revisar si la comunidad lo está discutiendo, decidir si vale una lectura profunda de 40 minutos.
+
+Y si el abstract suena prometedor, empieza la verdadera expedition: buscar el repo, verificar que el código exista de verdad y no sea un "coming soon", bajar el PDF de arXiv, saltar entre secciones para encontrar la metodología real.
+
+Hice esto a mano durante meses. El resultado: leía los abstracts de todo y el contenido de casi nada.
+
+## Dos skills, un solo flujo
+
+Monté un pipeline con OpenClaw que maneja el ciclo completo: descubrir, triar, leer a fondo. Son dos skills:
+
+**[hf-papers](https://github.com/openclaw/skills/tree/main/skills/willamhou/hf-papers)** — 4 herramientas:
+- `hf_daily_papers`: los papers en tendencia del día
+- `hf_search_papers`: búsqueda por palabra clave
+- `hf_paper_detail`: abstract, autores, repos de GitHub, upvotes, resúmenes generados por IA
+- `hf_paper_comments`: la discusión de la comunidad sobre cada paper
+
+**[arxiv-source](https://github.com/openclaw/skills/tree/main/skills/willamhou/arxiv-source)** — 3 herramientas:
+- `arxiv_fetch`, `arxiv_sections` y `arxiv_abstract`, para leer el texto completo vía el ID de arXiv
+
+Cero Docker. Cero autenticación. Ambas skills usan APIs públicas con caché local, así que la instalación es de treinta segundos.
+
+## Instalación
+
+```bash
+clawhub install hf-papers
+clawhub install arxiv-source
+```
+
+Listo. Eso es todo lo que hay que instalar.
+
+## El prompt que define el workflow
+
+La gracia de este setup está en describir tu flujo una sola vez. Le pasé esto a OpenClaw:
+
+```text
+Quiero estar al día en investigación de ML. Este es mi flujo de trabajo diario:
+
+1. Cada mañana, muéstrame los 10 papers en tendencia de Hugging Face
+   (ordenados por upvotes)
+   - Para cada paper: título, upvotes, repo de GitHub (si tiene)
+     y un resumen de 1 línea generado por IA
+
+2. Cuando escriba "busca [tema]":
+   - Busca en HF Papers y muéstrame los resultados más relevantes
+   - Destaca los papers con repos de GitHub enlazados o muchos upvotes
+
+3. Cuando elija un paper (por ID):
+   - Muéstrame el abstract completo, los autores y los recursos enlazados
+   - Muéstrame los comentarios de la comunidad si los hay
+   - Pregúntame si quiero una lectura profunda
+
+4. Para lecturas profundas:
+   - Trae el paper completo vía arxiv-source
+   - Resume contribuciones clave, metodología y resultados
+   - Señala cualquier repo de código enlazado que deba revisar
+
+Mantén una lista de los papers que revisé hoy con takeaways de una línea.
+```
+
+La primera vez que lo probé escribí: *"¿Qué está en tendencia hoy en Hugging Face Papers?"* — y el pipeline arrancó solo.
+
+## Cómo se ve en la práctica
+
+Mi mañana ahora se ve así:
+
+**Paso 1 — Escaneo (2 minutos).** Recibo los 10 trending con su resumen de una línea y los upvotes. La mayoría muere aquí, y eso está bien. Un resumen honesto de una línea me dice si el paper toca mi área o no.
+
+**Paso 2 — Triaje (5 minutos).** De los 10, quizás 2 tienen repo de GitHub y comentarios activos. Para esos pido el detalle completo: abstract, autores, recursos enlazados. Los comentarios de la comunidad son oro — si alguien ya encontró que la sección 4 tiene números que no reproducen, me entero antes de perder una tarde.
+
+**Paso 3 — Lectura profunda (cuando vale la pena).** Uno de cada diez papers merece esto. Pido el texto completo por su ID de arXiv y OpenClaw me devuelve contribuciones, metodología y resultados estructurados, con los repos señalados.
+
+La lista de "papers revisados hoy" con takeaways de una línea es la parte que no sabía que necesitaba. Al final de la semana tengo un registro real de qué miré y por qué lo descarté o lo guardé.
+
+## Por qué la lectura profunda es la pieza que importa
+
+Casi todo lo que probé antes para "seguir papers" se quedaba en el abstract. Y el abstract miente. No a propósito — pero un abstract optimizado para aceptación rara vez te dice las limitaciones del método.
+
+Poder pedir el LaTeX completo de arXiv cambia la conversación. "¿Cómo manejan el contexto largo?" deja de ser especulación y se vuelve una pregunta con respuesta verificable en la sección de metodología.
+
+Ahí está mi opinión honesta sobre este setup: **el valor no está en leer más papers, está en triar mejor**. La aritmética simple: si consumen tu atención 40 papers al día, pierdes. Si descartas 38 en dos minutos y lees 2 a fondo, ganas. Este pipeline existe para comprimir la primera parte y proteger la segunda.
+
+## Variaciones que uso
+
+- **Días de nicho:** "busca quantización de modelos en dispositivo" en vez del trending general, cuando estoy en modo implementación
+- **Control de ruido:** pedir solo papers con repo de GitHub enlazado, porque un paper sin código suele quedarse en la pila de "algún día"
+- **Verificación rápida:** abstract vía `arxiv_abstract` antes de comprometerme a la lectura completa
+
+## Empieza mañana
+
+Si tu rutina actual es refrescar Hugging Face Papers y abrir diez pestañas, prueba esto una semana. Dos comandos de instalación, un prompt, y tu triaje de investigación pasa de veinte minutos dispersos a siete minutos enfocados.
+
+En [papayaclaw.com](https://papayaclaw.com) encontrarás más workflows como este, pensados para que la maquinaria de investigación corra sola mientras tú te concentras en lo que de verdad construyes.
+
+Tu atención es finita. Gástala en los dos papers que importan, no en los cuarenta que no.

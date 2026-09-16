@@ -1,0 +1,162 @@
+---
+title: "Crea dashboards al instante para cualquier métrica que le importe a tu startup"
+date: "2026-08-03"
+summary: "Deja de construir dashboards a mano. Aprende a usar sub-agentes paralelos para monitorear GitHub, Twitter, mercados y salud del sistema en tiempo real."
+---
+
+# Crea dashboards al instante para cualquier métrica que le importe a tu startup
+
+Los dashboards estáticos son basura. Para cuando terminas de construirlos, las métricas que importan ya cambiaron.
+
+Y el proceso es peor: polls secuenciales a múltiples APIs, rate limits que te frenan, un frontend custom que nadie mantiene. Dos semanas de desarrollo para un panel que nadie mira porque los datos están stale.
+
+Hay otra forma.
+
+## El problema real
+
+Necesitas visibilidad en tiempo real. GitHub stars, menciones en Twitter, volumen en Polymarket, CPU del servidor. Todo junto, todo actualizado.
+
+Lo típico: armas un script que hace requests uno tras otro. El primer API responde en 200ms, el segundo en 800ms, el tercero te rate limita. Total: 5 segundos por ciclo, y a mitad de camino ya los datos del primero están desactualizados.
+
+Peor aún: cada vez que quieres agregar una fuente nueva, toca modificar código. Cambió la API de Twitter? A arreglar. Querés agregar Reddit? Otro fin de semana.
+
+## La solución: sub-agentes en paralelo
+
+En lugar de un solo agente que hace todo secuencialmente, spawns sub-agentes. Cada uno ataca una fuente de datos independiente. Corren en paralelo, no se bloquean entre sí, y distribuyen la carga de API.
+
+La arquitectura es directa:
+
+1. Un agente principal orquesta
+2. Spawnea N sub-agentes (uno por fuente)
+3. Cada sub-agente fetch, procesa, y escribe a la base
+4. El agente principal agrega y renderiza
+5. Todo corre cada N minutos vía cron
+
+Sin frontend custom. Sin rate limits acumulados. Sin código frágil.
+
+## Setup concreto
+
+Primero, la base de datos para históricos:
+
+```sql
+CREATE TABLE metrics (
+  id SERIAL PRIMARY KEY,
+  source TEXT,
+  metric_name TEXT,
+  metric_value NUMERIC,
+  timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE alerts (
+  id SERIAL PRIMARY KEY,
+  source TEXT,
+  condition TEXT,
+  threshold NUMERIC,
+  last_triggered TIMESTAMPTZ
+);
+```
+
+Dos tablas. `metrics` guarda cada lectura con timestamp. `alerts` trackea cuándo se disparó cada condición para no spampear.
+
+Después, creás un canal de Discord (tipo `#dashboard`) donde llegan las actualizaciones. Nada de dashboards web si no querés — Discord funciona como interfaz.
+
+## El prompt que lo mueve todo
+
+Acá está la parte donde define tu dashboard de forma conversacional:
+
+```text
+You are my dynamic dashboard manager. Every 15 minutes, run a cron job to:
+
+1. Spawn sub-agents in parallel to fetch data from:
+   - GitHub: stars, forks, open issues, commits (past 24h)
+   - Twitter: mentions of "@username", sentiment analysis
+   - Polymarket: volume for tracked markets
+   - System: CPU, memory, disk usage via shell commands
+
+2. Each sub-agent writes results to the metrics database.
+
+3. Aggregate all results and format a dashboard:
+
+📊 **Dashboard Update** — [timestamp]
+
+**GitHub**
+- ⭐ Stars: [count] (+[change])
+- 🍴 Forks: [count]
+- 🐛 Open Issues: [count]
+- 💻 Commits (24h): [count]
+
+**Social Media**
+- 🐦 Twitter Mentions: [count]
+- 📈 Sentiment: [positive/negative/neutral]
+
+**Markets**
+- 📊 Polymarket Volume: $[amount]
+- 🔥 Trending: [market names]
+
+**System Health**
+- 💻 CPU: [usage]%
+- 🧠 Memory: [usage]%
+- 💾 Disk: [usage]%
+
+4. Post to Discord #dashboard.
+
+5. Check alert conditions:
+   - If GitHub stars change > 50 in 1 hour → ping me
+   - If system CPU > 90% → alert
+   - If negative sentiment spike on Twitter → notify
+
+Store all metrics in the database for historical analysis.
+```
+
+Nota lo que pasa ahí: le estás diciendo *qué* quieres, no *cómo* hacerlo. El sistema decide cómo spawneear los sub-agentes, cómo paralelizar, cómo manejar errores.
+
+## Skills que entran en juego
+
+Cada sub-agente usa herramientas específicas:
+
+- **gh CLI** para GitHub — queries directas a la API sin auth compleja
+- **bird** (Twitter) para menciones y sentimiento
+- **web_search / web_fetch** para APIs externas tipo Polymarket
+- **postgres** para escribir métricas
+- **shell commands** para CPU, memoria, disco
+- **Discord** o **Canvas** para renderizar
+
+La combinación depende de qué fuentes necesites. Agregás Reddit? Spawneás otro sub-agente con web_fetch. No tocás la lógica existente.
+
+## Alertas que importan
+
+El dashboard no es solo visualización. Es detección.
+
+Cuando GitHub stars suben más de 50 en una hora, algo pasó. Un post viral, una mención en Hacker News. Querés saberlo *ahora*, no mañana cuando mirás el gráfico.
+
+Cuando el CPU pasa 90%, es incidente. No es un dato bonito para un chart — es algo que requiere acción inmediata.
+
+Cuando el sentimiento en Twitter se vuelve negativo, hay un problema de producto o PR que escala. Detectarlo temprano cambia la respuesta.
+
+Todo eso sale del mismo sistema. No armás alertas separadas en PagerDuty, no configurás monitors en Datadog. Está en el prompt.
+
+## Históricos sin esfuerzo
+
+Como cada lectura va a `metrics` con timestamp, podés consultar tendencias en cualquier momento:
+
+"Show me GitHub star growth over the past 30 days."
+
+El sistema query la base, calcula deltas, y te devuelve la respuesta. O si preferís visual, usás Canvas para renderizar un HTML con charts.
+
+La clave: no diseñaste nada de esto upfront. El schema es simple, las queries son directas, y la flexibilidad viene de tener los datos crudos con timestamps.
+
+## Por qué esto funciona para equipos chicos
+
+No tenés tiempo para buildar un dashboard custom. Ni para mantenerlo. Cada cambio de requisitos es dolor.
+
+Con este approach, cambiar qué monitoreás es un cambio en el prompt. Agregar una fuente es agregar un sub-agente. Modificar un threshold es editar una línea.
+
+El costo de iteración cae a minutos en vez de días.
+
+Y como los sub-agentes corren en paralelo, el tiempo total de ejecución es el del sub-agente más lento, no la suma de todos. Pasás de 5 segundos secuenciales a ~800ms paralelo.
+
+---
+
+Si estás perdiendo tiempo armando dashboards que nadie mantiene o haciendo polls secuenciales que te matan los rate limits, hay un camino mejor.
+
+En **papayaclaw.com** te mostramos cómo configurar este tipo de flujos para tu stack específico — sin vendor lock-in, sin frontend custom, sin scripts frágiles. Dale un vistazo.

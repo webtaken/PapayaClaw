@@ -1,0 +1,120 @@
+---
+title: "My Event RSVPs Are Now Fully Automated (and Guests Actually Show Up)"
+date: "2026-08-26"
+summary: "How I replaced manual RSVP phone calls with an AI voice agent that confirms guests, collects dietary needs, and compiles everything into a clean summary."
+---
+
+# My Event RSVPs Are Now Fully Automated (and Guests Actually Show Up)
+
+Last month I hosted a company offsite for 24 people. The week before, I realized I had no idea who was actually showing up. Emails went unread. Slack messages got buried. A text blast got me three responses — two of which were "sorry, can't make it."
+
+So I did what I always do: picked up the phone and started dialing.
+
+Twenty phone calls later, I had scribbled notes on sticky notes, a half-finished spreadsheet, and a growing headache. I forgot to ask Sarah about her dietary restriction until my coworker mentioned it at the event. Mike brought a plus-one I didn't have a seat for.
+
+There has to be a better way.
+
+## Why phone calls still win
+
+Here's the thing — phone calls work. They get dramatically higher response rates than text or email. People pick up, they answer directly, and you can ask follow-up questions on the spot.
+
+The problem isn't the medium. It's the manual labor of making 20+ calls, playing phone tag, and keeping track of what everyone said.
+
+I fixed this by having an AI make the calls for me.
+
+## The setup: OpenClaw + SuperCall
+
+I use [OpenClaw](https://papayaclaw.com) as my automation layer, and the [SuperCall](https://clawhub.ai/xonder/supercall) plugin handles the actual phone calls. SuperCall is a fully standalone voice agent — it calls people via Twilio, talks to them using OpenAI's GPT-4o Realtime voice model, and logs the conversation.
+
+The key detail: SuperCall is sandboxed. The AI on the call only has access to the context you explicitly give it — a persona name, a goal, and an opening line. It can't access your files, your other tools, or your main agent.
+
+This matters for two reasons. First, safety — nobody on the other end can prompt-inject their way into your system. Second, conversation quality — a scoped, single-purpose agent stays on topic way better than a general-purpose one.
+
+What you get is a focused, natural-sounding call that asks about RSVP status, collects dietary needs, notes plus-ones, and hangs up. No weird tangents.
+
+## What you need before starting
+
+Grab these four things:
+
+- **SuperCall plugin** — install via `openclaw plugins install @xonder/supercall`
+- **Twilio account** with a phone number for outbound calls
+- **OpenAI API key** — GPT-4o Realtime handles the voice
+- **ngrok** — for webhook tunneling, free tier works fine
+
+The [SuperCall README](https://github.com/xonder/supercall) walks through the full config. Make sure hooks are enabled in your OpenClaw config before proceeding.
+
+## Preparing the guest list
+
+Keep it simple. A plain text file works:
+
+```text
+Guest List — Summer BBQ, Saturday June 14th, 4 PM, 23 Oak Street
+
+- Sarah Johnson: +15551234567
+- Mike Chen: +15559876543
+- Rachel Torres: +15555551234
+- David Kim: +15558887777
+```
+
+You can paste this directly into the chat or reference a file. No fancy formatting needed.
+
+## The prompt that runs everything
+
+Here's what I feed OpenClaw:
+
+```text
+I need you to confirm attendance for my event. Here are the details:
+
+Event: Summer BBQ
+Date: Saturday, June 14th at 4 PM
+Location: 23 Oak Street
+
+Here is my guest list:
+<paste your guest list here>
+
+For each guest, use supercall to call them. Use the persona "Jamie, event coordinator
+for [your name]". The goal for each call is to confirm whether they're attending,
+and note any dietary restrictions, plus-ones, or other comments.
+
+After each call, log the result. Once all calls are done, give me a full summary:
+- Who confirmed
+- Who declined
+- Who didn't answer
+- Any notes or special requests from each guest
+```
+
+OpenClaw calls each guest one by one. You can check in anytime by asking for a status update. When it's done, you get a clean summary — confirmed, declined, no-answer, and every note or special request organized by name.
+
+## Things I learned the hard way
+
+**Test with 2-3 people first.** I made the mistake of blasting my full 24-person list on the first run. The persona sounded slightly too formal, and I couldn't adjust mid-batch. Now I always run a small test group, tweak the tone, then let it rip on the full list.
+
+**Watch the clock.** You don't want your AI calling guests at 8 AM or 9 PM. Tell OpenClaw to restrict calling hours — something like "only call between 10 AM and 7 PM in the guest's local timezone."
+
+**Read the transcripts.** SuperCall logs everything to `~/clawd/supercall-logs`. After my first batch, I skimmed through a few and noticed the agent wasn't asking about plus-ones consistently. A small prompt tweak fixed it for the next run.
+
+**No-answers need a plan.** Not everyone picks up. Decide upfront: do you want OpenClaw to retry once, or flag them for a manual follow-up text? I go with flag-and-text — it feels less aggressive.
+
+**Calls cost money.** Twilio charges per minute. For 24 guests with ~2-minute calls, I spent about $1.80 total. Not nothing — set spending limits in your Twilio console if you're running large lists.
+
+## Why this beats the alternatives
+
+Email RSVPs: 30-40% open rate, maybe half of those respond. You're chasing people for days.
+
+Text blasts: Better open rates, but people treat them as one-way announcements. Response rates are still low.
+
+Manual phone calls: Highest response rate, but you lose an entire afternoon and probably miss half the details.
+
+SuperCall gives you the response rate of a phone call without the time cost. And because the agent asks the same questions every time, you don't forget to collect dietary restrictions or plus-one info.
+
+## The result
+
+My offsite went from 24 maybes to a confirmed list of 19 attendees, 3 declines, and 2 no-answers (who I texted separately). I had every dietary restriction logged, knew about two extra plus-ones in advance, and spent maybe 10 minutes setting the whole thing up.
+
+The AI made the calls. I focused on actual event planning.
+
+---
+
+If you're running events — community meetups, company offsites, dinner parties, weddings — and you're tired of chasing RSVPs, this is the kind of automation that actually saves you real time. Not theoretical productivity gains. Actual hours back on your calendar.
+
+Head over to [papayaclaw.com](https://papayaclaw.com) to see how OpenClaw can handle this and dozens of other workflows for your team.

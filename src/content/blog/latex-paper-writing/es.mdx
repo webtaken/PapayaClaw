@@ -1,0 +1,101 @@
+---
+title: "Escribir papers en LaTeX acaba de volverse 10 veces menos doloroso"
+date: "2026-09-09"
+summary: "Cómo convertir tu agente en un asistente de LaTeX con compilación instantánea usando el skill latex-compiler y un contenedor Prismer con TeX Live completo, sin instalar nada en local."
+---
+
+# Escribir papers en LaTeX acaba de volverse 10 veces menos doloroso
+
+Si alguna vez montaste un entorno LaTeX en local, conoces el ritual: descargas TeX Live (varios gigabytes), rezas para que la instalación no se rompa a la mitad, y luego pasas la tarde depurando errores de compilación en un log que parece escrito en otro idioma.
+
+Y ni hablamos del flujo de trabajo. Escribes en tu editor, guardas, corres `pdflatex` en la terminal, cambias al visor de PDF, descubres que una figura se salió del margen, vuelves al editor. Repite ese ciclo unas doscientas veces por paper.
+
+Mi postura después de probar este flujo: instalar TeX Live en local es un rito de iniciación que ya nadie necesita en 2025. El verdadero cuello de botella no es la sintaxis de LaTeX — es el ciclo escribir-compilar-revisar.
+
+Aquí va cómo eliminarlo por completo.
+
+## La idea: tu agente como coautor con compilación instantánea
+
+El setup es un skill llamado [latex-compiler](https://github.com/Prismer-AI/Prismer/tree/main/skills/latex-compiler) que corre sobre un workspace de Prismer. Te da 4 herramientas:
+
+- `latex_compile` — compila tu documento con `pdflatex`, `xelatex` o `lualatex`
+- `latex_preview` — renderiza el PDF sin salir de la conversación
+- `latex_templates` — lista las plantillas disponibles
+- `latex_get_template` — te descarga la plantilla inicial
+
+Todo corre dentro de un contenedor que levanta un servidor LaTeX en el puerto 8080 con TeX Live completo. No instalas nada en tu máquina. Cero gigabytes en tu disco.
+
+Esto cambia la forma de escribir. En vez de redactar secciones a ciegas y compilar "cuando acabe", describes lo que quieres y el agente genera el código fuente. Después de cada edición importante, compila y te muestra el PDF ahí mismo. Detectas un problema de formato en segundos, no en tu siguiente sesión de depuración.
+
+## Qué cubre el flujo
+
+- **Escritura colaborativa**: describes una sección en lenguaje natural y el agente genera el LaTeX
+- **Compilación instantánea**: `pdflatex`, `xelatex` o `lualatex`, sin instalación local
+- **Preview inline**: el PDF aparece en la conversación, sin saltar a otra app
+- **Plantillas listas**: `article`, IEEE, `beamer`, artículo en chino — cero boilerplate
+- **Bibliografía**: soporte con BibTeX/BibLaTeX — pegas el contenido de tu `.bib` y listo
+
+Eso último importa más de lo que parece. Si has perdido una tarde peleando con una referencia rota, sabes de qué hablo.
+
+## Configuración en 3 pasos
+
+### 1. Levanta el contenedor
+
+Clona y despliega Prismer con Docker. El servidor LaTeX con TeX Live completo arranca automáticamente:
+
+```bash
+git clone https://github.com/Prismer-AI/Prismer.git && cd Prismer
+docker compose -f docker/docker-compose.dev.yml up
+```
+
+Eso es todo el setup de infraestructura. Sin gestionar paquetes de TeX, sin variables de entorno, sin `tlmgr` fallando a las 11 de la noche.
+
+### 2. Dale el flujo de trabajo al agente
+
+El skill `latex-compiler` viene integrado — no hay que instalar nada extra. Solo dale a OpenClaw un prompt con tu flujo:
+
+```text
+Ayúdame a escribir un paper de investigación en LaTeX. Mi flujo:
+
+1. Empieza desde la plantilla IEEE (o article/beamer según lo que necesite)
+2. Cuando describa una sección, genera el código fuente LaTeX
+3. Después de cada edición importante, compila y previsualiza el PDF
+   para que pueda revisar el formato
+4. Si hay errores de compilación, lee el log y corrígelos automáticamente
+5. Cuando te pase entradas BibTeX, agrégalas a la bibliografía y recompila
+
+Usa xelatex si necesito soporte para chino/CJK; si no, pdflatex por defecto.
+Ejecuta siempre 2 pasadas para las referencias cruzadas.
+```
+
+Dos detalles de ese prompt que valen oro. Primero, la corrección automática de errores: si la compilación falla, el agente lee el log, identifica el problema y lo arregla. Segundo, las 2 pasadas: cualquier paper con `\ref` y `\cite` las necesita, y olvidarlas es el clásico "¿por qué salen signos de interrogación en todas las referencias?".
+
+### 3. Pruébalo
+
+Pega esto en la conversación:
+
+> "Empieza un paper IEEE titulado 'A Survey of LLM Agents'. Dame la plantilla con las secciones de abstract e introduction rellenadas y compílalo."
+
+En segundos tienes un PDF compilado con el formato IEEE correcto, visible en la misma conversación. A partir de ahí, el flujo es: describes la siguiente sección → el agente la escribe → compila → revisas el preview. En bucle.
+
+## Por qué este flujo funciona (y no es por la IA)
+
+Seamos honestos: un LLM ya sabía escribir LaTeX antes de esto. Lo que cambia aquí es el bucle de iteración.
+
+Antes: escribes en el editor → guardas → compilas en la terminal → cambias de ventana al PDF → vuelves al editor. Cada iteración cuesta minutos de cambio de contexto. Con 200 iteraciones por paper, hablamos de horas muertas.
+
+Ahora: describe → genera → compila → preview → corrige. Todo en una sola conversación, sin cambiar de app, sin tocar la terminal. El agente lee los logs de error por ti, así que ni siquiera interpretas los mensajes crípticos de TeX. Y cuando llega la hora de la bibliografía, pegas tus entradas BibTeX y el agente las integra y recompila con las referencias resueltas.
+
+El detalle del CJK también es real: si escribes en chino o mezclas idiomas, el flujo cambia a `xelatex` automáticamente. Si no, `pdflatex` por defecto. Es el tipo de decisión que normalmente te obliga a documentarte media tarde, resuelta de entrada.
+
+## Mi conclusión
+
+Si tu relación con LaTeX es "lo uso porque el congreso me obliga", este flujo te quita la parte dolorosa y te deja la parte útil: escribir el contenido. Si eres de los que disfruta ajustar kerning a mano, bueno, siempre puedes abrir el editor.
+
+A mí me quedó claro que el entorno local de LaTeX es deuda técnica que ya no merece pagarse. Describe lo que quieres, mira el PDF, sigue escribiendo.
+
+## Empieza hoy
+
+El setup completo son dos comandos de Docker y un prompt. Si quieres ver más guías de workflows con agentes — desde compilación de papers hasta automatización de pipelines de escritura — pasa por [papayaclaw.com](https://papayaclaw.com). Tenemos la colección completa de skills y casos de uso, con ejemplos listos para copiar.
+
+Tu próxima deadline no necesita un TeX Live de 4 gigabytes en tu laptop.

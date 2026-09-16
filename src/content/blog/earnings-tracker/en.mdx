@@ -1,0 +1,83 @@
+---
+title: "I Built an AI That Tracks Earnings Calls So I Never Miss a Beat"
+date: "2026-08-24"
+summary: "Automate your earnings season workflow with cron jobs, web search, and Telegram—no more skimming 50-page transcripts for the one metric that matters."
+---
+
+# I Built an AI That Tracks Earnings Calls So I Never Miss a Beat
+
+Never again read through 50 pages of earnings transcripts just to find the one number that matters.
+
+Earnings season hits and suddenly you're juggling ten browser tabs, three spreadsheet trackers, and a nagging feeling you forgot something. NVDA reports Tuesday. Or was it Wednesday? Did META already drop? What did they say about capex?
+
+I got tired of this. So I built an automated pipeline that handles the entire earnings tracking workflow end to end.
+
+## The problem with manual earnings tracking
+
+Here's what earnings season usually looks like: you check a calendar site, note down the dates, set reminders, then scramble to find results after each report drops. Maybe you subscribe to a few newsletters. Maybe you pay for a Bloomberg terminal. Either way, you're still doing the mental work of filtering, prioritizing, and synthesizing.
+
+For founders and small teams who invest or track competitors, this is wasted cycles. You don't need every company's earnings. You need *your* companies' earnings, distilled down to what actually affects your decisions.
+
+## The architecture: cron jobs + search + Telegram
+
+The setup uses three things: OpenClaw's built-in `web_search` skill, its cron job support, and a dedicated Telegram topic. That's it. No custom scrapers, no API keys to earnings data providers, no database to maintain.
+
+The workflow runs in two phases.
+
+**Phase 1: Sunday preview.** Every Sunday at 6 PM, a cron job fires. It searches for the upcoming week's earnings calendar, filters for the companies you care about, and posts a clean list to your Telegram. You get a notification, scan the list, and reply with which ones you want tracked.
+
+**Phase 2: One-shot delivery.** When you confirm, OpenClaw schedules individual cron jobs for each earnings date and time. After each report drops, it searches for results, pulls the key numbers, and formats a summary directly into your Telegram thread.
+
+No polling. No manual triggers. The cron jobs are one-shot—they fire once and disappear.
+
+## Setting it up in five minutes
+
+First, create a Telegram topic called "earnings" wherever you want the updates to land.
+
+Then give OpenClaw this prompt:
+
+```text
+Every Sunday at 6 PM, run a cron job to:
+1. Search for the upcoming week's earnings calendar for tech and AI companies
+2. Filter for companies I care about (NVDA, MSFT, GOOGL, META, AMZN, TSLA, AMD, etc.)
+3. Post the list to my Telegram "earnings" topic
+4. Wait for me to confirm which ones I want to track
+
+When I reply with which companies to track:
+1. Schedule one-shot cron jobs for each earnings date/time
+2. After each report drops, search for earnings results
+3. Format a summary including: beat/miss, revenue, EPS, key metrics, AI-related highlights, guidance
+4. Post to Telegram "earnings" topic
+
+Keep a memory of which companies I typically track so you can auto-suggest them each week.
+```
+
+That last line matters. After a couple weeks, the system learns your patterns. If you consistently track NVDA, META, and MSFT, it'll pre-select them and just ask you to confirm—saving you even the small friction of typing out tickers.
+
+## What the output actually looks like
+
+When a report drops, you get something like this in Telegram:
+
+- **Beat/miss** vs consensus estimates
+- Revenue and EPS, actual vs expected
+- Key metrics specific to that company (DAU for META, cloud growth for MSFT, data center revenue for NVDA)
+- AI-related highlights (new model releases, capex comments, customer wins)
+- Forward guidance snippets
+
+Not a full transcript. Not a 2,000-word recap article. The numbers and context you need to decide whether something matters, delivered while you're still in your Telegram window.
+
+## Why this beats the alternatives
+
+Paid earnings services run $50-200/month and still dump raw data on you. Newsletters are written for everyone, not for your specific portfolio. Building your own scraper means maintaining it when sites change their HTML.
+
+This approach costs nothing beyond the OpenClaw usage, adapts to whatever companies you care about this week, and gets smarter over time through memory. The one-shot cron pattern is particularly useful—no stale jobs hanging around, no cleanup needed.
+
+## The bigger picture
+
+This isn't really about earnings calls. It's about a pattern: **recurring research delivered on a schedule, filtered to your context, pushed somewhere you're already looking.**
+
+You could apply the same structure to competitor product launches, regulatory filings, grant deadlines, or conference talk schedules. Any domain where the raw information is public but the filtering and timing are the actual work.
+
+---
+
+If you're building workflows like this for your own research or team operations, [papayaclaw.com](https://papayaclaw.com) has more patterns and setups worth stealing. We write for founders who'd rather automate than aggregate.

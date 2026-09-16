@@ -1,0 +1,115 @@
+---
+title: "This AI Reads arXiv Papers So I Don't Have To"
+date: "2026-08-12"
+summary: "Turn your agent into a research reading assistant that fetches, parses, and summarizes arXiv papers in under 60 seconds — no PDF downloads required."
+---
+
+# This AI Reads arXiv Papers So I Don't Have To
+
+What if you could get the key insights from any arXiv paper in under 60 seconds?
+
+If you're a researcher, PhD student, or ML engineer, you already know the drill. You spot a paper reference, open arXiv, download the PDF, squint at dense LaTeX notation, lose your place when you switch tabs, and repeat. Twenty papers later, you've forgotten what the first one was even about.
+
+I built a workflow that cuts this down to a conversation.
+
+## The real problem with reading papers
+
+It's not that papers are hard to read — it's that the *process* of reading them is broken. You're context-switching between your IDE, your notes, and a PDF viewer. You're manually parsing LaTeX macros that expand to who-knows-what. You're reading full sections when you only need one paragraph.
+
+And when you want to compare five papers on the same topic? You're opening five tabs, scanning five abstracts, and trying to hold it all in working memory.
+
+That's not research. That's tab management.
+
+## What the arXiv reader actually does
+
+I hooked up an agent skill called `arxiv-reader` from the Prismer repository. It gives the agent three tools:
+
+- **`arxiv_abstract`** — fetches just the abstract by paper ID
+- **`arxiv_sections`** — lists the table of contents without downloading the full text
+- **`arxiv_fetch`** — pulls the full paper, decompresses the LaTeX source, and flattens all `\input{}` and `\include{}` commands automatically
+
+No Python. No Docker. No external dependencies. It runs on Node.js built-ins, downloads directly from arXiv, and caches results locally so revisiting a paper is instant.
+
+The key detail: it works with the *LaTeX source*, not the rendered PDF. That means the agent gets clean, parseable text instead of a document dump.
+
+## How I actually use it
+
+Here's my prompt. I pasted this into OpenClaw once and it handles my entire reading workflow:
+
+```text
+I'm researching [topic]. Here's my workflow:
+
+1. When I give you an arXiv ID (like 2301.00001):
+   - First fetch the abstract so I can decide if it's relevant
+   - If I say "read it", fetch the full paper (remove appendix by default)
+   - Summarize the key contributions, methodology, and results
+
+2. When I give you multiple IDs:
+   - Fetch all abstracts and give me a comparison table
+   - Rank them by relevance to my research topic
+
+3. When I ask about a specific section:
+   - List the paper's sections first
+   - Then fetch and explain the relevant section in detail
+
+Keep a running list of papers I've read and their key takeaways.
+```
+
+This does three things I used to do manually:
+
+**First, it triages before I commit.** I give it an ID like `2401.04088`. It pulls the abstract. I decide whether it's worth reading. If it's not, I move on. Thirty seconds, no PDF download, no cognitive debt.
+
+**Second, it lets me browse structure first.** Instead of reading a 12-page paper top to bottom, I ask it to list sections. "Show me the structure of 2312.10745." I see: Introduction, Related Work, Proposed Method, Experiments, Ablation Studies, Conclusion. I jump straight to Proposed Method. I skip Related Work entirely because I already know the space.
+
+**Third, it compares across papers without me doing the work.** I paste five IDs. It fetches all five abstracts and returns a table with columns: Paper ID, Title, Key Contribution, Relevance Score. I can see at a glance which two are actually worth my time.
+
+## The setup (it's short)
+
+1. Grab the `arxiv-reader` skill from the [Prismer repository](https://github.com/Prismer-AI/Prismer/tree/main/skills/arxiv-reader).
+
+2. Copy the `skills/arxiv-reader/` directory into your OpenClaw skills folder.
+
+3. That's it. The skill is ready.
+
+No pip install, no container build, no API keys. The skill handles the arXiv download and LaTeX parsing internally.
+
+## A real example
+
+I was looking at recent work on sparse attention mechanisms. I had four paper IDs from a Twitter thread:
+
+- 2401.04088
+- 2312.10745
+- 2310.01889
+- 2402.03961
+
+Instead of opening four PDFs, I told the agent:
+
+> "Compare these four papers on sparse attention. Fetch all abstracts and rank by relevance to efficient long-context inference."
+
+Forty-five seconds later, I had a table. Two of the four were about hardware-aware attention — not what I needed. The other two addressed exactly my problem. I told the agent to "read" the top-ranked one. It pulled the full LaTeX source, skipped the appendix, and gave me a structured summary: contributions (3 bullet points), methodology (2 paragraphs), and results (key numbers from their Table 2).
+
+Then I asked: "What's their ablation on sequence length?" It listed the sections, found Ablation Studies, and explained only that section with the actual numbers.
+
+Total time: under two minutes. Total context switches: zero.
+
+## Why this beats the old way
+
+The shift isn't about speed, though that's nice. It's about *retention*. When I read a paper manually, I'm fighting the format — scrolling through PDFs, re-reading LaTeX I misparsed, losing my thread when I jump to a citation. By the time I finish, I've spent as much energy on navigation as on understanding.
+
+With this workflow, the agent handles navigation. I spend my energy on the thing that actually matters: deciding whether the ideas apply to my problem.
+
+The local caching is a small detail that matters more than you'd expect. When I circle back to a paper two days later — which happens constantly — the agent already has it. No re-download, no re-parse. The response is instant.
+
+## Who this is actually for
+
+If you read one arXiv paper a week, this is overkill. Open the PDF.
+
+But if you're triaging 10-20 papers per week — building a literature review, tracking a fast-moving subfield, or just trying to stay current — the friction adds up fast. This workflow removes the friction between "seeing a paper reference" and "knowing what it says."
+
+It's not a replacement for deep reading. When a paper matters, I still read it properly. But most papers don't deserve a full read. Most papers deserve a 60-second verdict.
+
+## Get started
+
+If you want to set this up yourself, the `arxiv-reader` skill is open source and takes two minutes to install. The full walkthrough — along with other agent workflows for research, code, and productivity — is over at [papayaclaw.com](https://papayaclaw.com).
+
+Stop managing tabs. Start reading.

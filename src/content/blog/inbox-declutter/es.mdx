@@ -1,0 +1,153 @@
+---
+title: "Por fin controla el caos del email: limpieza de bandeja con IA para fundadores ocupados"
+date: "2026-07-27"
+summary: "Cómo automatizar la lectura de newsletters con PapayaClaw y recibir un resumen diario en vez de cientos de correos sin abrir."
+---
+
+# Por fin controla el caos del email: limpieza de bandeja con IA para fundadores ocupados
+
+Tienes 847 correos sin leer.
+
+La mayoría son newsletters. Las mismas que te suscribiste con buena intención hace meses, cuando pensabas que tendrías tiempo de leerlas cada domingo.
+
+No lo hiciste.
+
+Y ahora tu bandeja de entrada es un cementerio de contenido útil que nunca vas a tocar, enterrado entre los correos que sí importan: soporte de clientes, respuestas de inversores, facturas que pagar.
+
+El problema no son las newsletters. El problema es el formato.
+
+## Lo que intentaste antes (y por qué no funcionó)
+
+Creamos una carpeta "Leer más tarde". Funcionó durante tres días.
+
+Instalamos extensiones que resumen correos individualmente. Sigue siendo un correo por cada newsletter. Sigue habiendo ruido.
+
+Probamos reglas de Gmail para archivar automáticamente. Funciona, pero entonces nunca lees nada porque desaparece de tu radar por completo.
+
+Ninguna de estas soluciones toca el problema real: no necesitas organizar mejor los correos. Necesitas reducir la señal al ruido de forma drástica.
+
+## El enfoque que sí funciona: un digest, no un archivo
+
+La idea es simple en teoría, compleja en ejecución manual:
+
+1. Recopilar todas las newsletters del día
+2. Extraer lo que realmente importa
+3. Desechar el resto
+4. Entregarte un solo resumen con los enlaces para profundizar
+
+Hacer esto a mano te lleva 30-40 minutos cada noche. Nadie lo hace consistentemente.
+
+Pero un agente de IA conectado a tu Gmail sí puede.
+
+## La arquitectura real
+
+Usamos PapayaClaw con el skill de Gmail OAuth. No es magia: es un cron job diario que lee tu bandeja, filtra newsletters por remitente y patrón de contenido, y genera un digest estructurado.
+
+El flujo técnico:
+
+- **Gmail OAuth** para acceso programático a tu cuenta (sin contraseñas en texto plano)
+- **Cron job** que se ejecuta cada día a las 20:00
+- **Filtro temporal** que solo lee correos de las últimas 24 horas
+- **Memoria persistente** que aprende tus preferencias con cada feedback
+
+## Setup paso a paso
+
+### Opcional pero recomendado: Gmail dedicado
+
+Esto suena contraintuitivo. ¿Otra cuenta de email?
+
+La razón es práctica. Si rediriges todas tus newsletters a una cuenta separada, tu inbox principal queda limpio por defecto. No necesitas reglas complicadas ni filtros.
+
+El proceso:
+
+1. Crea un nuevo Gmail (algo como `tunombre.newsletters@gmail.com`)
+2. Desde tu cuenta principal, da unsubscribe de todas las newsletters
+3. Resuscríbete usando la nueva dirección
+4. Conecta esa cuenta a PapayaClaw
+
+Si no quieres crear otra cuenta, funciona igual con tu Gmail principal. Solo acepta que los correos originales siguen ahí hasta que los archives.
+
+### Instalar el skill de Gmail OAuth
+
+Ve a clawhub.ai y busca el skill de Gmail OAuth Setup. Sigue la instalación estándar — son unos minutos de configuración OAuth con los permisos de lectura necesarios.
+
+Verifica que funciona pidiéndole a PapayaClaw que liste los correos recientes.
+
+### El prompt que lo hace todo
+
+Una vez instalado el skill, envía esta instrucción exacta a PapayaClaw:
+
+```txt
+Quiero que ejecutes un cron job cada día a las 8 p.m. para leer todos los emails de newsletters de las últimas 24 horas y generar un digest con los puntos más importantes junto con enlaces para leer más. Luego pide mi feedback sobre si elegí bien los puntos, y actualiza tu memoria basándote en mis preferencias para generar mejores digests en los siguientes jobs.
+```
+
+Hay tres elementos clave en este prompt que merecen atención:
+
+**"Cada día a las 8 p.m."** — El horario importa. Lo pones después de tu jornada laboral, cuando ya no vas a responder correos pero aún tienes energía para escanear información.
+
+**"Puntos más importantes junto con enlaces"** — El digest no reemplaza el contenido original. Te dice qué vale la pena leer y te da el link directo. Tú decides si profundizas.
+
+**"Actualiza tu memoria basándote en mis preferencias"** — Esta es la parte que convierte el sistema en algo que mejora con el tiempo. Si siempre ignoras las secciones de funding rounds pero clickeas todo sobre herramientas de productividad, los futuros digests reflejan eso.
+
+## Cómo se ve un digest real
+
+Después de una semana usando este sistema, un digest típico se ve así:
+
+```
+DAILY DIGEST — 14 Enero 2025
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📦 PRODUCTO
+• Linear lanzó roadmap público para equipos — los clientes pueden votar features
+  → https://linear.app/blog/...
+
+💰 FINANCIAMIENTO
+• (omitido por preferencia)
+
+🛠 HERRAMIENTAS
+• Nuevo CLI de Supabase permite migraciones sin salir de la terminal
+  → https://supabase.com/blog/...
+• Cursor añadió soporte para multi-file editing en contexto
+  → https://cursor.sh/changelog/...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+¿Estos temas fueron relevantes? ¿Qué cambiarías?
+```
+
+No son 47 correos. Es un bloque de texto que lees en 90 segundos.
+
+## Lo que pasa después de una semana
+
+Los primeros dos o tres días, el digest es genérico. PapayaClaw no conoce tus preferencias todavía.
+
+Aquí es donde el feedback importa. Cuando te pregunte si los temas fueron relevantes, responde honestamente:
+
+- "Omite todo sobre funding rounds"
+- "Siempre incluye cambios en herramientas de dev"
+- "Los artículos de opinión no me interesan a menos que hablen de pricing"
+
+Esa información se guarda en la memoria del agente. Para el día cinco, el digest ya se siente personalizado. Para el día diez, rara vez incluye algo que no te interesa.
+
+## El matemática simple
+
+Digamos que recibes 15 newsletters diarias. Cada una tiene un promedio de 4-5 artículos o enlaces.
+
+Sin este sistema: 75 piezas de contenido compitiendo por tu atención, mezcladas con correos reales.
+
+Con este sistema: 1 digest con 5-8 enlaces relevantes, entregado en un momento específico del día.
+
+Redujiste el ruido en un 90%. Y no perdiste información — al contrario, la información útil ahora es visible en vez de estar enterrada.
+
+## Empieza hoy
+
+Si estás leyendo esto, probablemente tienes una pestaña de Gmail abierta con un número rojo que no quieres mirar.
+
+La buena noticia: el setup completo toma menos de 20 minutos. La mayoría de ese tiempo es crear el Gmail dedicado si decides ir por esa ruta.
+
+Instala el skill de Gmail OAuth en PapayaClaw, copia el prompt de arriba, y mañana a las 8 p.m. recibes tu primer digest.
+
+Tu bandeja de entrada te lo va a agradecer.
+
+---
+
+**¿Quieres automatizar otras partes de tu workflow como fundador?** En [papayaclaw.com](https://papayaclaw.com) construímos agentes de IA que se conectan con tus herramientas y ejecutan tareas repetitivas sin que tú intervengas. Sin prompts genéricos, sin configuraciones de tres horas. Conecta, instruye, olvida.

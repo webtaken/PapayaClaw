@@ -1,0 +1,143 @@
+---
+title: "Ship a Mini App Overnight While You Sleep"
+date: "2026-07-31"
+summary: "Turn your AI agent into a self-directed builder that brain-dumps your goals, generates daily tasks, and ships working MVPs by morning — no prompting required."
+---
+
+# Ship a Mini App Overnight While You Sleep
+
+You know that feeling when you're lying in bed and think, *"I wish there was a tool that did X"* — and by the time you wake up, you've already forgotten about it?
+
+Now imagine waking up, grabbing your coffee, and finding a working prototype of that exact tool sitting in your repo.
+
+Not a hallucinated code dump. A real MVP. Built by your agent while you slept.
+
+That's what goal-driven autonomous tasks look like in practice. Here's how to set it up.
+
+## The real problem isn't building — it's deciding what to build
+
+Most indie hackers I talk to don't struggle with execution in the traditional sense. They struggle with two things simultaneously: breaking big goals into daily actions, and then actually doing those actions before the day gets eaten by support tickets, meetings, and random fires.
+
+You've got a Notion doc full of goals. Maybe a Trello board. Probably several. They collect dust while you spend your energy on whatever screams loudest that morning.
+
+Goal-driven autonomous tasks flip this. You give your agent your full goal stack once. Then it wakes up every morning, decides what to work on, and does it — including shipping mini-apps you never explicitly asked for.
+
+## How this actually works
+
+The core loop is deceptively simple:
+
+1. You brain-dump every goal you have into OpenClaw
+2. Every morning at 8 AM, the agent generates 4-5 tasks it can complete autonomously
+3. It executes those tasks using `sessions_spawn` and `sessions_send`
+4. It logs everything to a Kanban board it built for you
+
+The tasks aren't limited to coding. Your agent might research competitors, draft content, analyze partnership opportunities, or build a feature for an existing app. But the one that gets me excited? The overnight mini-app build.
+
+You tell it once: *"Build me a surprise mini-app MVP that gets me closer to one of my goals."* It picks a goal, finds an angle, and ships a prototype.
+
+## Step 1: The brain dump (this matters more than you think)
+
+Send this to your OpenClaw via Telegram or Discord:
+
+```text
+Here are my goals and missions. Remember all of this:
+
+Career:
+- Grow my YouTube channel to 100k subscribers
+- Launch my SaaS product by Q3
+- Build a community around AI education
+
+Personal:
+- Read 2 books per month
+- Learn Spanish
+
+Business:
+- Scale revenue to $10k/month
+- Build partnerships with 5 companies in my space
+- Automate as much of my workflow as possible
+
+Use this context for everything you do going forward.
+```
+
+Don't trim this down. Don't be "efficient." The brain dump is everything. Your agent's task quality is directly proportional to how much context it has about what you're trying to accomplish. Vague goals produce vague tasks. Specific goals produce surprises you actually care about.
+
+## Step 2: Set up the autonomous loop
+
+```text
+Every morning at 8:00 AM, come up with 4-5 tasks that you can complete
+on my computer today that bring me closer to my goals.
+
+Then schedule and complete those tasks yourself. Examples:
+- Research competitors and write analysis reports
+- Draft video scripts based on trending topics
+- Build new features for my apps
+- Write and schedule social media content
+- Research potential business partnerships
+- Build me a surprise mini-app MVP that gets me closer to one of my goals
+
+Track all tasks on a Kanban board. Update the board as you complete them.
+```
+
+Notice the last bullet. That's the overnight app shipper. But here's the critical nuance: tell it explicitly to build MVPs, not polished products. If you don't, it'll overengineer something and either fail or waste hours on styling that doesn't matter at the prototype stage.
+
+## Step 3: The Kanban board (let the agent build it)
+
+```text
+Build me a Kanban board in Next.js where I can see all the tasks you're
+working on. Show columns for To Do, In Progress, and Done. Update it
+in real-time as you complete them.
+```
+
+Yeah, the agent builds its own tracking tool. That's not a gimmick — it turns a black-box process into something you can inspect and course-correct. You see exactly what it worked on, what it shipped, and what it didn't get to.
+
+## The race condition that'll bite you (and the fix)
+
+Here's where most people's first attempt falls apart.
+
+When you run this with sub-agents via `sessions_spawn`, both the main session and spawned sub-agents will try to update the same task file. OpenClaw's `edit` tool requires an exact `oldText` match. If a sub-agent updates a line between the time your main session reads the file and tries to edit it, the text no longer matches.
+
+The edit silently fails. No error. No warning. Tasks just vanish.
+
+The fix is to split your task file into two roles:
+
+**`AUTONOMOUS.md`** — stays small. Contains only goals and open backlog. Only the main session touches this. Sub-agents never edit it.
+
+**`memory/tasks-log.md`** — append-only. Sub-agents only ever add new lines at the bottom. Never edit existing lines.
+
+```markdown
+# tasks-log.md — Completed Tasks (append-only)
+# Sub-agents: always append to the END. Never edit existing lines.
+
+### 2025-07-11
+- ✅ TASK-001: Research competitors → research/competitors.md
+- ✅ TASK-002: Draft blog post → drafts/post-1.md
+- ✅ TASK-003: Build price comparison mini-app → mini-apps/price-compare/
+```
+
+This is borrowed straight from Git's commit log design. You never rewrite history, you only append. It eliminates the race condition entirely.
+
+And it has a bonus: `AUTONOMOUS.md` stays under ~50 lines, which matters because that file gets loaded on every heartbeat poll. If it grows unbounded with completed tasks, you'll burn tokens for no reason.
+
+Always include this rule in your sub-agent spawn instructions:
+
+> "When done, append a ✅ line to `memory/tasks-log.md`. Never edit `AUTONOMOUS.md` directly."
+
+## Why this compounds in a way that feels unfair
+
+The first few days, the tasks will be obvious. Research this, draft that. Fine.
+
+But after a week or two, something shifts. The agent starts connecting dots across your goals in ways you wouldn't have. It might notice that your "build partnerships" goal and your "AI education community" goal overlap, and spin up a lightweight outreach tool tailored to that intersection. Or it might build a small script that automates part of your content pipeline because it noticed you keep doing the same manual step.
+
+You're not just getting free labor. You're getting a second brain that sees your goals from an angle you can't, because it's not tired, it's not biased by what you worked on yesterday, and it doesn't have sunk cost on any particular approach.
+
+## The uncomfortable truth
+
+Most goal-setting systems fail because they assume you have unlimited execution capacity. You don't. You have about 3-4 hours of deep work per day, and those hours are already spoken for.
+
+Goal-driven autonomous tasks don't make you more productive. They give you a second worker who shares your context and your incentives but operates on a completely different schedule — one that includes the hours you're asleep.
+
+Set it up on a Friday night. Give it the weekend. See what's in your repo Monday morning.
+
+---
+
+Want to see what else OpenClaw can do when you stop micromanaging it? We break down real agent workflows — with actual configs, actual failure modes, actual fixes — over at [papayaclaw.com](https://papayaclaw.com). No fluff, no "10x your productivity" nonsense. Just what works in production and what doesn't.
