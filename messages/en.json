@@ -306,7 +306,7 @@
     "selectProvider": "Select Provider",
     "selectModel": "Select Model",
     "customModelString": "Custom Model String",
-    "customModelPlaceholder": "e.g anthropic/claude-sonnet-4-5",
+    "customModelPlaceholder": "anthropic/claude-haiku-4.5",
     "apiKeyFor": "API Key for {provider}",
     "selectChannel": "Select Channel",
     "soon": "SOON",
@@ -339,7 +339,17 @@
     "popular": "POPULAR",
     "continueToCheckout": "Continue to Checkout",
     "redirecting": "Redirecting...",
-    "checkoutNote": "You'll be redirected to a secure Polar checkout. Your AI employee will be provisioned automatically after payment."
+    "checkoutNote": "You'll be redirected to a secure Polar checkout. Your AI employee will be provisioned automatically after payment.",
+    "openrouterModel": "OpenRouter model",
+    "openrouterSearch": "Search models (e.g. haiku, minimax)...",
+    "openrouterNoResults": "No model matches.",
+    "openrouterLoadError": "Could not load the model list. Type the exact model id below.",
+    "openrouterFeatured": "Recommended",
+    "openrouterNoTools": "No tool support",
+    "openrouterAdvanced": "Type a model id manually",
+    "modelLooksLikeKey": "That looks like an API key. Paste the key in the API key field below and pick a model here.",
+    "modelInvalidFormat": "Use the vendor/model form, e.g. anthropic/claude-haiku-4.5.",
+    "perMillion": "per 1M tokens"
   },
   "InstanceCard": {
     "running": "Running",

@@ -2,11 +2,13 @@
  * Cloud-init user data generator for OpenClaw VPS provisioning.
  *
  * Generates a cloud-init YAML script that:
- * 1. Installs jq and OpenClaw from scratch on a fresh Ubuntu 24.04 VPS
+ * 1. Installs jq and a pinned OpenClaw release on a fresh Ubuntu 24.04 VPS
  * 2. Runs `openclaw onboard` to bootstrap the gateway + systemd daemon
- * 3. Patches the OpenClaw config via `jq` (Telegram channel, model, UI, session)
- * 4. Restarts the gateway and waits for it to come up
- * 5. Writes a sentinel file so PapayaClaw can detect readiness via SSH
+ * 3. Patches the OpenClaw config via `jq` (channel, model, identity, session,
+ *    memory, tools, Control UI) using the 2026.9 schema
+ * 4. Validates the config (`openclaw config validate`) — invalid → error sentinel
+ * 5. Restarts the gateway and waits for it to come up — timeout → error sentinel
+ * 6. Writes a sentinel file so PapayaClaw can detect readiness via SSH
  *
  * Uses the official install path from https://docs.openclaw.ai/install
  * instead of Docker.
@@ -23,6 +25,18 @@
  */
 
 import { detectProviderByModelId } from "./ai-config";
+import { normalizeModelRef } from "./model-ref";
+
+/**
+ * OpenClaw release installed on every new VPS. Pinned so config-schema drift
+ * (e.g. 2026.9 retiring `ui.assistant`) is a deliberate bump, not a surprise.
+ * Override per environment with OPENCLAW_VERSION.
+ */
+export const DEFAULT_OPENCLAW_VERSION = "2026.9.4";
+
+export function getOpenClawVersion(): string {
+  return process.env.OPENCLAW_VERSION?.trim() || DEFAULT_OPENCLAW_VERSION;
+}
 
 export interface OpenClawConfig {
   instanceId: string;
@@ -35,6 +49,8 @@ export interface OpenClawConfig {
   sshPublicKey: string;
   tunnelToken: string;
   tunnelHostname: string;
+  /** Overrides OPENCLAW_VERSION / DEFAULT_OPENCLAW_VERSION. */
+  openclawVersion?: string;
 }
 
 /**
@@ -46,17 +62,19 @@ export interface OpenClawConfig {
  */
 export function generateCloudInit(config: OpenClawConfig): string {
   const key = config.modelApiKey || "YOUR_API_KEY";
-  let primaryModel = config.model;
+  const openclawVersion = config.openclawVersion || getOpenClawVersion();
+  const model = normalizeModelRef(config.model);
+  let primaryModel = model;
   let customModelsJson = "";
 
-  const detected = detectProviderByModelId(config.model);
+  const detected = detectProviderByModelId(model);
   const authChoice = detected?.authChoice ?? "openai-api-key";
   const apiKeyFlag = detected?.apiKeyFlag ?? "--openai-api-key";
 
   if (detected) {
     // openrouter/ and opencode/ models already include the provider prefix
     if (detected.id !== "openrouter" && detected.id !== "opencode") {
-      primaryModel = `${detected.id}/${config.model}`;
+      primaryModel = `${detected.id}/${model}`;
     }
 
     // MiniMax requires a custom models block per OpenClaw docs:
@@ -96,9 +114,17 @@ export function generateCloudInit(config: OpenClawConfig): string {
   } else {
     // Fallback: assume OpenAI-compatible
     if (!primaryModel.includes("/")) {
-      primaryModel = `openai/${config.model.replace("openai/", "")}`;
+      primaryModel = `openai/${model.replace("openai/", "")}`;
     }
   }
+
+  // OpenRouter proxies Anthropic/others through chat-completions; with
+  // thinking enabled, tool-call continuations lose the reasoning payload and
+  // the provider answers "incomplete or malformed tool call". Turn it off.
+  const thinkingFilter =
+    detected?.id === "openrouter"
+      ? ' | .agents.defaults.thinkingDefault = "off"'
+      : "";
 
   const customModelsB64 = customModelsJson
     ? Buffer.from(customModelsJson).toString("base64")
@@ -129,8 +155,8 @@ for i in $(seq 1 12); do
   sleep 5
 done
 
-# Install OpenClaw CLI
-curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard
+# Install OpenClaw CLI (pinned — see DEFAULT_OPENCLAW_VERSION / OPENCLAW_VERSION)
+curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard --version ${openclawVersion}
 
 # Export DBUS and systemd vars to guarantee daemon installation hooks flawlessly
 export XDG_RUNTIME_DIR=/run/user/0
@@ -145,7 +171,10 @@ mkdir -p /root/.openclaw/workspace
 export PATH=/root/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH
 
 # 1) Run the official OpenClaw CLI to bootstrap the gateway and systemd daemon
+# xtrace off: this line carries the provider API key and the gateway token.
+set +x
 openclaw onboard --non-interactive --mode local --auth-choice "${authChoice}" ${apiKeyFlag} "${key}" --gateway-port 18789 --gateway-bind loopback --gateway-auth token --gateway-token "${config.botToken}" --install-daemon --daemon-runtime node --skip-skills --accept-risk
+set -x
 
 # 2) Patch the generated config with jq (Telegram channel, model, UI, session)
 export BOT_TOKEN_B64="${botTokenB64}"
@@ -158,16 +187,23 @@ export CHANNEL="${config.channel}"
 BOT_TOKEN=$(echo "$BOT_TOKEN_B64" | base64 -d)
 INSTANCE_NAME=$(echo "$INSTANCE_NAME_B64" | base64 -d)
 
-# 2a) Patch channel config (Telegram or WhatsApp)
+# 2a) Patch channel config (Telegram or WhatsApp) — xtrace off, carries the bot token
+set +x
 if [ "$CHANNEL" = "telegram" ]; then
   jq --arg token "$BOT_TOKEN" '.channels.telegram = { enabled: true, botToken: $token, dmPolicy: "pairing", groups: { "*": { requireMention: true } } }' /root/.openclaw/openclaw.json > /run/oc.json && mv /run/oc.json /root/.openclaw/openclaw.json
 elif [ "$CHANNEL" = "whatsapp" ]; then
   CHANNEL_PHONE=$(echo "$CHANNEL_PHONE_B64" | base64 -d)
   jq --arg phone "$CHANNEL_PHONE" '.channels.whatsapp = { dmPolicy: "allowlist", allowFrom: [$phone] }' /root/.openclaw/openclaw.json > /run/oc.json && mv /run/oc.json /root/.openclaw/openclaw.json
 fi
+set -x
 
-# 2b) Patch model, UI, session, cron, browser, and Control UI for remote access
-jq --arg model "$MODEL_ID" --arg name "$INSTANCE_NAME" --arg origin "https://${config.tunnelHostname}" '.agents.defaults.model.primary = $model | .ui.assistant.name = $name | .ui.seamColor = "#FF4500" | .session.dmScope = "per-channel-peer" | .session.threadBindings.enabled = true | .session.reset.mode = "daily" | .cron.enabled = true | .browser = { enabled: true, evaluateEnabled: true } | .gateway.controlUi.enabled = true | .gateway.controlUi.dangerouslyDisableDeviceAuth = true | .gateway.controlUi.allowedOrigins = [$origin]' /root/.openclaw/openclaw.json > /run/oc.json && mv /run/oc.json /root/.openclaw/openclaw.json
+# 2b) Patch model, identity, session, cron, browser, memory, tools and Control UI.
+#     Schema: OpenClaw 2026.9 — identity lives in agents.entries.<id>.identity
+#     (the old ui-level assistant key is retired) and Control UI device auth
+#     can no longer be disabled (that flag is retired and ignored).
+#     memory.search defaults to OpenAI embeddings, which we have no key for.
+#     ask_user blocks the run waiting for a Control UI answer — never wanted on a chat channel.
+jq --arg model "$MODEL_ID" --arg name "$INSTANCE_NAME" --arg origin "https://${config.tunnelHostname}" '.agents.defaults.model.primary = $model${thinkingFilter} | .agents.entries.main.identity.name = $name | .ui.seamColor = "#FF4500" | .session.dmScope = "per-channel-peer" | .session.threadBindings.enabled = true | .session.reset.mode = "daily" | .cron.enabled = true | .browser = { enabled: true, evaluateEnabled: true } | .memory.search.provider = "none" | .tools.deny = ["ask_user"] | .gateway.controlUi.enabled = true | .gateway.controlUi.allowedOrigins = [$origin]' /root/.openclaw/openclaw.json > /run/oc.json && mv /run/oc.json /root/.openclaw/openclaw.json
 
 # 2c) Patch MiniMax custom models (only if CUSTOM_MODELS_B64 is set)
 if [ -n "$CUSTOM_MODELS_B64" ]; then
@@ -176,16 +212,31 @@ if [ -n "$CUSTOM_MODELS_B64" ]; then
   rm /run/custom_models.json
 fi
 
-# 3) Restart the gateway daemon by killing process, systemd Restart=always will kick in
-pkill -f "openclaw gateway" || true
+# 2d) Validate the patched config. The gateway refuses to hot-reload an invalid
+#     file and silently keeps the pre-patch config (no channels, default model),
+#     so fail the deploy loudly instead of reporting RUNNING.
+if ! openclaw config validate; then
+  echo "config-invalid" > /var/tmp/openclaw-error
+  exit 1
+fi
 
-# 4) Wait for gateway up
-for i in $(seq 1 12); do
+# 3) Restart the gateway daemon (openclaw-gateway.service, systemd --user);
+#    fall back to pkill + Restart=always if the CLI restart is unavailable.
+openclaw gateway restart || pkill -f "openclaw gateway" || true
+
+# 4) Wait for gateway up — fail the deploy if it never answers
+GATEWAY_UP=0
+for i in $(seq 1 24); do
   if curl -sf http://127.0.0.1:18789/ > /dev/null 2>&1; then
+    GATEWAY_UP=1
     break
   fi
   sleep 5
 done
+if [ "$GATEWAY_UP" != "1" ]; then
+  echo "gateway-timeout" > /var/tmp/openclaw-error
+  exit 1
+fi
 
 # 5) Install cloudflared and set up Cloudflare Tunnel
 curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null

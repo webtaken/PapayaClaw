@@ -12,6 +12,11 @@ import { provisionInstance } from "@/lib/provision-instance";
 import { assertProvisioningCapacity } from "@/lib/hetzner-limits";
 import { HetznerNoCapacityError } from "@/lib/hetzner";
 import { getSessionContext } from "@/lib/auth-context";
+import {
+  validateInstanceInput,
+  INSTANCE_INPUT_MESSAGES,
+  type ValidatedInstanceInput,
+} from "@/lib/instance-input";
 
 function provisionErrorResponse(err: unknown) {
   if (err instanceof HetznerNoCapacityError) {
@@ -73,9 +78,12 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const validation = validateBody(body);
+  const validation = validateInstanceInput(body);
   if (!validation.ok) {
-    return NextResponse.json({ error: validation.error }, { status: 400 });
+    return NextResponse.json(
+      { error: INSTANCE_INPUT_MESSAGES[validation.error] },
+      { status: 400 },
+    );
   }
 
   // Staff bypass payment: provision directly with no subscription, using the
@@ -140,61 +148,8 @@ export async function POST(request: Request) {
   }
 }
 
-type PlanType = "basic" | "pro";
-
-type ValidatedBody = {
-  name: string;
-  model: string;
-  modelApiKey: string | null;
-  channel: string;
-  botToken?: string;
-  channelPhone?: string | null;
-  planType?: PlanType;
-};
-
-/** Drop the staff-only planType before passing to provisionInstance. */
-function stripPlanType(data: ValidatedBody) {
+function stripPlanType(data: ValidatedInstanceInput) {
   const rest = { ...data };
   delete rest.planType;
   return rest;
-}
-
-function validateBody(
-  body: unknown,
-): { ok: true; data: ValidatedBody } | { ok: false; error: string } {
-  if (!body || typeof body !== "object") {
-    return { ok: false, error: "Invalid body" };
-  }
-  const b = body as Record<string, unknown>;
-  const name = typeof b.name === "string" ? b.name.trim() : "";
-  const model = typeof b.model === "string" ? b.model.trim() : "";
-  const channel = typeof b.channel === "string" ? b.channel : "";
-  const modelApiKey = typeof b.modelApiKey === "string" ? b.modelApiKey : null;
-  const botToken = typeof b.botToken === "string" ? b.botToken : undefined;
-  const channelPhone =
-    typeof b.channelPhone === "string" ? b.channelPhone : undefined;
-  const planType =
-    b.planType === "basic" || b.planType === "pro" ? b.planType : undefined;
-
-  if (!name || !model || !channel) {
-    return { ok: false, error: "Missing required fields" };
-  }
-  if (channel === "telegram" && !botToken) {
-    return { ok: false, error: "Telegram requires a bot token" };
-  }
-  if (channel === "whatsapp" && !channelPhone) {
-    return { ok: false, error: "WhatsApp requires a phone number" };
-  }
-  return {
-    ok: true,
-    data: {
-      name,
-      model,
-      modelApiKey,
-      channel,
-      botToken,
-      channelPhone,
-      planType,
-    },
-  };
 }

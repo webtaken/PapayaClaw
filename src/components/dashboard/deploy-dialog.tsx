@@ -42,6 +42,11 @@ import {
 } from "@/lib/ai-config";
 import { getProviderIcon, getChannelIcon } from "@/lib/ai-config-ui";
 import { createPendingCheckout } from "@/app/actions/create-pending-checkout";
+import { validateModelRef } from "@/lib/model-ref";
+import {
+  OpenRouterModelPicker,
+  manualModelErrorKey,
+} from "./openrouter-model-picker";
 
 const AVAILABLE_CHANNELS = new Set<ChannelId>(["telegram", "whatsapp"]);
 
@@ -151,9 +156,15 @@ export function DeployDialog({
     : selectedModel;
 
   const activeApiKey = modelApiKey.trim();
+  // Reject keys/typos typed as the model — the server enforces the same rule.
+  const modelIsValid = !!finalModelId && validateModelRef(finalModelId).ok;
+  const customModelError =
+    isCustomProvider && selectedProvider !== "openrouter"
+      ? manualModelErrorKey(customModelId)
+      : null;
 
   const canProceedStep1 =
-    name.trim() && selectedProvider && finalModelId && activeApiKey;
+    name.trim() && selectedProvider && modelIsValid && activeApiKey;
   const canProceedStep2 =
     selectedChannel &&
     ((selectedChannel === "telegram" && botToken.trim()) ||
@@ -224,7 +235,8 @@ export function DeployDialog({
   const selectedChannelData = CHANNELS.find((c) => c.id === selectedChannel);
 
   const getModelName = () => {
-    if (isCustomProvider) return finalModelId;
+    // Never echo something that failed validation (it may be a secret).
+    if (isCustomProvider) return modelIsValid ? finalModelId : "••••••••";
     if (!selectedProvider || !selectedModel) return "—";
     const models = getModelsByProvider(selectedProvider as ProviderId);
     const modelObj = models.find((m) => m.id === selectedModel);
@@ -427,29 +439,56 @@ export function DeployDialog({
                 </div>
               )}
 
-              {selectedProvider && isCustomProvider && (
+              {selectedProvider === "openrouter" && (
                 <div className="animate-fade-in-up">
-                  <Label
-                    htmlFor="custom-model-id"
-                    className="mb-1.5 block text-xs font-medium text-foreground/80"
-                  >
-                    {t("customModelString")}
-                  </Label>
-                  <div className="flex rounded-lg overflow-hidden border border-border bg-muted/50 shadow-sm focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500/20">
-                    <div className="bg-muted px-2.5 py-1.5 text-xs font-mono text-muted-foreground flex items-center border-r border-border">
-                      {selectedProvider}/
-                    </div>
-                    <input
-                      id="custom-model-id"
-                      type="text"
-                      placeholder={t("customModelPlaceholder")}
-                      value={customModelId}
-                      onChange={(e) => setCustomModelId(e.target.value)}
-                      className="flex-1 bg-transparent px-2.5 py-1.5 text-xs text-foreground font-mono placeholder:text-muted-foreground/60 focus:outline-none"
-                    />
-                  </div>
+                  <OpenRouterModelPicker
+                    inputId="custom-model-id"
+                    value={customModelId}
+                    onChange={setCustomModelId}
+                  />
                 </div>
               )}
+
+              {selectedProvider &&
+                isCustomProvider &&
+                selectedProvider !== "openrouter" && (
+                  <div className="animate-fade-in-up">
+                    <Label
+                      htmlFor="custom-model-id"
+                      className="mb-1.5 block text-xs font-medium text-foreground/80"
+                    >
+                      {t("customModelString")}
+                    </Label>
+                    <div
+                      className={`flex rounded-lg overflow-hidden border bg-muted/50 shadow-sm focus-within:ring-1 ${
+                        customModelError
+                          ? "border-destructive/60 focus-within:border-destructive focus-within:ring-destructive/20"
+                          : "border-border focus-within:border-violet-500 focus-within:ring-violet-500/20"
+                      }`}
+                    >
+                      <div className="bg-muted px-2.5 py-1.5 text-xs font-mono text-muted-foreground flex items-center border-r border-border">
+                        {selectedProvider}/
+                      </div>
+                      <input
+                        id="custom-model-id"
+                        type="text"
+                        autoComplete="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        aria-invalid={!!customModelError}
+                        placeholder={t("customModelPlaceholder")}
+                        value={customModelId}
+                        onChange={(e) => setCustomModelId(e.target.value.trim())}
+                        className="flex-1 bg-transparent px-2.5 py-1.5 text-xs text-foreground font-mono placeholder:text-muted-foreground/60 focus:outline-none"
+                      />
+                    </div>
+                    {customModelError && (
+                      <p className="mt-1.5 text-xs text-destructive">
+                        {t(customModelError)}
+                      </p>
+                    )}
+                  </div>
+                )}
 
               {selectedProvider && (
                 <div className="animate-fade-in-up mt-2">
@@ -464,6 +503,7 @@ export function DeployDialog({
                   <Input
                     id="model-api-key"
                     type="password"
+                    autoComplete="new-password"
                     placeholder="sk-..."
                     value={modelApiKey}
                     onChange={(e) => setModelApiKey(e.target.value)}

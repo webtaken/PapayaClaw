@@ -39,6 +39,7 @@ cp .env.example .env.development.local
 | `HETZNER_API_TOKEN` | Yes | API token from [Hetzner Cloud Console](https://console.hetzner.cloud/) > Security > API Tokens |
 | `HETZNER_SERVER_LIMIT` | No | Account-wide instance cap (default `5`). Provisioning is rejected once this many instances exist. |
 | `HETZNER_LOCATIONS` | No | Comma-separated location preference for new servers (default `hel1,nbg1,fsn1`). Locations without stock for the plan's server type are skipped; on `resource_unavailable` the next one is tried. |
+| `OPENCLAW_VERSION` | No | OpenClaw release installed on every new VPS (default `2026.9.4`, `DEFAULT_OPENCLAW_VERSION` in `src/lib/cloud-init.ts`). The cloud-init `jq` patches target that release's config schema, so bump it deliberately and re-run the cloud-init tests. |
 
 Create a token with **Read & Write** permissions.
 

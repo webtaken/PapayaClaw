@@ -33,14 +33,23 @@ The cloud-init script (`src/lib/cloud-init.ts`) runs on first boot of the Ubuntu
 
 The setup script then:
 1. Waits for DNS resolution (up to 60s)
-2. Installs OpenClaw CLI (`curl | bash`)
-3. Runs `openclaw onboard` with the selected provider/model/API key
-4. Patches the OpenClaw config with `jq` (channel, model, UI settings, session config)
+2. Installs the pinned OpenClaw CLI (`install.sh --version $OPENCLAW_VERSION`, default `2026.9.4`)
+3. Runs `openclaw onboard` with the selected provider/API key (xtrace is off around this line so the key and gateway token never reach the setup log)
+4. Patches the OpenClaw config with `jq` using the 2026.9 schema:
+   - `channels.telegram` / `channels.whatsapp`
+   - `agents.defaults.model.primary` (normalized — a duplicated `openrouter/` prefix is collapsed) and, for OpenRouter, `agents.defaults.thinkingDefault = "off"` (thinking + tool continuations through OpenRouter's chat-completions API fail with "incomplete or malformed tool call")
+   - `agents.entries.main.identity.name` (the old `ui.assistant` key is retired in 2026.9 and makes the whole config invalid)
+   - `memory.search.provider = "none"` (default is OpenAI embeddings, which we have no key for)
+   - `tools.deny = ["ask_user"]` (blocks the run waiting for a Control UI answer — never wanted on a chat channel)
+   - `gateway.controlUi.enabled` + `allowedOrigins` (device auth can no longer be disabled; the old flag is retired)
 5. Handles provider-specific config (e.g., MiniMax custom models block)
-6. Restarts the OpenClaw gateway
-7. Installs `cloudflared` and configures the Cloudflare Tunnel
-8. Installs channel plugins if needed (e.g., `@openclaw/whatsapp`)
-9. Writes a sentinel file: `/var/tmp/openclaw-ready` (or `/var/tmp/openclaw-error` on failure)
+6. Runs `openclaw config validate` — on failure writes `/var/tmp/openclaw-error` (`config-invalid`) and exits
+7. Restarts the OpenClaw gateway (`openclaw gateway restart`, `pkill` fallback) and waits up to 2 min — on timeout writes `/var/tmp/openclaw-error` (`gateway-timeout`) and exits
+8. Installs `cloudflared` and configures the Cloudflare Tunnel
+9. Installs channel plugins if needed (e.g., `@openclaw/whatsapp`)
+10. Writes a sentinel file: `/var/tmp/openclaw-ready`
+
+Why validate: the gateway refuses to hot-reload an invalid file and silently keeps the pre-patch config (no channels, `openrouter/auto`), while the VM reports as running. That was the failure behind the 2026-09-16 Bigotito incident.
 
 ### 5. Hetzner VPS Creation
 - Uploads SSH public key to Hetzner
@@ -128,6 +137,8 @@ All cleanup steps are best-effort — if one fails, the others still execute.
 - **OpenClaw config:** `cat /root/.openclaw/openclaw.json`
 - **Sentinel files:** `ls /var/tmp/openclaw-*`
 - **Cloudflared status:** `systemctl status cloudflared`
-- **OpenClaw gateway:** `systemctl --user status openclaw` (as root)
+- **OpenClaw gateway:** `systemctl --user status openclaw-gateway` (as root; `export XDG_RUNTIME_DIR=/run/user/0` first), or `openclaw gateway status` / `openclaw gateway restart`
+- **Gateway journal:** `journalctl --user -u openclaw-gateway --since "1 hour ago"` — look for `[reload] config reload skipped (invalid config)` and `embedded run agent end: ... isError=true ... rawError=`
+- **Config validity:** `openclaw config validate` (and `openclaw doctor --fix` to migrate legacy keys)
 
 All of these can be accessed via the browser SSH terminal in the dashboard.

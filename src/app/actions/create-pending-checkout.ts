@@ -12,6 +12,10 @@ import {
   type PlanType,
 } from "@/lib/polar";
 import { assertProvisioningCapacity } from "@/lib/hetzner-limits";
+import {
+  validateInstanceInput,
+  INSTANCE_INPUT_MESSAGES,
+} from "@/lib/instance-input";
 
 export type CheckoutInput = {
   name: string;
@@ -34,22 +38,12 @@ export async function createPendingCheckout(
   const capacity = await assertProvisioningCapacity();
   if (!capacity.ok) return { error: capacity.error };
 
-  const name = input.name?.trim();
-  const model = input.model?.trim();
-  const modelApiKey = input.modelApiKey?.trim();
-  const channel = input.channel;
-  const botToken = input.botToken?.trim();
-  const channelPhone = input.channelPhone?.trim();
-
-  if (!name || !model || !modelApiKey || !channel) {
-    return { error: "Missing required fields" };
+  const validation = validateInstanceInput(input, { requireApiKey: true });
+  if (!validation.ok) {
+    return { error: INSTANCE_INPUT_MESSAGES[validation.error] };
   }
-  if (channel === "telegram" && !botToken) {
-    return { error: "Telegram requires a bot token" };
-  }
-  if (channel === "whatsapp" && !channelPhone) {
-    return { error: "WhatsApp requires a phone number" };
-  }
+  const { name, model, modelApiKey, channel, botToken, channelPhone } =
+    validation.data;
 
   const productId =
     input.planType === "pro" ? POLAR_PRO_PRODUCT_ID : POLAR_BASIC_PRODUCT_ID;

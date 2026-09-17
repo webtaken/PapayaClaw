@@ -5,6 +5,8 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { executeCommand } from "@/lib/ssh";
 import { detectProviderByModelId } from "@/lib/ai-config";
+import { validateModelRef } from "@/lib/model-ref";
+import { INSTANCE_INPUT_MESSAGES } from "@/lib/instance-input";
 import { getSessionContext, canAccessInstance } from "@/lib/auth-context";
 
 /**
@@ -27,14 +29,30 @@ export async function POST(
 
   const { id } = await params;
   const body = await request.json();
-  const { model, modelApiKey } = body;
+  const { model: rawModel, modelApiKey } = body;
 
-  if (!model || typeof model !== "string") {
+  if (!rawModel || typeof rawModel !== "string") {
     return NextResponse.json(
       { error: "Model ID is required" },
       { status: 400 },
     );
   }
+
+  const modelCheck = validateModelRef(rawModel);
+  if (!modelCheck.ok) {
+    return NextResponse.json(
+      {
+        error:
+          INSTANCE_INPUT_MESSAGES[
+            modelCheck.reason === "api-key"
+              ? "invalidModelApiKey"
+              : "invalidModelFormat"
+          ],
+      },
+      { status: 400 },
+    );
+  }
+  const model = modelCheck.model;
 
   if (!modelApiKey || typeof modelApiKey !== "string") {
     return NextResponse.json(

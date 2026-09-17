@@ -23,6 +23,9 @@ import {
   type ProviderId,
 } from "@/lib/ai-config";
 import { getProviderIcon, formatModelInfo } from "@/lib/ai-config-ui";
+import { validateModelRef } from "@/lib/model-ref";
+import { INSTANCE_INPUT_MESSAGES } from "@/lib/instance-input";
+import { OpenRouterModelPicker } from "./openrouter-model-picker";
 
 const PASS_THROUGH_PROVIDERS = new Set<string>([
   "openrouter",
@@ -86,7 +89,18 @@ export function ModelProviderModule({
     ? `${selectedProvider}/${customModelId}`
     : selectedModel;
 
-  const canSave = selectedProvider && finalModelId && modelApiKey.trim();
+  const modelCheck = finalModelId ? validateModelRef(finalModelId) : null;
+  const customModelError =
+    isCustom && selectedProvider !== "openrouter" && customModelId && modelCheck && !modelCheck.ok
+      ? INSTANCE_INPUT_MESSAGES[
+          modelCheck.reason === "api-key"
+            ? "invalidModelApiKey"
+            : "invalidModelFormat"
+        ]
+      : null;
+
+  const canSave =
+    selectedProvider && modelCheck?.ok && modelApiKey.trim();
 
   const handleSave = useCallback(async () => {
     if (!canSave || !finalModelId) return;
@@ -276,8 +290,19 @@ export function ModelProviderModule({
               </div>
             )}
 
-            {/* Model selection — custom/pass-through input */}
-            {selectedProvider && isCustom && (
+            {/* Model selection — OpenRouter catalog picker */}
+            {selectedProvider === "openrouter" && (
+              <div className="animate-fade-in-up">
+                <OpenRouterModelPicker
+                  inputId="reconfigure-model-id"
+                  value={customModelId}
+                  onChange={setCustomModelId}
+                />
+              </div>
+            )}
+
+            {/* Model selection — other pass-through providers */}
+            {selectedProvider && isCustom && selectedProvider !== "openrouter" && (
               <div className="animate-fade-in-up">
                 <Label
                   htmlFor="reconfigure-model-id"
@@ -285,19 +310,32 @@ export function ModelProviderModule({
                 >
                   Model ID
                 </Label>
-                <div className="flex rounded-lg overflow-hidden border border-border bg-muted/50 shadow-sm focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500/20">
+                <div
+                  className={`flex rounded-lg overflow-hidden border bg-muted/50 shadow-sm focus-within:ring-1 ${
+                    customModelError
+                      ? "border-destructive/60 focus-within:border-destructive focus-within:ring-destructive/20"
+                      : "border-border focus-within:border-violet-500 focus-within:ring-violet-500/20"
+                  }`}
+                >
                   <div className="bg-muted px-2.5 py-1.5 text-xs font-mono text-muted-foreground flex items-center border-r border-border">
                     {selectedProvider}/
                   </div>
                   <input
                     id="reconfigure-model-id"
                     type="text"
-                    placeholder="model-name"
+                    autoComplete="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    aria-invalid={!!customModelError}
+                    placeholder="vendor/model-name"
                     value={customModelId}
-                    onChange={(e) => setCustomModelId(e.target.value)}
+                    onChange={(e) => setCustomModelId(e.target.value.trim())}
                     className="flex-1 bg-transparent px-2.5 py-1.5 text-xs text-foreground font-mono placeholder:text-muted-foreground/60 focus:outline-none"
                   />
                 </div>
+                {customModelError && (
+                  <p className="mt-1.5 text-xs text-destructive">{customModelError}</p>
+                )}
               </div>
             )}
 
@@ -313,6 +351,7 @@ export function ModelProviderModule({
                 <Input
                   id="reconfigure-api-key"
                   type="password"
+                  autoComplete="new-password"
                   placeholder="sk-..."
                   value={modelApiKey}
                   onChange={(e) => setModelApiKey(e.target.value)}

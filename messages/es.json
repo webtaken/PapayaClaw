@@ -306,7 +306,7 @@
     "selectProvider": "Seleccionar Proveedor",
     "selectModel": "Seleccionar Modelo",
     "customModelString": "Cadena de Modelo Personalizado",
-    "customModelPlaceholder": "ej. anthropic/claude-sonnet-4-5",
+    "customModelPlaceholder": "anthropic/claude-haiku-4.5",
     "apiKeyFor": "Clave API para {provider}",
     "selectChannel": "Seleccionar Canal",
     "soon": "PRONTO",
@@ -339,7 +339,17 @@
     "popular": "POPULAR",
     "continueToCheckout": "Continuar al Pago",
     "redirecting": "Redirigiendo...",
-    "checkoutNote": "Serás redirigido a un pago seguro de Polar. Tu empleado IA se aprovisionará automáticamente después del pago."
+    "checkoutNote": "Serás redirigido a un pago seguro de Polar. Tu empleado IA se aprovisionará automáticamente después del pago.",
+    "openrouterModel": "Modelo de OpenRouter",
+    "openrouterSearch": "Busca un modelo (ej. haiku, minimax)...",
+    "openrouterNoResults": "Ningún modelo coincide.",
+    "openrouterLoadError": "No se pudo cargar la lista de modelos. Escribe el id exacto del modelo abajo.",
+    "openrouterFeatured": "Recomendado",
+    "openrouterNoTools": "Sin soporte de herramientas",
+    "openrouterAdvanced": "Escribir el id del modelo a mano",
+    "modelLooksLikeKey": "Eso parece una clave API. Pega la clave en el campo de abajo y elige un modelo aquí.",
+    "modelInvalidFormat": "Usa la forma proveedor/modelo, ej. anthropic/claude-haiku-4.5.",
+    "perMillion": "por 1M de tokens"
   },
   "InstanceCard": {
     "running": "En ejecución",
