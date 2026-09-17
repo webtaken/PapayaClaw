@@ -6,12 +6,26 @@
  */
 
 import { Client } from "ssh2";
+import {
+  GATEWAY_URL,
+  OPENCLAW_ENV,
+  PROBE_SCRIPT,
+  parseProbeOutput,
+  type GatewayProbe,
+} from "./gateway-health";
 
 interface ExecResult {
   stdout: string;
   stderr: string;
   code: number;
 }
+
+/** Signature of `executeCommand`; injectable for tests. */
+export type ExecFn = (
+  host: string,
+  privateKey: string,
+  command: string,
+) => Promise<ExecResult>;
 
 /**
  * Executes a command on a remote server over SSH.
@@ -97,13 +111,20 @@ export interface PairingRequest {
 /**
  * Lists pending pairing requests on a remote OpenClaw instance.
  */
+interface RawPairingEntry {
+  code?: string;
+  id?: string | number;
+  meta?: { firstName?: string; username?: string };
+  createdAt?: string;
+}
+
 export async function listPairingRequests(
   host: string,
   privateKey: string,
   channel: string = "telegram",
 ): Promise<PairingRequest[]> {
   // Read the pairing file directly — more reliable than parsing CLI output
-  const { stdout, code } = await executeCommand(
+  const { stdout } = await executeCommand(
     host,
     privateKey,
     `cat /root/.openclaw/credentials/${channel}-pairing.json 2>/dev/null || echo '[]'`,
@@ -113,13 +134,13 @@ export async function listPairingRequests(
     const raw = JSON.parse(stdout.trim());
 
     // The pairing file uses { version, requests: [...] } schema
-    const requests: any[] = Array.isArray(raw)
+    const requests: RawPairingEntry[] = Array.isArray(raw)
       ? raw
       : Array.isArray(raw.requests)
         ? raw.requests
         : [];
 
-    return requests.map((entry: any) => ({
+    return requests.map((entry) => ({
       code: entry.code || "",
       senderId: String(entry.id || ""),
       senderName: entry.meta?.firstName || entry.meta?.username || null,
@@ -248,7 +269,7 @@ export interface OpenClawAgent {
  */
 export function parseAgents(raw: unknown): OpenClawAgent[] {
   if (!Array.isArray(raw)) return [];
-  return raw.map((entry: any) => ({
+  return raw.map((entry: Record<string, unknown> | null | undefined) => ({
     id: String(entry?.id ?? ""),
     identityName:
       typeof entry?.identityName === "string" && entry.identityName
@@ -323,4 +344,43 @@ export async function checkWhatsAppLinked(
     "ls /root/.openclaw/credentials/whatsapp/*/creds.json 2>/dev/null",
   );
   return code === 0 && stdout.trim().length > 0;
+}
+
+/**
+ * Probes gateway health on a running VPS in ONE ssh round-trip:
+ * HTTP answer on 127.0.0.1:18789, `openclaw config validate` exit code,
+ * and the cloud-init error sentinel. Rejects if SSH itself fails.
+ */
+export async function checkGatewayHealth(
+  host: string,
+  privateKey: string,
+  exec: ExecFn = executeCommand,
+): Promise<GatewayProbe> {
+  const { stdout } = await exec(host, privateKey, PROBE_SCRIPT);
+  return parseProbeOutput(stdout);
+}
+
+/**
+ * Restarts the OpenClaw gateway (systemd --user unit) and waits up to ~20s
+ * for it to answer HTTP before probing health — all in ONE ssh command.
+ * Clears the stale cloud-init error sentinel once the gateway answers.
+ */
+export async function restartGateway(
+  host: string,
+  privateKey: string,
+  exec: ExecFn = executeCommand,
+): Promise<ExecResult & { probe: GatewayProbe }> {
+  const command = [
+    OPENCLAW_ENV,
+    '(openclaw gateway restart || pkill -f "openclaw gateway" || true) 2>&1',
+    "for i in $(seq 1 20); do",
+    `  code=$(curl -s -o /dev/null -m 2 -w '%{http_code}' ${GATEWAY_URL} 2>/dev/null || echo 000)`,
+    '  if [ "$code" != "000" ]; then rm -f /var/tmp/openclaw-error; break; fi',
+    "  sleep 1",
+    "done",
+    PROBE_SCRIPT,
+  ].join("\n");
+
+  const result = await exec(host, privateKey, command);
+  return { ...result, probe: parseProbeOutput(result.stdout) };
 }

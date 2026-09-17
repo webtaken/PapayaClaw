@@ -90,7 +90,72 @@ Deletes the instance and cleans up all associated resources (VPS, SSH key, Cloud
 GET /api/instances/[id]/status
 ```
 
-Returns the current status of an instance. Used by the frontend to poll during deployment.
+Returns the DB status, the live Hetzner VM state and — once the VM is up and setup is no longer in flight — the OpenClaw **gateway health**. VM power state alone does not prove the agent is alive, so the dashboard badge is driven by `health`, not `hetznerStatus`.
+
+Response:
+
+```json
+{
+  "instanceStatus": "running",
+  "hetznerStatus": "running",
+  "serverIp": "1.2.3.4",
+  "gatewayToken": "...",
+  "channels": ["telegram"],
+  "whatsappNumbers": [],
+  "health": "healthy",
+  "healthReason": null,
+  "gatewayUp": true,
+  "configValid": true,
+  "errorSentinel": null
+}
+```
+
+| `health` | `healthReason` | Meaning |
+|----------|----------------|---------|
+| `healthy` | `null` | VM running, gateway answers HTTP on `127.0.0.1:18789`, `openclaw config validate` passes |
+| `degraded` | `config-invalid` | VM running but the config does not validate (gateway may be crash-looping) |
+| `degraded` | `gateway-unreachable` | VM running, config valid, but no HTTP answer from the gateway |
+| `down` | `vm-off` | Hetzner reports the VM is not `running` (off, starting, …); no SSH attempted |
+| `unknown` | `ssh-unreachable` | VM running but the SSH probe failed |
+| `unknown` | `hetzner-unknown` | Hetzner API call failed |
+
+`gatewayUp` / `configValid` / `errorSentinel` are the raw probe values (`null` when no probe ran). `errorSentinel` is the content of `/var/tmp/openclaw-error` written by cloud-init (`config-invalid`, `gateway-timeout`, or a numeric exit code). It is informational only and never affects `health`; a successful restart clears it.
+
+Health is computed per request and never stored. The probe is one SSH command (`src/lib/gateway-health.ts` → `PROBE_SCRIPT`) and runs whenever `hetznerStatus === "running"` and `instanceStatus !== "deploying"` — including DB status `error`, so a broken instance can still be diagnosed and restarted.
+
+---
+
+### Restart Gateway
+
+```
+POST /api/instances/[id]/restart
+```
+
+Restarts the OpenClaw gateway on the VPS without touching VM power state: `openclaw gateway restart`, falling back to `pkill -f "openclaw gateway"` (systemd `Restart=always` brings it back). Waits up to ~20 s for the gateway to answer HTTP, clears the stale cloud-init error sentinel if it does, then re-probes and returns the fresh health.
+
+Response `200`:
+
+```json
+{
+  "health": "healthy",
+  "healthReason": null,
+  "gatewayUp": true,
+  "configValid": true,
+  "errorSentinel": null
+}
+```
+
+A `200` with `health: "degraded"` means the restart ran but the agent is still unhealthy — check `healthReason` (typically `config-invalid`).
+
+| Status | When |
+|--------|------|
+| `400` | Instance has no server IP / SSH key yet |
+| `401` | Not authenticated |
+| `404` | Instance not found or not accessible (`canAccessInstance`) |
+| `500` | Restart command exited non-zero; `detail` carries stderr/stdout |
+| `502` | SSH could not connect to the VPS |
+
+No DB writes.
 
 ---
 

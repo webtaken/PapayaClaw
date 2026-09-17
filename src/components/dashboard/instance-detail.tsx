@@ -18,6 +18,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { GeneralTab } from "./tabs/general-tab";
+import type { GatewayHealth, HealthReason } from "@/lib/gateway-health";
 import { ChannelsTab, type PairingRequest } from "./tabs/channels-tab";
 import { SshTab } from "./tabs/ssh-tab";
 import { IntegrationsTab } from "./tabs/integrations-tab";
@@ -54,44 +55,94 @@ interface StatusData {
   gatewayToken: string | null;
   channels?: string[];
   whatsappNumbers?: string[];
+  health?: GatewayHealth;
+  healthReason?: HealthReason | null;
+  gatewayUp?: boolean | null;
+  configValid?: boolean | null;
+  errorSentinel?: string | null;
 }
 
-const statusConfig: Record<
-  string,
-  { label: string; className: string; dotClass: string }
-> = {
+type BadgeStatus =
+  | "running"
+  | "degraded"
+  | "unknown"
+  | "stopped"
+  | "stopping"
+  | "deploying"
+  | "initializing"
+  | "starting"
+  | "error";
+
+/**
+ * Header badge = agent (gateway) health, not VM power.
+ * Labels come from i18n `InstanceDetail.status.<key>`.
+ */
+const statusConfig: Record<BadgeStatus, { className: string; dotClass: string }> = {
   running: {
-    label: "Running",
     className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
     dotClass: "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]",
   },
+  // VM on, gateway dead or config invalid. Solid dot: a fault, not a transition.
+  degraded: {
+    className: "border-amber-500/30 bg-amber-500/10 text-amber-400",
+    dotClass: "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]",
+  },
+  // VM on but we could not reach it — neither alive nor dead.
+  unknown: {
+    className: "border-zinc-500/30 bg-zinc-500/10 text-zinc-400",
+    dotClass: "bg-zinc-400 animate-pulse",
+  },
   stopped: {
-    label: "Stopped",
     className: "border-zinc-500/30 bg-zinc-500/10 text-zinc-400",
     dotClass: "bg-zinc-400",
   },
+  stopping: {
+    className: "border-zinc-500/30 bg-zinc-500/10 text-zinc-400",
+    dotClass: "bg-zinc-400 animate-pulse",
+  },
   deploying: {
-    label: "Deploying",
     className: "border-amber-500/30 bg-amber-500/10 text-amber-400",
     dotClass: "bg-amber-400 animate-pulse",
   },
   initializing: {
-    label: "Initializing",
     className: "border-violet-500/30 bg-violet-500/10 text-violet-400",
     dotClass:
       "bg-violet-400 animate-pulse shadow-[0_0_8px_rgba(167,139,250,0.5)]",
   },
   starting: {
-    label: "Starting",
     className: "border-blue-500/30 bg-blue-500/10 text-blue-400",
     dotClass: "bg-blue-400 animate-pulse shadow-[0_0_8px_rgba(96,165,250,0.5)]",
   },
   error: {
-    label: "Error",
     className: "border-red-500/30 bg-red-500/10 text-red-500",
     dotClass: "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]",
   },
 };
+
+function isBadgeStatus(value: string): value is BadgeStatus {
+  return value in statusConfig;
+}
+
+/**
+ * Resolves what the header badge shows. Precedence:
+ * deploying → VM off → DB error → VM running (gateway health) → other VM states.
+ */
+function resolveBadgeStatus(
+  currentStatus: string,
+  hetznerStatus: string | null,
+  health: GatewayHealth | undefined,
+): BadgeStatus {
+  if (currentStatus === "deploying") return "deploying";
+  if (hetznerStatus === "off") return "stopped";
+  if (currentStatus === "error") return "error";
+  if (hetznerStatus === "running") {
+    if (health === "degraded") return "degraded";
+    if (health === "unknown") return "unknown";
+    return "running";
+  }
+  const raw = hetznerStatus ?? currentStatus;
+  return isBadgeStatus(raw) ? raw : "deploying";
+}
 
 
 export function InstanceDetail({
@@ -119,14 +170,16 @@ export function InstanceDetail({
     fetcher,
     {
       refreshInterval: (data) => {
-        // Stop polling once running and no longer deploying
+        if (!data) return 10000;
+        if (data.hetznerStatus === "off") return 0; // nothing to watch
         if (
-          data?.hetznerStatus === "running" &&
-          data?.instanceStatus !== "deploying"
+          data.instanceStatus === "deploying" ||
+          data.hetznerStatus !== "running"
         ) {
-          return 0; // stop polling
+          return 10000; // provisioning / VM transitioning
         }
-        return 10000; // poll every 10s
+        // VM up: keep an eye on the gateway. Faster while unhealthy.
+        return data.health === "healthy" ? 60000 : 30000;
       },
     },
   );
@@ -134,11 +187,25 @@ export function InstanceDetail({
   const currentStatus = statusData?.instanceStatus || instance.status;
   const currentIp = statusData?.serverIp || instance.providerServerIp;
 
+  const hetznerStatus = statusData?.hetznerStatus ?? null;
+  const health = statusData?.health;
+  const healthReason = statusData?.healthReason ?? null;
+
+  // Only true setup phases show the provisioning log. A powered-off VM is
+  // stopped, not provisioning.
   const isProvisioning =
     currentStatus === "deploying" ||
-    (statusData?.hetznerStatus && statusData.hetznerStatus !== "running");
+    hetznerStatus === "initializing" ||
+    hetznerStatus === "starting";
 
-  const effectiveStatus = statusData?.hetznerStatus || currentStatus;
+  const effectiveStatus = resolveBadgeStatus(
+    currentStatus,
+    hetznerStatus,
+    health,
+  );
+  const showHealthReason =
+    (effectiveStatus === "degraded" || effectiveStatus === "unknown") &&
+    healthReason !== null;
 
   const channels = useMemo(() => {
     const live = statusData?.channels;
@@ -281,7 +348,7 @@ export function InstanceDetail({
     }
   }, [hasTelegram, isProvisioning, currentIp, fetchPairingRequests]);
 
-  const status = statusConfig[effectiveStatus] || statusConfig.deploying;
+  const status = statusConfig[effectiveStatus];
 
   const pendingPairingCount = pairingRequests.length;
 
@@ -298,14 +365,25 @@ export function InstanceDetail({
           </div>
           <span className="font-medium">Dashboard</span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col items-end gap-1">
           <Badge
             variant="outline"
             className={`gap-1.5 rounded-md px-2.5 py-1 text-xs font-mono uppercase tracking-wider ${status.className}`}
           >
             <span className={`h-1.5 w-1.5 rounded-full ${status.dotClass}`} />
-            {status.label}
+            {t(`status.${effectiveStatus}`)}
           </Badge>
+          {showHealthReason && healthReason ? (
+            <span className="text-xs text-muted-foreground text-right">
+              {t(`healthReason.${healthReason}`)}
+              {statusData?.errorSentinel &&
+              statusData.errorSentinel !== healthReason ? (
+                <span className="ml-1.5 font-mono text-muted-foreground/60">
+                  [{statusData.errorSentinel}]
+                </span>
+              ) : null}
+            </span>
+          ) : null}
         </div>
       </div>
 
@@ -357,10 +435,13 @@ export function InstanceDetail({
             instance={instance}
             currentIp={currentIp}
             currentStatus={currentStatus}
-            isProvisioning={!!isProvisioning}
+            isProvisioning={isProvisioning}
             effectiveStatus={effectiveStatus}
             channels={channels}
-            hetznerStatus={statusData?.hetznerStatus ?? null}
+            hetznerStatus={hetznerStatus}
+            health={health ?? null}
+            healthReason={healthReason}
+            onRestarted={() => mutateStatus()}
             onModelChanged={(newModel) =>
               setInstance((prev) => ({ ...prev, model: newModel }))
             }
@@ -371,7 +452,7 @@ export function InstanceDetail({
           <ChannelsTab
             instanceId={instance.id}
             currentIp={currentIp}
-            isProvisioning={!!isProvisioning}
+            isProvisioning={isProvisioning}
             channelSet={channelSet}
             activeChannelTab={activeChannelTab}
             setActiveChannelTab={setActiveChannelTab}
@@ -395,7 +476,7 @@ export function InstanceDetail({
           <SshTab
             instanceId={instance.id}
             currentIp={currentIp}
-            isProvisioning={!!isProvisioning}
+            isProvisioning={isProvisioning}
             isTerminalOpen={isTerminalOpen}
             setIsTerminalOpen={setIsTerminalOpen}
           />
@@ -408,7 +489,7 @@ export function InstanceDetail({
         <TabsContent value="agents" className="mt-6">
           <AgentsTab
             instanceId={instance.id}
-            isProvisioning={!!isProvisioning}
+            isProvisioning={isProvisioning}
           />
         </TabsContent>
       </Tabs>

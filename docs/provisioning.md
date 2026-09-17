@@ -90,6 +90,25 @@ After creation, a background poller (`src/lib/instance-poller.ts`) monitors the 
 
 The frontend polls `GET /api/instances/[id]/status` to reflect the current state.
 
+### Gateway health
+
+Once the VM is `running` and the DB status is no longer `deploying`, the status endpoint also probes the OpenClaw gateway in one SSH command (`PROBE_SCRIPT` in `src/lib/gateway-health.ts`):
+
+```sh
+export XDG_RUNTIME_DIR=/run/user/0 PATH="/root/.local/bin:/usr/local/bin:/usr/bin:$PATH"
+echo "GATEWAY=$(curl -s -o /dev/null -m 5 -w '%{http_code}' http://127.0.0.1:18789/ 2>/dev/null || echo 000)"
+openclaw config validate >/dev/null 2>&1; echo "CONFIG=$?"
+echo "SENTINEL=$(cat /var/tmp/openclaw-error 2>/dev/null || echo none)"
+```
+
+- **Gateway up** = curl got *any* HTTP status (a `401` on `/` still proves the process is alive). `000` = nothing listening.
+- **Config valid** = `openclaw config validate` exited 0. Invalid config wins as the reason (it is the root cause of a dead gateway).
+- **Sentinel** = `/var/tmp/openclaw-error` is written once by cloud-init and never cleared, so it is shown as detail only and never drives health. A successful dashboard restart removes it.
+
+The result surfaces as `health` (`healthy | degraded | down | unknown`) — see `docs/api-routes.md`. The instance detail header badge shows **this**, not the VM power state: a powered-on VM with a dead gateway reads **DEGRADED** with the reason underneath. The raw Hetzner state is shown separately in the General tab telemetry band.
+
+Polling cadence in the dashboard: 10 s while deploying / VM transitioning, 30 s while degraded or unknown, 60 s while healthy, none while the VM is off.
+
 ---
 
 ## Instance Lifecycle States
@@ -140,5 +159,7 @@ All cleanup steps are best-effort — if one fails, the others still execute.
 - **OpenClaw gateway:** `systemctl --user status openclaw-gateway` (as root; `export XDG_RUNTIME_DIR=/run/user/0` first), or `openclaw gateway status` / `openclaw gateway restart`
 - **Gateway journal:** `journalctl --user -u openclaw-gateway --since "1 hour ago"` — look for `[reload] config reload skipped (invalid config)` and `embedded run agent end: ... isError=true ... rawError=`
 - **Config validity:** `openclaw config validate` (and `openclaw doctor --fix` to migrate legacy keys)
+- **Badge says DEGRADED:** the reason under the badge tells you which signal failed. `Config invalid` → run `openclaw config validate` on the VPS and fix `/root/.openclaw/openclaw.json`; `Gateway not responding` → check the gateway journal, then use **Restart agent** in the General tab (`POST /api/instances/[id]/restart`). The restart response reports the post-restart health, so a still-degraded result means the config is still broken, not that the restart failed.
+- **Badge says UNKNOWN:** the VM is up but the SSH probe (or the Hetzner API) failed — check `sshd`, the firewall, or Hetzner status before assuming the agent is down.
 
 All of these can be accessed via the browser SSH terminal in the dashboard.

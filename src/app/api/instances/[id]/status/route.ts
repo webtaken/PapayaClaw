@@ -4,8 +4,14 @@ import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { getServer } from "@/lib/hetzner";
-import { checkInstanceReady, getInstanceChannels, getWhatsAppAllowedNumbers } from "@/lib/ssh";
+import {
+  checkGatewayHealth,
+  checkInstanceReady,
+  getInstanceChannels,
+  getWhatsAppAllowedNumbers,
+} from "@/lib/ssh";
 import { getSessionContext, canAccessInstance } from "@/lib/auth-context";
+import { computeHealth, type GatewayProbe } from "@/lib/gateway-health";
 
 /**
  * Lightweight status endpoint for polling.
@@ -13,6 +19,10 @@ import { getSessionContext, canAccessInstance } from "@/lib/auth-context";
  *
  * When Hetzner reports "running" but the DB status is still "deploying",
  * performs a fallback SSH sentinel-file check and updates the DB if ready.
+ *
+ * Once the VM is running and no longer deploying, also probes the OpenClaw
+ * gateway over SSH (HTTP answer + config validity) and reports an ephemeral
+ * `health` — VM power state alone does not prove the agent is alive.
  */
 export async function GET(
   _request: Request,
@@ -80,18 +90,32 @@ export async function GET(
     }
   }
 
-  // Fetch live channels and WhatsApp numbers from VPS when instance is running
+  // Live data from the VPS. All SSH calls run in parallel (one round-trip wall time).
   let channels: string[] = inst.channel.split("|");
   let whatsappNumbers: string[] = [];
+  let probe: GatewayProbe | null = null;
 
-  if (
-    instanceStatus === "running" &&
-    inst.providerServerIp &&
-    inst.sshPrivateKey
-  ) {
-    const [liveChannels, liveNumbers] = await Promise.all([
-      getInstanceChannels(inst.providerServerIp, inst.sshPrivateKey),
-      getWhatsAppAllowedNumbers(inst.providerServerIp, inst.sshPrivateKey),
+  const canSsh = Boolean(inst.providerServerIp && inst.sshPrivateKey);
+  // Channels/numbers only make sense once setup finished.
+  const fetchChannels = canSsh && instanceStatus === "running";
+  // Health is probed whenever the VM is up and setup is no longer in flight —
+  // including DB status "error", so a config-invalid instance can be recovered.
+  const probeHealth =
+    canSsh && hetznerStatus === "running" && instanceStatus !== "deploying";
+
+  if (canSsh && (fetchChannels || probeHealth)) {
+    const ip = inst.providerServerIp!;
+    const key = inst.sshPrivateKey!;
+
+    const [liveChannels, liveNumbers, liveProbe] = await Promise.all([
+      fetchChannels ? getInstanceChannels(ip, key) : Promise.resolve([]),
+      fetchChannels ? getWhatsAppAllowedNumbers(ip, key) : Promise.resolve([]),
+      probeHealth
+        ? checkGatewayHealth(ip, key).catch((error: unknown) => {
+            console.error("[status] Gateway health probe failed:", error);
+            return null;
+          })
+        : Promise.resolve(null),
     ]);
 
     if (liveChannels.length > 0) {
@@ -106,7 +130,13 @@ export async function GET(
     }
 
     whatsappNumbers = liveNumbers;
+    probe = liveProbe;
   }
+
+  const { health, reason: healthReason } = computeHealth({
+    hetznerStatus,
+    probe,
+  });
 
   return NextResponse.json({
     instanceStatus,
@@ -115,5 +145,10 @@ export async function GET(
     gatewayToken: inst.botToken,
     channels,
     whatsappNumbers,
+    health,
+    healthReason,
+    gatewayUp: probe?.gatewayUp ?? null,
+    configValid: probe?.configValid ?? null,
+    errorSentinel: probe?.errorSentinel ?? null,
   });
 }

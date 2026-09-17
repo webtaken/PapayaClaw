@@ -1,10 +1,13 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { ExternalLink, Loader2, ShieldAlert } from "lucide-react";
+import { useState } from "react";
+import { ExternalLink, Loader2, RotateCw, ShieldAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { formatModelInfo, formatChannelInfo } from "@/lib/ai-config-ui";
+import type { GatewayHealth, HealthReason } from "@/lib/gateway-health";
 import type { InstanceData } from "../instance-detail";
 
 const ModelProviderModule = dynamic(
@@ -21,8 +24,59 @@ export interface GeneralTabProps {
   effectiveStatus: string;
   channels: string[];
   hetznerStatus: string | null;
+  /** Gateway health from the status endpoint; null until first poll. */
+  health: GatewayHealth | null;
+  healthReason: HealthReason | null;
+  /** Called after a restart attempt so the parent can revalidate status. */
+  onRestarted: () => void;
   onModelChanged: (newModel: string) => void;
 }
+
+interface RestartResponse {
+  error?: string;
+  detail?: string;
+  health?: GatewayHealth;
+  healthReason?: HealthReason | null;
+}
+
+const TRANSITIONAL_VM_STATES = new Set(["initializing", "starting", "stopping"]);
+
+/** Dot for the raw Hetzner VM state in the telemetry band. */
+function serverDotClass(hetznerStatus: string | null): string {
+  if (hetznerStatus === "running") {
+    return "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]";
+  }
+  if (hetznerStatus && TRANSITIONAL_VM_STATES.has(hetznerStatus)) {
+    return "bg-amber-400 animate-pulse";
+  }
+  return "bg-zinc-500";
+}
+
+const gatewayIndicator: Record<
+  GatewayHealth,
+  { dot: string; text: string; labelKey: "gatewayOnline" | "gatewayDegraded" | "gatewayUnknown" }
+> = {
+  healthy: {
+    dot: "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]",
+    text: "text-emerald-400",
+    labelKey: "gatewayOnline",
+  },
+  degraded: {
+    dot: "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]",
+    text: "text-amber-400",
+    labelKey: "gatewayDegraded",
+  },
+  down: {
+    dot: "bg-zinc-500",
+    text: "text-zinc-400",
+    labelKey: "gatewayUnknown",
+  },
+  unknown: {
+    dot: "bg-zinc-400 animate-pulse",
+    text: "text-zinc-400",
+    labelKey: "gatewayUnknown",
+  },
+};
 
 const provisioningSteps = [
   { key: "creating", stepKey: "stepCreating" as const },
@@ -50,11 +104,52 @@ export function GeneralTab({
   isProvisioning,
   channels,
   hetznerStatus,
+  health,
+  healthReason,
+  onRestarted,
   onModelChanged,
 }: GeneralTabProps) {
   const t = useTranslations("InstanceDetail");
   const model = formatModelInfo(instance.model);
   const activeStep = getActiveStep(hetznerStatus);
+  const [isRestarting, setIsRestarting] = useState(false);
+
+  const indicator = gatewayIndicator[health ?? "unknown"];
+  const canRestart =
+    !isRestarting && hetznerStatus === "running" && Boolean(currentIp);
+
+  const restartAgent = async () => {
+    setIsRestarting(true);
+    try {
+      const res = await fetch(`/api/instances/${instance.id}/restart`, {
+        method: "POST",
+      });
+      const body = (await res.json().catch(() => ({}))) as RestartResponse;
+
+      if (!res.ok) {
+        const message = body.error ?? t("general.restartFailed");
+        toast.error(body.detail ? `${message}: ${body.detail}` : message);
+        return;
+      }
+
+      if (body.health === "healthy") {
+        toast.success(t("general.restartSuccess"));
+      } else {
+        toast.warning(
+          t("general.restartDegraded", {
+            reason: body.healthReason
+              ? t(`healthReason.${body.healthReason}`)
+              : t("healthReason.gateway-unreachable"),
+          }),
+        );
+      }
+    } catch {
+      toast.error(t("general.restartFailed"));
+    } finally {
+      setIsRestarting(false);
+      onRestarted();
+    }
+  };
 
   if (isProvisioning) {
     return (
@@ -111,7 +206,19 @@ export function GeneralTab({
     <div className="flex flex-col gap-6">
       {/* Telemetry Databand */}
       <div className="rounded-xl border border-border bg-card shadow-2xl overflow-hidden">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-muted/50">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-px bg-muted/50">
+          <div className="bg-card p-4 flex flex-col gap-1.5">
+            <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
+              {t("general.serverLabel")}
+            </span>
+            <span className="flex items-center gap-2 font-mono text-sm text-foreground/90">
+              <span
+                className={`h-1.5 w-1.5 shrink-0 rounded-full ${serverDotClass(hetznerStatus)}`}
+              />
+              {hetznerStatus ?? "—"}
+            </span>
+          </div>
+
           <div className="bg-card p-4 flex flex-col gap-1.5">
             <span className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">
               IP Address
@@ -182,10 +289,15 @@ export function GeneralTab({
                   {t("general.gatewayTitle")}
                 </h3>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                <span className="text-xs font-mono text-emerald-400 font-medium uppercase tracking-widest">
-                  TLS Active
+              <div
+                className="flex items-center gap-1.5"
+                title={healthReason ? t(`healthReason.${healthReason}`) : undefined}
+              >
+                <div className={`h-1.5 w-1.5 rounded-full ${indicator.dot}`} />
+                <span
+                  className={`text-xs font-mono font-medium uppercase tracking-widest ${indicator.text}`}
+                >
+                  {t(`general.${indicator.labelKey}`)}
                 </span>
               </div>
             </div>
@@ -199,7 +311,7 @@ export function GeneralTab({
                   {t("general.gatewayWarning")}
                 </p>
               </div>
-              <div>
+              <div className="flex flex-col sm:flex-row gap-3">
                 <a
                   href={`https://${instance.cfTunnelHostname}/?token=${encodeURIComponent(instance.botToken)}`}
                   target="_blank"
@@ -211,6 +323,22 @@ export function GeneralTab({
                     {t("general.gatewayLaunch")}
                   </Button>
                 </a>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={restartAgent}
+                  disabled={!canRestart}
+                  className="w-full sm:w-auto px-6 h-11 shadow-none gap-2 font-mono text-xs uppercase tracking-wider"
+                >
+                  {isRestarting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RotateCw className="h-4 w-4" />
+                  )}
+                  {isRestarting
+                    ? t("general.restarting")
+                    : t("general.restartAgent")}
+                </Button>
               </div>
             </div>
           </div>

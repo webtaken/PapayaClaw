@@ -399,7 +399,16 @@
       "gatewayDescription": "Accede a la interfaz web segura de OpenClaw para interactuar con tu agente, ver registros internos, gestionar habilidades y monitorizar métricas.",
       "gatewayWarning": "No compartas esta interfaz con nadie — este es tu panel de control secreto.",
       "gatewayLaunch": "Abrir Interfaz",
-      "gatewayPending": "El túnel de acceso está siendo aprovisionado"
+      "gatewayPending": "El túnel de acceso está siendo aprovisionado",
+      "serverLabel": "Servidor",
+      "gatewayOnline": "Agente en línea",
+      "gatewayDegraded": "Agente degradado",
+      "gatewayUnknown": "Agente desconocido",
+      "restartAgent": "Reiniciar agente",
+      "restarting": "Reiniciando…",
+      "restartSuccess": "Agente reiniciado y respondiendo.",
+      "restartDegraded": "Agente reiniciado pero sigue con problemas: {reason}",
+      "restartFailed": "No se pudo reiniciar el agente."
     },
     "channels": {
       "notReady": "La gestión de canales estará disponible una vez finalice el aprovisionamiento.",
@@ -466,6 +475,24 @@
       "stepStarting": "Iniciando servicios del sistema",
       "stepRunning": "Sistema en línea",
       "awaitingTelemetry": "Esperando transmisión de telemetría..."
+    },
+    "status": {
+      "running": "En ejecución",
+      "degraded": "Degradado",
+      "unknown": "Desconocido",
+      "stopped": "Detenido",
+      "stopping": "Deteniendo",
+      "deploying": "Desplegando",
+      "initializing": "Inicializando",
+      "starting": "Iniciando",
+      "error": "Error"
+    },
+    "healthReason": {
+      "config-invalid": "Configuración inválida — el agente no puede cargar su configuración",
+      "gateway-unreachable": "El gateway no responde",
+      "vm-off": "El servidor está apagado",
+      "ssh-unreachable": "No se pudo conectar al servidor por SSH",
+      "hetzner-unknown": "No se pudo leer el estado del servidor"
     }
   },
   "Metadata": {

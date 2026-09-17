@@ -399,7 +399,16 @@
       "gatewayDescription": "Access the OpenClaw securely-tunneled web interface to interact with your agent, view internal logs, manage skills, and monitor inference metrics.",
       "gatewayWarning": "Do not share this web interface with anyone — this is your secret control panel.",
       "gatewayLaunch": "Launch Interface",
-      "gatewayPending": "Gateway tunnel is being provisioned"
+      "gatewayPending": "Gateway tunnel is being provisioned",
+      "serverLabel": "Server",
+      "gatewayOnline": "Agent online",
+      "gatewayDegraded": "Agent degraded",
+      "gatewayUnknown": "Agent unknown",
+      "restartAgent": "Restart agent",
+      "restarting": "Restarting…",
+      "restartSuccess": "Agent restarted and responding.",
+      "restartDegraded": "Agent restarted but still unhealthy: {reason}",
+      "restartFailed": "Could not restart the agent."
     },
     "channels": {
       "notReady": "Channel management becomes available once provisioning completes.",
@@ -466,6 +475,24 @@
       "stepStarting": "Starting system services",
       "stepRunning": "System online",
       "awaitingTelemetry": "Awaiting telemetry broadcast..."
+    },
+    "status": {
+      "running": "Running",
+      "degraded": "Degraded",
+      "unknown": "Unknown",
+      "stopped": "Stopped",
+      "stopping": "Stopping",
+      "deploying": "Deploying",
+      "initializing": "Initializing",
+      "starting": "Starting",
+      "error": "Error"
+    },
+    "healthReason": {
+      "config-invalid": "Config invalid — the agent cannot load its configuration",
+      "gateway-unreachable": "Gateway not responding",
+      "vm-off": "Server is powered off",
+      "ssh-unreachable": "Could not reach the server over SSH",
+      "hetzner-unknown": "Could not read server state"
     }
   },
   "Metadata": {
