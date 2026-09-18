@@ -13,6 +13,14 @@ import {
   parseProbeOutput,
   type GatewayProbe,
 } from "./gateway-health";
+import { SshUnreachableError, CliError } from "./ssh-errors";
+import {
+  parsePairingListOutput,
+  type PairingChannel,
+  type PairingRequest,
+} from "./pairing";
+
+export type { PairingRequest } from "./pairing";
 
 interface ExecResult {
   stdout: string;
@@ -29,30 +37,47 @@ export type ExecFn = (
 
 /**
  * Executes a command on a remote server over SSH.
+ *
+ * Rejects with SshUnreachableError when the connection, handshake, auth or
+ * channel open fails (nothing ran). A non-zero exit code is NOT an error here —
+ * callers decide what it means. `createClient` is injectable for tests.
  */
 export function executeCommand(
   host: string,
   privateKey: string,
   command: string,
+  createClient: () => Client = () => new Client(),
 ): Promise<ExecResult> {
   return new Promise((resolve, reject) => {
-    const conn = new Client();
+    const conn = createClient();
+    const fail = (err: Error & { level?: string }) =>
+      reject(
+        new SshUnreachableError(`SSH to ${host} failed: ${err.message}`, {
+          cause: err,
+          level: err.level,
+        }),
+      );
 
     conn
       .on("ready", () => {
         conn.exec(command, (err, stream) => {
           if (err) {
             conn.end();
-            return reject(err);
+            return fail(err);
           }
 
           let stdout = "";
           let stderr = "";
 
           stream
-            .on("close", (code: number) => {
+            .on("close", (code: number | null) => {
               conn.end();
-              resolve({ stdout, stderr, code: code ?? 0 });
+              // null = killed by signal → treat as failure, never success.
+              resolve({ stdout, stderr, code: code ?? 1 });
+            })
+            .on("error", (e: Error) => {
+              conn.end();
+              fail(e);
             })
             .on("data", (data: Buffer) => {
               stdout += data.toString();
@@ -62,9 +87,7 @@ export function executeCommand(
             });
         });
       })
-      .on("error", (err) => {
-        reject(err);
-      })
+      .on("error", fail)
       .connect({
         host,
         port: 22,
@@ -101,83 +124,52 @@ export async function checkInstanceReady(
   }
 }
 
-export interface PairingRequest {
-  code: string;
-  senderId: string;
-  senderName: string | null;
-  timestamp: string;
-}
-
 /**
- * Lists pending pairing requests on a remote OpenClaw instance.
+ * Lists pending DM pairing requests via `openclaw pairing list <channel> --json`.
+ * (OpenClaw ≥2026.4.29 keeps pairing state in SQLite; the credentials/*.json
+ * file no longer exists.) Throws SshUnreachableError or CliError.
  */
-interface RawPairingEntry {
-  code?: string;
-  id?: string | number;
-  meta?: { firstName?: string; username?: string };
-  createdAt?: string;
-}
-
 export async function listPairingRequests(
   host: string,
   privateKey: string,
-  channel: string = "telegram",
+  channel: PairingChannel,
+  exec: ExecFn = executeCommand,
 ): Promise<PairingRequest[]> {
-  // Read the pairing file directly — more reliable than parsing CLI output
-  const { stdout } = await executeCommand(
+  const { stdout, stderr, code } = await exec(
     host,
     privateKey,
-    `cat /root/.openclaw/credentials/${channel}-pairing.json 2>/dev/null || echo '[]'`,
+    `${OPENCLAW_ENV}\nopenclaw pairing list ${channel} --json`,
   );
-
-  try {
-    const raw = JSON.parse(stdout.trim());
-
-    // The pairing file uses { version, requests: [...] } schema
-    const requests: RawPairingEntry[] = Array.isArray(raw)
-      ? raw
-      : Array.isArray(raw.requests)
-        ? raw.requests
-        : [];
-
-    return requests.map((entry) => ({
-      code: entry.code || "",
-      senderId: String(entry.id || ""),
-      senderName: entry.meta?.firstName || entry.meta?.username || null,
-      timestamp: entry.createdAt || new Date().toISOString(),
-    }));
-  } catch {
-    return [];
+  if (code !== 0) {
+    throw new CliError(`openclaw pairing list ${channel} exited ${code}`, {
+      code,
+      stdout,
+      stderr,
+    });
   }
+  return parsePairingListOutput(stdout);
 }
 
 /**
- * Approves a pairing request on a remote OpenClaw instance.
+ * Approves a pairing code via `openclaw pairing approve <channel> <code>`.
+ * `channel` and `code` MUST be validated by assertPairingChannel/assertPairingCode
+ * before calling — they are interpolated into a shell command.
  */
 export async function approvePairingRequest(
   host: string,
   privateKey: string,
   code: string,
-  channel: string = "telegram",
-): Promise<{ success: boolean; error?: string }> {
-  const {
-    stdout,
-    stderr,
-    code: exitCode,
-  } = await executeCommand(
+  channel: PairingChannel,
+  exec: ExecFn = executeCommand,
+): Promise<void> {
+  const result = await exec(
     host,
     privateKey,
-    `export PATH="/root/.local/bin:/usr/bin:$PATH" && openclaw pairing approve ${channel} ${code}`,
+    `${OPENCLAW_ENV}\nopenclaw pairing approve ${channel} ${code}`,
   );
-
-  if (exitCode !== 0) {
-    return {
-      success: false,
-      error: stderr.trim() || stdout.trim() || "Failed to approve pairing",
-    };
+  if (result.code !== 0) {
+    throw new CliError(`openclaw pairing approve exited ${result.code}`, result);
   }
-
-  return { success: true };
 }
 
 /**
@@ -289,45 +281,32 @@ export function parseAgents(raw: unknown): OpenClawAgent[] {
 }
 
 /**
- * Lists OpenClaw agents on a remote instance by running
- * `openclaw agents list --bindings --json`.
- *
- * Returns `{ agents }` on success (possibly empty), or `{ error }` when the
- * command fails, the output is not a JSON array, or the connection errors.
+ * Lists OpenClaw agents via `openclaw agents list --bindings --json`.
+ * Throws SshUnreachableError (no connection) or CliError (non-zero exit / bad output).
  */
 export async function listAgents(
   host: string,
   privateKey: string,
-): Promise<{ agents?: OpenClawAgent[]; error?: string }> {
-  try {
-    const { stdout, stderr, code } = await executeCommand(
-      host,
-      privateKey,
-      'export PATH="/root/.local/bin:/usr/bin:$PATH" && openclaw agents list --bindings --json',
-    );
-
-    if (code !== 0) {
-      return {
-        error:
-          stderr.trim() || stdout.trim() || "Failed to list agents",
-      };
-    }
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(stdout.trim());
-    } catch {
-      return { error: "Unexpected output from openclaw" };
-    }
-
-    if (!Array.isArray(parsed)) {
-      return { error: "Unexpected output from openclaw" };
-    }
-
-    return { agents: parseAgents(parsed) };
-  } catch {
-    return { error: "Failed to connect to instance" };
+  exec: ExecFn = executeCommand,
+): Promise<OpenClawAgent[]> {
+  const result = await exec(
+    host,
+    privateKey,
+    `${OPENCLAW_ENV}\nopenclaw agents list --bindings --json`,
+  );
+  if (result.code !== 0) {
+    throw new CliError(`openclaw agents list exited ${result.code}`, result);
   }
+  let raw: unknown;
+  try {
+    raw = JSON.parse(result.stdout.trim());
+  } catch {
+    throw new CliError("openclaw agents list printed non-JSON output", result);
+  }
+  if (!Array.isArray(raw)) {
+    throw new CliError("openclaw agents list did not print an array", result);
+  }
+  return parseAgents(raw);
 }
 
 /**

@@ -1,7 +1,12 @@
 import { db } from "@/lib/db";
 import { instance } from "@/lib/schema";
 import { eq } from "drizzle-orm";
-import { createServer, uploadSSHKey } from "@/lib/hetzner";
+import {
+  createServer,
+  uploadSSHKey,
+  NO_CAPACITY_MAX_ATTEMPTS,
+  NO_CAPACITY_RETRY_DELAY_MS,
+} from "@/lib/hetzner";
 import {
   createTunnel,
   configureTunnel,
@@ -115,6 +120,7 @@ export async function provisionInstance(input: ProvisionInput) {
       [hetznerKey.name],
       undefined,
       serverType,
+      { maxAttempts: NO_CAPACITY_MAX_ATTEMPTS, retryDelayMs: NO_CAPACITY_RETRY_DELAY_MS },
     );
 
     const [updated] = await db

@@ -1,7 +1,7 @@
 import { Webhooks } from "@polar-sh/nextjs";
 import { db } from "@/lib/db";
 import { subscription, pendingInstanceConfig } from "@/lib/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { getPlanTypeFromMetadata, PLAN_SERVER_TYPE } from "@/lib/polar";
 import { decryptJSON } from "@/lib/encryption";
 import { provisionInstance } from "@/lib/provision-instance";
@@ -78,6 +78,7 @@ export const POST = Webhooks({
           status: sub.status,
           planType,
           productId: sub.product.id,
+          priceId: sub.prices?.[0]?.id ?? null,
           currentPeriodStart: sub.currentPeriodStart
             ? new Date(sub.currentPeriodStart)
             : null,
@@ -239,33 +240,65 @@ export const POST = Webhooks({
       return;
     }
 
-    // Mark consumed BEFORE provisioning to guarantee idempotency under retry.
+    // Mark consumed BEFORE provisioning. The isNull guard makes concurrent
+    // deliveries of the same order lose the race instead of both provisioning.
     const [consumed] = await db
       .update(pendingInstanceConfig)
       .set({ consumedAt: new Date() })
       .where(
-        eq(pendingInstanceConfig.id, pendingConfigId),
+        and(
+          eq(pendingInstanceConfig.id, pendingConfigId),
+          isNull(pendingInstanceConfig.consumedAt),
+        ),
       )
       .returning({ id: pendingInstanceConfig.id });
 
     if (!consumed) {
-      console.log(
-        `[Polar Webhook] pendingConfigId ${pendingConfigId} consumed concurrently — skipping`,
-      );
+      console.log(`[Polar Webhook] pendingConfigId ${pendingConfigId} consumed concurrently — skipping`);
       return;
     }
 
-    const [linkedSub] = await db
-      .select()
-      .from(subscription)
-      .where(eq(subscription.polarCustomerId, order.customer.id))
-      .orderBy(desc(subscription.createdAt))
-      .limit(1);
+    // Upsert the subscription from the order payload so the instance is always
+    // linked, regardless of whether subscription.created has arrived yet.
+    const orderSub = order.subscription;
+    if (orderSub) {
+      await db
+        .insert(subscription)
+        .values({
+          id: orderSub.id,
+          userId: pending.userId,
+          polarCustomerId: orderSub.customerId,
+          productId: orderSub.productId,
+          priceId: null, // OrderSubscription carries no prices; subscription.created fills it
+          planType,
+          status: orderSub.status,
+          currentPeriodStart: orderSub.currentPeriodStart,
+          currentPeriodEnd: orderSub.currentPeriodEnd,
+          cancelAtPeriodEnd: orderSub.cancelAtPeriodEnd,
+        })
+        .onConflictDoUpdate({
+          target: subscription.id,
+          set: {
+            status: orderSub.status,
+            planType,
+            productId: orderSub.productId,
+            currentPeriodStart: orderSub.currentPeriodStart,
+            currentPeriodEnd: orderSub.currentPeriodEnd,
+            cancelAtPeriodEnd: orderSub.cancelAtPeriodEnd,
+          },
+        });
+    } else {
+      console.warn(`[Polar Webhook] order ${order.id} has no subscription payload; instance will be unlinked`);
+    }
+    // Only link to a subscription row we just upserted: order.subscriptionId can
+    // name a subscription that has no row yet, and instance.subscription_id has
+    // an FK, so the INSERT would throw and the paid user would get nothing.
+    const subscriptionId = orderSub ? (order.subscriptionId ?? orderSub.id) : null;
 
     try {
       await provisionInstance({
         userId: pending.userId,
-        subscriptionId: linkedSub?.id ?? null,
+        subscriptionId,
         serverType: PLAN_SERVER_TYPE[planType] ?? "cx22",
         name: config.name,
         model: config.model,

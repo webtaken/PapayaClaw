@@ -96,9 +96,9 @@ export function ChannelsTab({
           {activeChannelTab === "telegram" && pairingRequests.length > 0 ? (
             <Badge
               variant="outline"
-              className="rounded-md px-2 py-0.5 text-xs font-mono border-amber-500/30 bg-amber-500/10 text-amber-400"
+              className="rounded-md px-2 py-0.5 text-xs font-mono uppercase border-amber-500/30 bg-amber-500/10 text-amber-400"
             >
-              {pairingRequests.length} PENDING
+              {t("channels.pendingBadge", { count: pairingRequests.length })}
             </Badge>
           ) : null}
         </div>
@@ -162,24 +162,25 @@ export function ChannelsTab({
                     size="sm"
                     onClick={onRefreshPairing}
                     disabled={isPairingLoading}
-                    className="h-6 px-2 text-xs font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded gap-1"
+                    className="h-6 px-2 text-xs font-mono uppercase hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded gap-1"
                   >
                     <RefreshCw className={`h-3 w-3 ${isPairingLoading ? "animate-spin" : ""}`} />
-                    REFRESH
+                    {t("pairing.refresh")}
                   </Button>
                 </div>
 
                 <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-3">
                   <ShieldAlert className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
                   <p className="text-xs text-amber-400/90 leading-relaxed font-mono">
-                    If you see pairing codes you don&apos;t recognize, ignore
-                    them — do not approve anything. This is the door to your
-                    agent.
+                    {t("pairing.securityNotice")}
                   </p>
                 </div>
 
                 {pairingError ? (
-                  <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-xs font-mono text-red-400">
+                  <div
+                    role="alert"
+                    className="mb-4 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-xs font-mono text-destructive"
+                  >
                     {pairingError}
                   </div>
                 ) : null}
@@ -187,7 +188,7 @@ export function ChannelsTab({
                 {isPairingLoading && pairingRequests.length === 0 ? (
                   <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="text-xs font-mono">Loading pairing requests...</span>
+                    <span className="text-xs font-mono">{t("pairing.loading")}</span>
                   </div>
                 ) : pairingRequests.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 text-center flex-1">
@@ -195,11 +196,10 @@ export function ChannelsTab({
                       <MessageCircle className="h-6 w-6 text-muted-foreground/60" />
                     </div>
                     <p className="text-sm text-muted-foreground font-mono">
-                      No pending pairing requests
+                      {t("pairing.empty")}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground/60 font-mono max-w-xs">
-                      Send a message to your Telegram bot to initiate a pairing
-                      request
+                      {t("pairing.emptyHint")}
                     </p>
                   </div>
                 ) : (
@@ -212,10 +212,10 @@ export function ChannelsTab({
                         <div className="flex flex-col gap-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-mono font-medium text-foreground/90 truncate">
-                              {req.senderName ?? `User ${req.senderId}`}
+                              {req.senderName ?? t("pairing.userFallback", { id: req.senderId })}
                             </span>
                             <span className="text-xs font-mono text-muted-foreground/60">
-                              ID: {req.senderId}
+                              {t("pairing.idLabel")}: {req.senderId}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -238,7 +238,7 @@ export function ChannelsTab({
                           ) : (
                             <Check className="h-3 w-3" />
                           )}
-                          Approve
+                          {t("pairing.approve")}
                         </Button>
                       </div>
                     ))}

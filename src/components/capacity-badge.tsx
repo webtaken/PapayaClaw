@@ -34,15 +34,15 @@ export function CapacityBadge({
 
   if (!data) return null;
 
-  const { remaining, limit, used } = data;
+  const { remaining } = data;
   const isFull = remaining <= 0;
   const isLow = !isFull && remaining <= 2;
 
   const tone = isFull
-    ? "border-red-500/30 bg-red-500/10 text-red-500"
+    ? "border-destructive/30 bg-destructive/10 text-destructive"
     : isLow
-      ? "border-amber-500/30 bg-amber-500/10 text-amber-500"
-      : "border-green-600/20 bg-green-600/5 text-green-500";
+      ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+      : "border-border bg-muted/40 text-muted-foreground";
 
   const label = isFull ? t("full") : t("remaining", { count: remaining });
 
@@ -53,9 +53,11 @@ export function CapacityBadge({
       } ${className ?? ""}`}
       role="status"
       aria-live="polite"
+      title={t("quotaHint")}
     >
       <Server className="h-3 w-3" />
       <span>{label}</span>
+      <span className="sr-only">{t("quotaHint")}</span>
     </div>
   );
 }

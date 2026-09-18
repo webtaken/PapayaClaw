@@ -38,11 +38,15 @@ The cloud-init script patches the OpenClaw config with:
 ```
 
 ### Pairing Workflow
-- DM policy is set to `pairing` — new users must be approved
-- The dashboard provides a **Pairing Dialog** (`src/components/dashboard/pairing-dialog.tsx`) that:
-  1. Fetches pending pairing requests via SSH (`GET /api/instances/[id]/pairing`)
-  2. Lets the instance owner approve requests (`POST /api/instances/[id]/pairing`)
-  3. Executes `openclaw telegram approve-pairing <id>` on the VPS
+- Pairing state lives in OpenClaw's SQLite store (`~/.openclaw/state/openclaw.sqlite`,
+  OpenClaw ≥ 2026.4.29). The dashboard never reads it directly:
+  1. `GET /api/instances/[id]/pairing?channel=telegram` runs
+     `openclaw pairing list telegram --json` over SSH (manual Refresh only — no polling).
+  2. `POST /api/instances/[id]/pairing` `{ code, channel }` runs
+     `openclaw pairing approve telegram <CODE>`.
+  3. `channel` is whitelisted (`telegram | whatsapp`) and `code` matched against
+     `^[A-Za-z0-9_-]{1,64}$` before touching the shell.
+- Codes expire after 1 hour; OpenClaw keeps at most 3 pending codes per channel.
 
 ### Group Behavior
 - `requireMention: true` — the bot only responds when @mentioned in group chats

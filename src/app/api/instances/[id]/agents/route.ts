@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { listAgents } from "@/lib/ssh";
 import { getSessionContext, canAccessInstance } from "@/lib/auth-context";
+import { toErrorResponse } from "@/lib/api-errors";
 
 /**
  * GET /api/instances/[id]/agents
@@ -40,11 +41,12 @@ export async function GET(
     );
   }
 
-  const result = await listAgents(inst.providerServerIp, inst.sshPrivateKey);
-
-  if (result.error) {
-    return NextResponse.json({ error: result.error }, { status: 502 });
+  try {
+    const agents = await listAgents(inst.providerServerIp, inst.sshPrivateKey);
+    return NextResponse.json({ agents });
+  } catch (error) {
+    console.error(`[agents] list failed for instance ${id}:`, error);
+    const { status, body } = toErrorResponse(error);
+    return NextResponse.json(body, { status });
   }
-
-  return NextResponse.json({ agents: result.agents ?? [] });
 }

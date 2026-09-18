@@ -164,10 +164,25 @@ No DB writes.
 ### List Pairing Requests
 
 ```
-GET /api/instances/[id]/pairing
+GET /api/instances/[id]/pairing?channel=telegram
 ```
 
-Runs `openclaw telegram list-pairings` via SSH on the VPS. Returns pending pairing requests.
+`channel` is optional (`telegram | whatsapp`) and defaults to the instance's first configured channel. Runs `openclaw pairing list <channel> --json` via SSH on the VPS. Manual refresh only — the dashboard does not poll this.
+
+Response:
+
+```json
+{
+  "requests": [
+    {
+      "code": "123456",
+      "senderId": "987654321",
+      "senderName": "Ada",
+      "timestamp": "2026-09-17T12:00:00.000Z"
+    }
+  ]
+}
+```
 
 ### Approve Pairing Request
 
@@ -178,11 +193,16 @@ POST /api/instances/[id]/pairing
 **Body:**
 ```json
 {
-  "pairingId": "abc123"
+  "code": "123456",
+  "channel": "telegram"
 }
 ```
 
-Runs `openclaw telegram approve-pairing <id>` via SSH on the VPS.
+`channel` is optional and defaults the same way as `GET`. Runs `openclaw pairing approve <channel> <code>` via SSH on the VPS.
+
+**Returns:** `200` `{ "success": true }`.
+
+`channel` is whitelisted and `code` must match `^[A-Za-z0-9_-]{1,64}$` — both are rejected with `400` (`invalid_channel` / `invalid_code`) before touching the VPS. A wrong or expired code is not caught by that check: `openclaw pairing approve` exits non-zero and surfaces as `500` `cli_error`, with OpenClaw's own message in `detail`. See "Error codes" below for the full table.
 
 ---
 
@@ -250,3 +270,21 @@ Handles Polar subscription events:
 - `subscription.revoked` / `subscription.canceled` — Marks subscription as inactive
 
 Verified via `POLAR_WEBHOOK_SECRET`.
+
+---
+
+## Error codes (instance SSH/CLI routes)
+
+`pairing`, `agents` and `reconfigure` return `{ error, code, detail? }`:
+
+| status | code | meaning |
+|---|---|---|
+| 400 | `invalid_channel` / `invalid_code` | rejected before touching the VPS |
+| 400 | (no code) | reconfigure: API key contains control characters, or the provider cannot be reconfigured with an API key from the dashboard |
+| 409 | `config_invalid` | `openclaw config validate` failed (before or after the change; config restored) |
+| 409 | `checkout_pending` | (`POST /api/instances`) a fresh checkout for this account is still provisioning; `retryAfterSeconds` |
+| 500 | `cli_error` | command ran and failed; `detail` = stderr tail |
+| 502 | `ssh_unreachable` | could not connect/authenticate |
+| 503 | `no_capacity` | (`POST /api/instances`) Hetzner out of stock; `retryAfterSeconds` |
+
+The UI localizes by `code` (`InstanceDetail.errors.*`).

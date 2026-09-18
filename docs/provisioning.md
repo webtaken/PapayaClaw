@@ -16,7 +16,7 @@ When a user deploys a new instance (`POST /api/instances`):
 
 ### 2. SSH Keypair Generation
 - Generates an Ed25519 keypair via `crypto.generateKeyPairSync`
-- Public key is uploaded to Hetzner; private key is stored encrypted in the database
+- Public key is uploaded to Hetzner; private key is stored in the database
 
 ### 3. Cloudflare Tunnel Setup
 - Creates a Cloudflare Tunnel via API (`POST /accounts/{id}/cfe/tunnel`)
@@ -72,8 +72,49 @@ Cloudflare tunnel and DNS setup do not depend on the location.
 
 Follow-ups (not implemented): server-type fallback (e.g. `cx23` → `cpx22`) when the whole CX line is out of stock; treating `placement_error` (422) as retriable; persisting failed provisioning attempts so paid-but-unprovisioned orders are visible to staff instead of only in logs.
 
+**Retry on no capacity.** When every location is out of stock, `createServer`
+re-runs the full walk up to `NO_CAPACITY_MAX_ATTEMPTS` (3) times with
+`NO_CAPACITY_RETRY_DELAY_MS` (20 s) between attempts, then throws
+`HetznerNoCapacityError` (`code: "no_capacity"`). `POST /api/instances` maps it
+to **503** `{ error, code: "no_capacity", serverType, retryAfterSeconds: 120 }`
+plus a `Retry-After: 120` header; the deploy dialog shows a localized toast with
+a Retry action. The Polar webhook path uses the same retry.
+
+**Capacity badge is a quota, not stock.** `/api/capacity` reports
+`HETZNER_SERVER_LIMIT − count(instance)`. It says nothing about Hetzner's live
+inventory; a non-zero badge can coexist with a no-capacity 503.
+
 ### 6. Database Record
 - Saves the instance with status `deploying` and all metadata (server ID, IP, tunnel ID, SSH key, etc.)
+
+---
+
+## Checkout states (paid but no instance yet)
+
+`order.paid` upserts the subscription row from the order payload and links the
+instance by `order.subscriptionId`, so `subscription.created` ordering no longer
+matters. The dashboard derives a `checkoutState` (`src/lib/checkout-state.ts`)
+from the user's latest `pending_instance_config`:
+
+| pending config | subscription available | instances | state | UI |
+|---|---|---|---|---|
+| unconsumed, < 15 min old | yes | 0 | `pending` | "Setting up…" banner, deploy disabled, page auto-refreshes |
+| consumed < 2 min ago | yes | 0 | `pending` | same banner — provisioning may not have inserted the instance row yet |
+| consumed 2 min – 24 h ago | yes | 0 | `failed` | error banner + Retry (direct deploy, no second charge) |
+| consumed > 24 h ago | — | — | `none` | stale (e.g. the user deleted the server days later) |
+| anything else | — | — | `none` | normal |
+
+The `failed` verdict is bounded on both sides (`FAILED_GRACE_MS` = 2 min,
+`FAILED_MAX_AGE_MS` = 24 h): "consumed with no instance row" means *provisioning
+failed* only inside that window — before it, provisioning is probably still
+running; after it, the user most likely deleted a server that did get created.
+
+`POST /api/instances` runs the same derivation for non-staff users on the Polar
+path and answers `409 checkout_pending` (with `Retry-After: 30`) while the state
+is `pending`, so a stale tab cannot deploy a second server during that window.
+
+Provisioning failure inside the webhook is still only logged; the `failed`
+state is what makes it visible to the user.
 
 ---
 

@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Pencil, X, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
+import { apiErrorMessage, type ApiErrorBody } from "@/lib/api-errors";
 import {
   Combobox,
   ComboboxInput,
@@ -48,6 +50,7 @@ export function ModelProviderModule({
   currentModel: string;
   onModelChanged: (newModel: string) => void;
 }) {
+  const t = useTranslations("InstanceDetail");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -115,20 +118,36 @@ export function ModelProviderModule({
         }),
       });
 
+      const body = (await res.json().catch(() => ({}))) as Partial<ApiErrorBody> & {
+        health?: string;
+        healthReason?: string | null;
+      };
       if (res.ok) {
         onModelChanged(finalModelId);
         setIsEditing(false);
         resetForm();
-        toast.success("Model updated", {
-          description:
-            "Your instance is being reconfigured with the new model.",
-        });
+        if (body.health === "healthy") {
+          toast.success(t("model.updatedTitle"), { description: t("model.updatedDescription") });
+        } else {
+          toast.warning(
+            t("model.updatedDegraded", {
+              reason: body.healthReason
+                ? t(`healthReason.${body.healthReason}`)
+                : t("healthReason.gateway-unreachable"),
+            }),
+          );
+        }
       } else {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err.error || "Failed to reconfigure");
+        // `detail` rides in the toast description here, so it is withheld
+        // from the helper (which would otherwise append it in parentheses).
+        const { detail, ...rest } = body;
+        toast.error(
+          apiErrorMessage(t, rest, "model.failed"),
+          detail ? { description: detail } : undefined,
+        );
       }
     } catch {
-      toast.error("Failed to connect");
+      toast.error(t("errors.network"));
     } finally {
       setIsSaving(false);
     }
@@ -139,6 +158,7 @@ export function ModelProviderModule({
     instanceId,
     onModelChanged,
     resetForm,
+    t,
   ]);
 
   return (

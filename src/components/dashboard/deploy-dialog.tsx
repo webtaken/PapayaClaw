@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -105,6 +105,10 @@ export function DeployDialog({
   const [whatsappPhone, setWhatsappPhone] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // The no-capacity toast outlives the dialog (15 s), and closing the dialog
+  // resets the form — so Retry must replay the exact payload that was POSTed,
+  // not re-read the (by then empty) form state.
+  const lastPayloadRef = useRef<string | null>(null);
 
   // Plan picker only needed when paying for a new subscription (and for staff,
   // who pick a tier for server size). Hidden when an active sub is reused.
@@ -172,6 +176,61 @@ export function DeployDialog({
   const canProceedStep3Plan = !!selectedPlan;
   const isReviewStep = step === totalSteps;
 
+  // Takes the serialized body rather than reading form state, so the Retry
+  // toast action can replay a submission whose form has since been reset.
+  const postInstance = async (payload: string) => {
+    lastPayloadRef.current = payload;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/instances", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      });
+
+      if (res.ok) {
+        const newInstance = await res.json();
+        onInstanceCreated(newInstance);
+        resetForm();
+        router.push(`/dashboard/${newInstance.id}`);
+        return;
+      }
+
+      const data = (await res.json().catch(() => null)) as
+        | { error?: string; code?: string; retryAfterSeconds?: number }
+        | null;
+      setIsSubmitting(false);
+      if (data?.code === "no_capacity") {
+        const minutes = Math.max(
+          1,
+          Math.round((data.retryAfterSeconds ?? 120) / 60),
+        );
+        toast.error(t("noCapacityTitle"), {
+          description: t("noCapacityBody", { minutes }),
+          duration: 15000,
+          action: {
+            label: t("retry"),
+            onClick: () => {
+              const snapshot = lastPayloadRef.current;
+              if (snapshot) void postInstance(snapshot);
+            },
+          },
+        });
+        return;
+      }
+      if (data?.code === "checkout_pending") {
+        toast.error(t("checkoutPendingTitle"), {
+          description: t("checkoutPendingBody"),
+        });
+        return;
+      }
+      toast.error(data?.error || t("deployError"));
+    } catch {
+      toast.error(t("networkError"));
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
@@ -197,34 +256,18 @@ export function DeployDialog({
         return;
       }
 
-      const res = await fetch("/api/instances", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          model: finalModelId!,
-          modelApiKey: activeApiKey,
-          channel: selectedChannel,
-          ...(selectedChannel === "telegram"
-            ? { botToken: botToken.trim() }
-            : {}),
-          ...(selectedChannel === "whatsapp"
-            ? { channelPhone: whatsappPhone.trim() }
-            : {}),
-          ...(isStaff && selectedPlan ? { planType: selectedPlan } : {}),
-        }),
+      const payload = JSON.stringify({
+        name: name.trim(),
+        model: finalModelId!,
+        modelApiKey: activeApiKey,
+        channel: selectedChannel,
+        ...(selectedChannel === "telegram" ? { botToken: botToken.trim() } : {}),
+        ...(selectedChannel === "whatsapp"
+          ? { channelPhone: whatsappPhone.trim() }
+          : {}),
+        ...(isStaff && selectedPlan ? { planType: selectedPlan } : {}),
       });
-
-      if (res.ok) {
-        const newInstance = await res.json();
-        onInstanceCreated(newInstance);
-        resetForm();
-        router.push(`/dashboard/${newInstance.id}`);
-      } else {
-        const data = await res.json().catch(() => null);
-        toast.error(data?.error || t("deployError"));
-        setIsSubmitting(false);
-      }
+      await postInstance(payload);
     } catch {
       toast.error(t("networkError"));
       setIsSubmitting(false);

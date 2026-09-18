@@ -124,6 +124,6 @@ Implementation: `src/components/dashboard/ssh-terminal.tsx` (client), `server.ts
 1. A new Telegram user messages the bot
 2. OpenClaw queues a pairing request (DM policy: `pairing`)
 3. Instance owner opens the Pairing Dialog in the dashboard
-4. `GET /api/instances/[id]/pairing` runs `openclaw telegram list-pairings` via SSH
+4. `GET /api/instances/[id]/pairing` runs `openclaw pairing list <channel> --json` via SSH
 5. Owner clicks "Approve"
-6. `POST /api/instances/[id]/pairing` runs `openclaw telegram approve-pairing <id>` via SSH
+6. `POST /api/instances/[id]/pairing` runs `openclaw pairing approve <channel> <code>` via SSH

@@ -260,6 +260,64 @@ describe("createServer location fallback", () => {
     ]);
     expect(server.location).toBe("hel1");
   });
+
+  it("retries the whole location walk on no-capacity, sleeping between attempts", async () => {
+    const sleep = vi.fn(async () => {});
+    fetchMock
+      .mockResolvedValueOnce(serverTypesResponse({ hel1: false, nbg1: false, fsn1: false })) // attempt 1 pre-check
+      .mockResolvedValueOnce(serverTypesResponse({ hel1: false, nbg1: false, fsn1: false })) // attempt 2 pre-check
+      .mockResolvedValueOnce(serverTypesResponse({ hel1: true, nbg1: true, fsn1: true }))    // attempt 3 pre-check
+      .mockResolvedValueOnce(createdResponse(77));                                         // attempt 3 POST hel1
+
+    const server = await createServer("n", "ud", undefined, undefined, "cx23", {
+      maxAttempts: 3,
+      retryDelayMs: 20_000,
+      sleep,
+    });
+
+    expect(server.id).toBe(77);
+    expect(server.location).toBe("hel1");
+    expect(sleep).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenNthCalledWith(1, 20_000);
+    expect(postCalls(fetchMock)).toHaveLength(1);
+  });
+
+  it("throws HetznerNoCapacityError with code no_capacity after maxAttempts", async () => {
+    const sleep = vi.fn(async () => {});
+    fetchMock
+      .mockResolvedValueOnce(serverTypesResponse({ hel1: false, nbg1: false, fsn1: false }))
+      .mockResolvedValueOnce(serverTypesResponse({ hel1: false, nbg1: false, fsn1: false }))
+      .mockResolvedValueOnce(serverTypesResponse({ hel1: false, nbg1: false, fsn1: false }));
+
+    const err = await createServer("n", "ud", undefined, undefined, "cx23", {
+      maxAttempts: 3,
+      retryDelayMs: 5,
+      sleep,
+    }).catch((e) => e);
+
+    expect(err).toBeInstanceOf(HetznerNoCapacityError);
+    expect(err.code).toBe("no_capacity");
+    expect(err.serverType).toBe("cx23");
+    expect(sleep).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry non-capacity errors", async () => {
+    const sleep = vi.fn(async () => {});
+    fetchMock
+      .mockResolvedValueOnce(serverTypesResponse({ hel1: true, nbg1: true, fsn1: true }))
+      .mockResolvedValueOnce(jsonResponse(403, { error: { code: "forbidden", message: "nope" } }));
+
+    await expect(
+      createServer("n", "ud", undefined, undefined, "cx23", { maxAttempts: 3, sleep }),
+    ).rejects.toBeInstanceOf(HetznerApiError);
+    expect(sleep).not.toHaveBeenCalled();
+  });
+
+  it("defaults to a single attempt (no sleep) when options are omitted", async () => {
+    fetchMock.mockResolvedValueOnce(serverTypesResponse({ hel1: false, nbg1: false, fsn1: false }));
+    await expect(createServer("n", "ud")).rejects.toBeInstanceOf(HetznerNoCapacityError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("HetznerApiError", () => {

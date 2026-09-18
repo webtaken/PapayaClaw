@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
-import { instance, user } from "@/lib/schema";
-import { eq, desc } from "drizzle-orm";
+import { instance, user, pendingInstanceConfig } from "@/lib/schema";
+import { eq, desc, count } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import {
@@ -10,13 +10,20 @@ import {
 } from "@/lib/polar";
 import { provisionInstance } from "@/lib/provision-instance";
 import { assertProvisioningCapacity } from "@/lib/hetzner-limits";
-import { HetznerNoCapacityError } from "@/lib/hetzner";
+import {
+  HetznerNoCapacityError,
+  NO_CAPACITY_RETRY_AFTER_SECONDS,
+} from "@/lib/hetzner";
 import { getSessionContext } from "@/lib/auth-context";
 import {
   validateInstanceInput,
   INSTANCE_INPUT_MESSAGES,
   type ValidatedInstanceInput,
 } from "@/lib/instance-input";
+import { deriveCheckoutState } from "@/lib/checkout-state";
+
+/** Matches the dashboard banner's window (see src/app/[locale]/dashboard/page.tsx). */
+const CHECKOUT_PENDING_RETRY_AFTER_SECONDS = 30;
 
 function provisionErrorResponse(err: unknown) {
   if (err instanceof HetznerNoCapacityError) {
@@ -24,7 +31,18 @@ function provisionErrorResponse(err: unknown) {
       "[instances] provisioning failed: no capacity —",
       err.message,
     );
-    return NextResponse.json({ error: err.message }, { status: 503 });
+    return NextResponse.json(
+      {
+        error: err.message,
+        code: err.code,
+        serverType: err.serverType,
+        retryAfterSeconds: NO_CAPACITY_RETRY_AFTER_SECONDS,
+      },
+      {
+        status: 503,
+        headers: { "Retry-After": String(NO_CAPACITY_RETRY_AFTER_SECONDS) },
+      },
+    );
   }
   console.error("[instances] provisioning failed:", err);
   return NextResponse.json(
@@ -119,6 +137,51 @@ export async function POST(request: Request) {
             "No available subscription. Each subscription supports one instance. Purchase another subscription or delete an existing instance.",
         },
         { status: 403 },
+      );
+    }
+
+    // A checkout whose order.paid is still in flight (or whose provisioning is
+    // mid-run) would get a second server here. The dashboard already hides the
+    // deploy button in that window; this is the server-side half of that rule.
+    const [latestPending, [instanceCount]] = await Promise.all([
+      db
+        .select({
+          consumedAt: pendingInstanceConfig.consumedAt,
+          expiresAt: pendingInstanceConfig.expiresAt,
+          createdAt: pendingInstanceConfig.createdAt,
+        })
+        .from(pendingInstanceConfig)
+        .where(eq(pendingInstanceConfig.userId, ctx.user.id))
+        .orderBy(desc(pendingInstanceConfig.createdAt))
+        .limit(1)
+        .then((rows) => rows[0] ?? null),
+      db
+        .select({ value: count() })
+        .from(instance)
+        .where(eq(instance.userId, ctx.user.id)),
+    ]);
+
+    const checkoutState = deriveCheckoutState({
+      pending: latestPending,
+      hasAvailableSubscription: Boolean(subscription),
+      instanceCount: instanceCount?.value ?? 0,
+      isStaff: false,
+    });
+
+    if (checkoutState === "pending") {
+      return NextResponse.json(
+        {
+          error:
+            "A checkout is still being processed for this account. Please wait a moment.",
+          code: "checkout_pending",
+          retryAfterSeconds: CHECKOUT_PENDING_RETRY_AFTER_SECONDS,
+        },
+        {
+          status: 409,
+          headers: {
+            "Retry-After": String(CHECKOUT_PENDING_RETRY_AFTER_SECONDS),
+          },
+        },
       );
     }
 

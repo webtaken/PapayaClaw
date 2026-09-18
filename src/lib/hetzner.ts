@@ -43,6 +43,7 @@ export class HetznerApiError extends Error {
 
 /** Thrown when no configured location has stock for the requested server type. */
 export class HetznerNoCapacityError extends Error {
+  readonly code = "no_capacity" as const;
   readonly serverType: string;
   readonly locations: string[];
 
@@ -55,6 +56,24 @@ export class HetznerNoCapacityError extends Error {
     this.locations = locations;
   }
 }
+
+/** Provisioning re-walks every location this many times before giving up. */
+export const NO_CAPACITY_MAX_ATTEMPTS = 3;
+/** Pause between walks — Hetzner stock flickers on a minutes scale. */
+export const NO_CAPACITY_RETRY_DELAY_MS = 20_000;
+/** What we tell the client to wait before retrying (503 body + Retry-After). */
+export const NO_CAPACITY_RETRY_AFTER_SECONDS = 120;
+
+export interface CreateServerOptions {
+  /** Total attempts of the full location walk. Default 1 (no retry). */
+  maxAttempts?: number;
+  retryDelayMs?: number;
+  /** Injectable for tests. */
+  sleep?: (ms: number) => Promise<void>;
+}
+
+const defaultSleep = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /**
  * Location preference order for server creation.
@@ -78,6 +97,34 @@ export function getApiToken(): string {
     );
   }
   return token;
+}
+
+/**
+ * Shape of the `code`/`cause`/`name`/`message` fields we read off whatever
+ * `fetch()` throws (Node/undici network errors, `AbortError`, etc). These
+ * errors aren't a fixed class, so we narrow with a runtime check instead of
+ * trusting a cast.
+ */
+interface FetchErrorLike {
+  code?: string;
+  name?: string;
+  message?: string;
+  cause?: {
+    code?: string;
+    message?: string;
+    errors?: Array<{
+      message?: string;
+      code?: string;
+      syscall?: string;
+      address?: string;
+    }>;
+  };
+}
+
+function asFetchErrorLike(error: unknown): FetchErrorLike {
+  return typeof error === "object" && error !== null
+    ? (error as FetchErrorLike)
+    : {};
 }
 
 async function hetznerFetch(
@@ -137,14 +184,16 @@ async function hetznerFetch(
       }
 
       return res;
-    } catch (error: any) {
+    } catch (error) {
       clearTimeout(timeout);
 
+      const err = asFetchErrorLike(error);
+
       const isNetworkError =
-        error?.code === "ETIMEDOUT" ||
-        error?.cause?.code === "ETIMEDOUT" ||
-        error?.name === "AbortError" ||
-        error?.message === "fetch failed";
+        err.code === "ETIMEDOUT" ||
+        err.cause?.code === "ETIMEDOUT" ||
+        err.name === "AbortError" ||
+        err.message === "fetch failed";
 
       if (isNetworkError && attempt < maxRetries) {
         const delay = Math.min(attempt * 2000, 8000); // 2s, 4s, 8s (capped)
@@ -158,15 +207,15 @@ async function hetznerFetch(
       console.error(
         `[hetznerFetch] Network/Fetch Error on ${method} ${path} (attempt ${attempt}/${maxRetries}):`,
       );
-      console.error(`  message: ${error?.message}`);
-      console.error(`  code: ${error?.code}`);
-      console.error(`  name: ${error?.name}`);
-      if (error?.cause) {
+      console.error(`  message: ${err.message}`);
+      console.error(`  code: ${err.code}`);
+      console.error(`  name: ${err.name}`);
+      if (err.cause) {
         console.error(
-          `  cause: ${error.cause.message} (code: ${error.cause.code})`,
+          `  cause: ${err.cause.message} (code: ${err.cause.code})`,
         );
-        if (error.cause.errors) {
-          error.cause.errors.forEach((e: any, i: number) => {
+        if (err.cause.errors) {
+          err.cause.errors.forEach((e, i) => {
             console.error(
               `    sub-error[${i}]: ${e.message} (code: ${e.code}, syscall: ${e.syscall}, address: ${e.address})`,
             );
@@ -289,7 +338,7 @@ export async function deleteSSHKey(keyId: number): Promise<void> {
 // ─── Server CRUD ────────────────────────────────────────────────────────────
 
 /**
- * Creates a new Hetzner Cloud server with cloud-init user_data.
+ * Creates a new Hetzner Cloud server with cloud-init user_data — single walk.
  *
  * Server type is determined by plan: Basic → cx23, Pro → cx33.
  * The user_data is a cloud-init script that provisions OpenClaw.
@@ -300,7 +349,7 @@ export async function deleteSSHKey(keyId: number): Promise<void> {
  * is tried. Throws HetznerNoCapacityError when none has stock.
  * The returned object carries the location actually used.
  */
-export async function createServer(
+async function createServerOnce(
   name: string,
   userData: string,
   sshKeyNames?: string[],
@@ -398,6 +447,39 @@ export async function createServer(
     `[createServer] every location returned ${STOCK_ERROR_CODE} for ${serverType}: ${candidates.join(", ")}`,
   );
   throw new HetznerNoCapacityError(serverType, preference);
+}
+
+/**
+ * Creates a Hetzner server, walking the location preference list. When every
+ * location is out of stock, the whole walk is retried up to `maxAttempts`
+ * times with `retryDelayMs` between attempts, then HetznerNoCapacityError is
+ * thrown. Other errors are never retried here (hetznerFetch handles network retries).
+ */
+export async function createServer(
+  name: string,
+  userData: string,
+  sshKeyNames?: string[],
+  imageId?: string,
+  serverType: string = "cx23",
+  options: CreateServerOptions = {},
+): Promise<HetznerServer & { location: string }> {
+  const maxAttempts = Math.max(1, options.maxAttempts ?? 1);
+  const retryDelayMs = options.retryDelayMs ?? NO_CAPACITY_RETRY_DELAY_MS;
+  const sleep = options.sleep ?? defaultSleep;
+
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await createServerOnce(name, userData, sshKeyNames, imageId, serverType);
+    } catch (error) {
+      if (!(error instanceof HetznerNoCapacityError) || attempt >= maxAttempts) {
+        throw error;
+      }
+      console.warn(
+        `[createServer] no capacity for ${serverType} (attempt ${attempt}/${maxAttempts}), retrying in ${retryDelayMs}ms`,
+      );
+      await sleep(retryDelayMs);
+    }
+  }
 }
 
 /**

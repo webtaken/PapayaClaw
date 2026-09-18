@@ -7,10 +7,10 @@ import useSWR from "swr";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { OpenClawAgent } from "@/lib/ssh";
+import { apiErrorMessage, type ApiErrorBody } from "@/lib/api-errors";
 
-interface AgentsResponse {
+interface AgentsResponse extends Partial<ApiErrorBody> {
   agents?: OpenClawAgent[];
-  error?: string;
 }
 
 /**
@@ -206,11 +206,12 @@ export function AgentsTab({
   }
 
   if (fetchError) {
+    const description = apiErrorMessage(t, data, "agents.errorDescription");
     return (
       <CenteredMessage
-        icon={<AlertCircle className="h-8 w-8 text-red-500/70" />}
+        icon={<AlertCircle className="h-8 w-8 text-destructive/70" />}
         title={t("agents.errorTitle")}
-        description={t("agents.errorDescription")}
+        description={description}
         action={
           <RefreshButton
             loading={isValidating}

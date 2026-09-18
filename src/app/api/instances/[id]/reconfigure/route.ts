@@ -3,7 +3,11 @@ import { instance } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { executeCommand } from "@/lib/ssh";
+import { executeCommand, restartGateway } from "@/lib/ssh";
+import { computeHealth } from "@/lib/gateway-health";
+import { buildReconfigureScript, RECONFIGURE_EXIT } from "@/lib/reconfigure-script";
+import { ConfigInvalidError, toErrorResponse, stderrTail } from "@/lib/api-errors";
+import { CliError } from "@/lib/ssh-errors";
 import { detectProviderByModelId } from "@/lib/ai-config";
 import { validateModelRef } from "@/lib/model-ref";
 import { INSTANCE_INPUT_MESSAGES } from "@/lib/instance-input";
@@ -13,7 +17,14 @@ import { getSessionContext, canAccessInstance } from "@/lib/auth-context";
  * POST /api/instances/[id]/reconfigure
  *
  * Reconfigures the AI model/provider on a running OpenClaw VPS instance.
- * Updates the database record and runs SSH commands to reconfigure OpenClaw.
+ *
+ * Runs one SSH command that: validates the existing config, backs it up,
+ * runs `openclaw onboard` with the new auth, jq-patches the primary model,
+ * then validates again — restoring the backup on any failure in between.
+ * A pre- or post-patch validation failure maps to 409 `config_invalid`;
+ * any other non-zero exit maps to 500 `cli_error`. On success, restarts the
+ * gateway and probes health (see `restartGateway`) before persisting the
+ * new model/key to the database.
  *
  * Body: { model: string, modelApiKey: string }
  */
@@ -61,6 +72,13 @@ export async function POST(
     );
   }
 
+  if (/[\x00-\x1f\x7f]/.test(modelApiKey)) {
+    return NextResponse.json(
+      { error: "API key contains invalid characters" },
+      { status: 400 },
+    );
+  }
+
   const [inst] = await db
     .select()
     .from(instance)
@@ -85,6 +103,13 @@ export async function POST(
     );
   }
 
+  if (provider.authChoice !== "skip" && !provider.apiKeyFlag) {
+    return NextResponse.json(
+      { error: "This provider cannot be reconfigured from the dashboard" },
+      { status: 400 },
+    );
+  }
+
   // Build the primary model ID with provider prefix (as OpenClaw expects)
   let primaryModel = model;
   if (
@@ -96,101 +121,67 @@ export async function POST(
     primaryModel = `${provider.id}/${model}`;
   }
 
-  // Build the SSH reconfiguration command
-  const pathExport =
-    'export PATH="/root/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"';
-  const skipFlags =
-    "--skip-channels --skip-skills --skip-daemon --skip-ui --skip-search --skip-health";
-
-  let reconfigureCmd: string;
-
-  if (provider.authChoice === "skip") {
-    // Env-var based providers (Groq, NVIDIA) — write env var and use --auth-choice skip
-    const envVarMap: Record<string, string> = {
-      groq: "GROQ_API_KEY",
-      nvidia: "NVIDIA_API_KEY",
-    };
-    const envVar = envVarMap[provider.id] || `${provider.id.toUpperCase()}_API_KEY`;
-
-    reconfigureCmd = [
-      pathExport,
-      // Write to OpenClaw's env file (overwrite if exists, append if not)
-      `grep -q '^${envVar}=' /root/.openclaw/.env 2>/dev/null && sed -i 's|^${envVar}=.*|${envVar}=${modelApiKey}|' /root/.openclaw/.env || echo '${envVar}=${modelApiKey}' >> /root/.openclaw/.env`,
-      // Run onboard with skip auth
-      `openclaw onboard --non-interactive --accept-risk --auth-choice skip ${skipFlags}`,
-    ].join(" && ");
-  } else {
-    // Standard API key providers
-    reconfigureCmd = [
-      pathExport,
-      `openclaw onboard --non-interactive --accept-risk --auth-choice "${provider.authChoice}" ${provider.apiKeyFlag} "${modelApiKey}" ${skipFlags}`,
-    ].join(" && ");
-  }
-
-  // Patch the model in config and restart gateway
-  const patchAndRestart = [
-    pathExport,
-    `jq --arg model "${primaryModel}" '.agents.defaults.model.primary = $model' /root/.openclaw/openclaw.json > /run/oc.json && mv /run/oc.json /root/.openclaw/openclaw.json`,
-    `pkill -f "openclaw gateway" || true`,
-  ].join(" && ");
-
   try {
-    // Step 1: Run onboard to reconfigure auth
-    const onboardResult = await executeCommand(
+    // buildReconfigureScript can throw (e.g. an unsafe derived env var name);
+    // keep it inside the try so that goes through toErrorResponse too.
+    const script = buildReconfigureScript({
+      provider: {
+        id: provider.id,
+        authChoice: provider.authChoice,
+        apiKeyFlag: provider.apiKeyFlag,
+      },
+      primaryModel,
+      apiKey: modelApiKey,
+    });
+
+    // Step 1: validate → backup → onboard → patch → validate (one ssh call).
+    const result = await executeCommand(
       inst.providerServerIp,
       inst.sshPrivateKey,
-      reconfigureCmd,
+      script,
     );
 
-    if (onboardResult.code !== 0) {
-      console.error(
-        "Reconfigure onboard failed:",
-        onboardResult.stderr,
-        onboardResult.stdout,
-      );
-      return NextResponse.json(
-        {
-          error: "Failed to reconfigure provider auth on VPS",
-          detail: onboardResult.stderr || onboardResult.stdout,
-        },
-        { status: 500 },
+    if (
+      result.code === RECONFIGURE_EXIT.configInvalidBefore ||
+      result.code === RECONFIGURE_EXIT.configInvalidAfter
+    ) {
+      const stage =
+        result.code === RECONFIGURE_EXIT.configInvalidBefore
+          ? "before changes (nothing was modified)"
+          : "after applying changes (restored previous config)";
+      throw new ConfigInvalidError(
+        `${stage}: ${stderrTail(result.stderr) || stderrTail(result.stdout)}`,
       );
     }
+    if (result.code !== 0) {
+      throw new CliError(`reconfigure script exited ${result.code}`, result);
+    }
 
-    // Step 2: Patch model in config and restart gateway
-    const patchResult = await executeCommand(
+    // Step 2: restart the gateway and probe health (F4 helper).
+    const restart = await restartGateway(
       inst.providerServerIp,
       inst.sshPrivateKey,
-      patchAndRestart,
     );
+    const { health, reason } = computeHealth({
+      hetznerStatus: "running",
+      probe: restart.probe,
+    });
 
-    if (patchResult.code !== 0) {
-      console.error(
-        "Reconfigure patch failed:",
-        patchResult.stderr,
-        patchResult.stdout,
-      );
-      return NextResponse.json(
-        {
-          error: "Failed to update model config on VPS",
-          detail: patchResult.stderr || patchResult.stdout,
-        },
-        { status: 500 },
-      );
-    }
-
-    // Step 3: Update DB record
+    // Step 3: persist only after the VPS accepted the config.
     await db
       .update(instance)
       .set({ model, modelApiKey })
       .where(eq(instance.id, id));
 
-    return NextResponse.json({ success: true, model: primaryModel });
+    return NextResponse.json({
+      success: true,
+      model: primaryModel,
+      health,
+      healthReason: reason,
+    });
   } catch (error) {
-    console.error("Reconfigure SSH error:", error);
-    return NextResponse.json(
-      { error: "Failed to connect to instance via SSH" },
-      { status: 500 },
-    );
+    console.error(`[reconfigure] failed for instance ${id}:`, error);
+    const { status, body } = toErrorResponse(error);
+    return NextResponse.json(body, { status });
   }
 }

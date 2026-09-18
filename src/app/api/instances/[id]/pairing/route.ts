@@ -4,13 +4,15 @@ import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { listPairingRequests, approvePairingRequest } from "@/lib/ssh";
+import { assertPairingChannel, assertPairingCode } from "@/lib/pairing";
+import { toErrorResponse } from "@/lib/api-errors";
 import { getSessionContext, canAccessInstance } from "@/lib/auth-context";
 
 /**
  * GET /api/instances/[id]/pairing
  *
- * Lists pending Telegram pairing requests by SSH-ing into the VPS
- * and reading the pairing state file.
+ * Lists pending DM pairing requests by running
+ * `openclaw pairing list <channel> --json` over SSH.
  */
 export async function GET(
   request: Request,
@@ -42,29 +44,29 @@ export async function GET(
 
   try {
     const url = new URL(request.url);
-    const channelParam = url.searchParams.get("channel") || inst.channel.split("|")[0];
+    const channel = assertPairingChannel(
+      url.searchParams.get("channel") ?? inst.channel.split("|")[0],
+    );
     const requests = await listPairingRequests(
       inst.providerServerIp,
       inst.sshPrivateKey,
-      channelParam,
+      channel,
     );
     return NextResponse.json({ requests });
   } catch (error) {
-    console.error("Failed to list pairing requests:", error);
-    return NextResponse.json(
-      { error: "Failed to connect to instance" },
-      { status: 502 },
-    );
+    console.error(`[pairing] list failed for instance ${id}:`, error);
+    const { status, body } = toErrorResponse(error);
+    return NextResponse.json(body, { status });
   }
 }
 
 /**
  * POST /api/instances/[id]/pairing
  *
- * Approves a Telegram pairing request by SSH-ing into the VPS
- * and running `openclaw pairing approve telegram <CODE>`.
+ * Approves a pending DM pairing request by running
+ * `openclaw pairing approve <channel> <CODE>` over SSH.
  *
- * Body: { code: string }
+ * Body: { code: string, channel?: string }
  */
 export async function POST(
   request: Request,
@@ -79,13 +81,6 @@ export async function POST(
   const { id } = await params;
   const body = await request.json();
   const { code, channel: channelParam } = body;
-
-  if (!code || typeof code !== "string") {
-    return NextResponse.json(
-      { error: "Missing pairing code" },
-      { status: 400 },
-    );
-  }
 
   const [inst] = await db
     .select()
@@ -104,24 +99,20 @@ export async function POST(
   }
 
   try {
-    const approveChannel = channelParam || inst.channel.split("|")[0];
-    const result = await approvePairingRequest(
+    const channel = assertPairingChannel(
+      channelParam ?? inst.channel.split("|")[0],
+    );
+    const pairingCode = assertPairingCode(code);
+    await approvePairingRequest(
       inst.providerServerIp,
       inst.sshPrivateKey,
-      code,
-      approveChannel,
+      pairingCode,
+      channel,
     );
-
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
-    }
-
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Failed to approve pairing:", error);
-    return NextResponse.json(
-      { error: "Failed to connect to instance" },
-      { status: 502 },
-    );
+    console.error(`[pairing] approve failed for instance ${id}:`, error);
+    const { status, body } = toErrorResponse(error);
+    return NextResponse.json(body, { status });
   }
 }

@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { instance, user } from "@/lib/schema";
+import { instance, user, pendingInstanceConfig } from "@/lib/schema";
 import { eq, desc } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -8,6 +8,7 @@ import { getUserSubscription, getAvailableSubscription } from "@/lib/polar";
 import { getCapacitySnapshot } from "@/lib/hetzner-limits";
 import { setRequestLocale } from "next-intl/server";
 import { getSessionContext } from "@/lib/auth-context";
+import { deriveCheckoutState } from "@/lib/checkout-state";
 
 export default async function DashboardPage({
   params,
@@ -39,13 +40,31 @@ export default async function DashboardPage({
         .where(eq(instance.userId, ctx.user.id))
         .orderBy(desc(instance.createdAt));
 
-  const [instances, currentSubscription, availableSubscription, capacity] =
+  const [instances, currentSubscription, availableSubscription, capacity, latestPending] =
     await Promise.all([
       instancesPromise,
       getUserSubscription(ctx.user.id),
       getAvailableSubscription(ctx.user.id),
       getCapacitySnapshot().catch(() => undefined),
+      db
+        .select({
+          consumedAt: pendingInstanceConfig.consumedAt,
+          expiresAt: pendingInstanceConfig.expiresAt,
+          createdAt: pendingInstanceConfig.createdAt,
+        })
+        .from(pendingInstanceConfig)
+        .where(eq(pendingInstanceConfig.userId, ctx.user.id))
+        .orderBy(desc(pendingInstanceConfig.createdAt))
+        .limit(1)
+        .then((rows) => rows[0] ?? null),
     ]);
+
+  const checkoutState = deriveCheckoutState({
+    pending: latestPending,
+    hasAvailableSubscription: Boolean(availableSubscription),
+    instanceCount: instances.length,
+    isStaff: ctx.isStaff,
+  });
 
   return (
     <DashboardContent
@@ -55,6 +74,7 @@ export default async function DashboardPage({
       user={{ id: ctx.user.id, email: ctx.user.email }}
       isStaff={ctx.isStaff}
       capacity={capacity}
+      checkoutState={checkoutState}
     />
   );
 }

@@ -10,8 +10,9 @@
     "templates": "Templates"
   },
   "Capacity": {
-    "remaining": "{count} server slots left",
-    "full": "All server slots taken"
+    "remaining": "{count} slots left",
+    "full": "No slots left",
+    "quotaHint": "Account quota — not live server stock"
   },
   "Hero": {
     "badge": "AI Employees Platform",
@@ -292,7 +293,12 @@
     "channel": "Channel",
     "checkoutSuccessTitle": "Payment received",
     "checkoutSuccessBody": "Your AI employee is being provisioned. This usually takes 1–2 minutes — the page will refresh automatically.",
-    "staffBadge": "Staff"
+    "staffBadge": "Staff",
+    "checkoutPendingTitle": "Setting up your server…",
+    "checkoutPendingBody": "Payment received. Your AI employee is being created — this page refreshes automatically.",
+    "checkoutFailedTitle": "Payment received, but we couldn't create your server",
+    "checkoutFailedBody": "We couldn't finish creating your server. Press Retry to try again — you won't be charged twice. If it keeps failing, contact support.",
+    "checkoutRetry": "Retry"
   },
   "DeployDialog": {
     "title": "Hire New AI Employee",
@@ -349,7 +355,12 @@
     "openrouterAdvanced": "Type a model id manually",
     "modelLooksLikeKey": "That looks like an API key. Paste the key in the API key field below and pick a model here.",
     "modelInvalidFormat": "Use the vendor/model form, e.g. anthropic/claude-haiku-4.5.",
-    "perMillion": "per 1M tokens"
+    "perMillion": "per 1M tokens",
+    "noCapacityTitle": "No servers available right now",
+    "noCapacityBody": "Try again in {minutes} minutes. You won't be charged twice.",
+    "checkoutPendingTitle": "Your payment is still being processed",
+    "checkoutPendingBody": "Give it a moment — your server will appear automatically.",
+    "retry": "Retry"
   },
   "InstanceCard": {
     "running": "Running",
@@ -493,6 +504,33 @@
       "vm-off": "Server is powered off",
       "ssh-unreachable": "Could not reach the server over SSH",
       "hetzner-unknown": "Could not read server state"
+    },
+    "errors": {
+      "ssh_unreachable": "Could not reach your instance over SSH. It may be restarting — try again in a minute.",
+      "cli_error": "OpenClaw returned an error on your instance.",
+      "config_invalid": "Your OpenClaw configuration is invalid. Use Restart agent on the General tab, or contact support.",
+      "invalid_channel": "Unsupported channel.",
+      "invalid_code": "Invalid pairing code.",
+      "internal": "Something went wrong on our side. Please try again.",
+      "network": "Network error — could not reach the server."
+    },
+    "pairing": {
+      "refresh": "Refresh",
+      "loading": "Loading pairing requests…",
+      "empty": "No pending pairing requests",
+      "emptyHint": "Send a message to your Telegram bot, then press Refresh.",
+      "securityNotice": "If you see pairing codes you don't recognize, ignore them — do not approve anything. This is the door to your agent.",
+      "approve": "Approve",
+      "approvedTitle": "Pairing approved",
+      "approvedDescription": "You can now chat with your agent through Telegram.",
+      "userFallback": "User {id}",
+      "idLabel": "ID"
+    },
+    "model": {
+      "updatedTitle": "Model updated",
+      "updatedDescription": "Your instance was reconfigured and the agent restarted.",
+      "updatedDegraded": "Model updated, but the agent is still having trouble: {reason}",
+      "failed": "Could not update the model."
     }
   },
   "Metadata": {

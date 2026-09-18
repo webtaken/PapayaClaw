@@ -6,10 +6,11 @@ import { toast } from "sonner";
 import { InstanceCard } from "./instance-card";
 import { DeployDialog } from "./deploy-dialog";
 import { Button } from "@/components/ui/button";
-import { Plus, Crown, ExternalLink, CreditCard } from "lucide-react";
+import { Plus, Crown, ExternalLink, CreditCard, Loader2, AlertTriangle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { CapacityBadge } from "@/components/capacity-badge";
+import type { CheckoutState } from "@/lib/checkout-state";
 
 export interface Instance {
   id: string;
@@ -46,6 +47,7 @@ interface DashboardProps {
   user: { id: string; email: string };
   isStaff: boolean;
   capacity?: CapacitySnapshot;
+  checkoutState: CheckoutState;
 }
 
 const BASIC_PRODUCT_ID = process.env.NEXT_PUBLIC_POLAR_BASIC_PRODUCT_ID;
@@ -62,6 +64,7 @@ export function DashboardContent({
   user,
   isStaff,
   capacity,
+  checkoutState,
 }: DashboardProps) {
   const [instances, setInstances] = useState<Instance[]>(initialInstances);
   const [deployOpen, setDeployOpen] = useState(false);
@@ -97,6 +100,13 @@ export function DashboardContent({
     url.searchParams.delete("deploy");
     window.history.replaceState({}, "", url.toString());
   }, [searchParams]);
+
+  // Poll for provisioning completion while a checkout is still in flight.
+  useEffect(() => {
+    if (checkoutState !== "pending") return;
+    const id = setInterval(() => router.refresh(), 5000);
+    return () => clearInterval(id);
+  }, [checkoutState, router]);
 
   const planLabel =
     subscription?.planType === "pro"
@@ -175,6 +185,7 @@ export function DashboardContent({
             {t("navSubscriptions")}
           </Link>
           {subscription ? (
+            // eslint-disable-next-line @next/next/no-html-link-for-pages -- raw <a> on purpose: next-intl <Link> 404s /api/* for non-en locales
             <a
               href="/api/portal"
               className="inline-flex items-center gap-1.5 rounded-lg bg-muted border border-border px-3 h-9 text-xs font-mono text-muted-foreground hover:text-foreground/90 hover:border-border transition-all"
@@ -205,6 +216,7 @@ export function DashboardContent({
           )}
           <Button
             onClick={() => setDeployOpen(true)}
+            disabled={checkoutState === "pending"}
             className="bg-foreground text-background hover:bg-foreground/90 font-medium shadow-none h-9 px-4 border border-transparent transition-all hover:border-border gap-2 font-mono text-xs uppercase tracking-wider"
           >
             <Plus className="h-3.5 w-3.5" />
@@ -212,6 +224,42 @@ export function DashboardContent({
           </Button>
         </div>
       </div>
+
+      {checkoutState === "pending" && (
+        <div
+          role="status"
+          className="flex items-center gap-3 rounded-xl border border-border bg-card px-6 py-4"
+        >
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <div>
+            <p className="text-sm font-medium text-foreground">{t("checkoutPendingTitle")}</p>
+            <p className="text-xs text-muted-foreground font-mono">{t("checkoutPendingBody")}</p>
+          </div>
+        </div>
+      )}
+
+      {checkoutState === "failed" && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-4 rounded-xl border border-destructive/30 bg-destructive/5 px-6 py-4"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/10 border border-destructive/20">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">{t("checkoutFailedTitle")}</p>
+              <p className="text-xs text-muted-foreground font-mono">{t("checkoutFailedBody")}</p>
+            </div>
+          </div>
+          <Button
+            onClick={() => setDeployOpen(true)}
+            className="bg-foreground text-background hover:bg-foreground/90 font-mono text-xs uppercase tracking-wider h-9 px-5 shrink-0"
+          >
+            {t("checkoutRetry")}
+          </Button>
+        </div>
+      )}
 
       {/* Subscription CTA Banner — shown when user has no active plan (not for staff) */}
       {!subscription && !isStaff && (
@@ -253,6 +301,7 @@ export function DashboardContent({
             </p>
             <Button
               onClick={() => setDeployOpen(true)}
+              disabled={checkoutState === "pending"}
               className="bg-muted text-foreground/90 hover:bg-muted border border-border hover:text-foreground font-medium shadow-none gap-2 font-mono text-xs uppercase tracking-wider h-10 px-6"
             >
               <Plus className="h-3.5 w-3.5 text-muted-foreground" />

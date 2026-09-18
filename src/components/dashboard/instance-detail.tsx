@@ -23,6 +23,7 @@ import { ChannelsTab, type PairingRequest } from "./tabs/channels-tab";
 import { SshTab } from "./tabs/ssh-tab";
 import { IntegrationsTab } from "./tabs/integrations-tab";
 import { AgentsTab } from "./tabs/agents-tab";
+import { apiErrorMessage, type ApiErrorBody } from "@/lib/api-errors";
 
 
 export interface InstanceData {
@@ -151,6 +152,10 @@ export function InstanceDetail({
   initialInstance: InstanceData;
 }) {
   const t = useTranslations("InstanceDetail");
+  const describeApiError = useCallback(
+    (body: Partial<ApiErrorBody> | null | undefined) => apiErrorMessage(t, body),
+    [t],
+  );
   const [instance, setInstance] = useState(initialInstance);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
 
@@ -298,52 +303,53 @@ export function InstanceDetail({
     setPairingError(null);
     try {
       const res = await fetch(`/api/instances/${instance.id}/pairing?channel=telegram`);
+      const body = (await res.json().catch(() => ({}))) as Partial<ApiErrorBody> & {
+        requests?: PairingRequest[];
+      };
       if (res.ok) {
-        const data = await res.json();
-        setPairingRequests(data.requests || []);
+        setPairingRequests(body.requests ?? []);
       } else {
-        const err = await res.json().catch(() => ({}));
-        setPairingError(err.error || "Failed to fetch pairing requests");
+        setPairingError(describeApiError(body));
       }
     } catch {
-      setPairingError("Failed to connect");
+      setPairingError(t("errors.network"));
     } finally {
       setIsPairingLoading(false);
     }
-  }, [instance.id, hasTelegram]);
+  }, [instance.id, hasTelegram, describeApiError, t]);
 
   const approvePairing = useCallback(
     async (code: string) => {
       setApprovingCode(code);
+      setPairingError(null);
       try {
         const res = await fetch(`/api/instances/${instance.id}/pairing`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code }),
+          body: JSON.stringify({ code, channel: "telegram" }),
         });
         if (res.ok) {
-          // Remove the approved request from the list
           setPairingRequests((prev) => prev.filter((r) => r.code !== code));
-          toast.success("Pairing approved!", {
-            description:
-              "You can now start chatting with your agent through Telegram.",
+          toast.success(t("pairing.approvedTitle"), {
+            description: t("pairing.approvedDescription"),
           });
         } else {
-          const err = await res.json().catch(() => ({}));
-          setPairingError(err.error || "Failed to approve");
+          const body = (await res.json().catch(() => ({}))) as Partial<ApiErrorBody>;
+          setPairingError(describeApiError(body));
         }
       } catch {
-        setPairingError("Failed to connect");
+        setPairingError(t("errors.network"));
       } finally {
         setApprovingCode(null);
       }
     },
-    [instance.id],
+    [instance.id, describeApiError, t],
   );
 
   // Fetch pairing requests when instance becomes ready (Telegram only)
   useEffect(() => {
     if (hasTelegram && !isProvisioning && currentIp) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing fetch-on-ready; the loading flag is intentional. TODO: migrate to SWR like tabs/agents-tab.tsx
       fetchPairingRequests();
     }
   }, [hasTelegram, isProvisioning, currentIp, fetchPairingRequests]);

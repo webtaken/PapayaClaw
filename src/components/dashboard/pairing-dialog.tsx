@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Check, RefreshCw, Users, Shield } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
+import { apiErrorMessage, type ApiErrorBody } from "@/lib/api-errors";
 
 interface PairingRequest {
   code: string;
@@ -33,6 +34,7 @@ export function PairingDialog({
   const [approving, setApproving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const t = useTranslations("PairingDialog");
+  const tErr = useTranslations("InstanceDetail");
   const locale = useLocale();
 
   const fetchRequests = useCallback(async () => {
@@ -44,18 +46,19 @@ export function PairingDialog({
         const data = await res.json();
         setRequests(data.requests || []);
       } else {
-        const data = await res.json();
-        setError(data.error || "Failed to load pairing requests");
+        const body = (await res.json().catch(() => ({}))) as Partial<ApiErrorBody>;
+        setError(apiErrorMessage(tErr, body));
       }
     } catch {
-      setError("Failed to connect");
+      setError(tErr("errors.network"));
     } finally {
       setLoading(false);
     }
-  }, [instanceId]);
+  }, [instanceId, tErr]);
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing fetch-on-open; the loading flag is intentional. TODO: migrate to SWR like tabs/agents-tab.tsx
       fetchRequests();
     }
   }, [open, fetchRequests]);
@@ -72,11 +75,11 @@ export function PairingDialog({
       if (res.ok) {
         setRequests((prev) => prev.filter((r) => r.code !== code));
       } else {
-        const data = await res.json();
-        setError(data.error || "Failed to approve");
+        const body = (await res.json().catch(() => ({}))) as Partial<ApiErrorBody>;
+        setError(apiErrorMessage(tErr, body));
       }
     } catch {
-      setError("Failed to connect");
+      setError(tErr("errors.network"));
     } finally {
       setApproving(null);
     }
@@ -98,7 +101,10 @@ export function PairingDialog({
         <div className="px-6 py-4">
           {/* Error banner */}
           {error && (
-            <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            <div
+              role="alert"
+              className="mb-4 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+            >
               {error}
             </div>
           )}

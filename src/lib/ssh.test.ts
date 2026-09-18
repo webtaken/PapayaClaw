@@ -1,10 +1,17 @@
 import { describe, it, expect } from "vitest";
+import { EventEmitter } from "node:events";
+import type { Client } from "ssh2";
 import {
   parseAgents,
   checkGatewayHealth,
   restartGateway,
+  executeCommand,
+  listPairingRequests,
+  approvePairingRequest,
+  listAgents,
   type ExecFn,
 } from "./ssh";
+import { SshUnreachableError, CliError } from "./ssh-errors";
 
 describe("parseAgents", () => {
   it("maps a fully-populated agent", () => {
@@ -165,5 +172,143 @@ describe("restartGateway", () => {
       configValid: false,
       errorSentinel: "config-invalid",
     });
+  });
+});
+
+class FakeStream extends EventEmitter {
+  stderr = new EventEmitter();
+}
+
+type Behaviour = "refuse" | "timeout" | "exec-fail" | "ok";
+
+function fakeClient(behaviour: Behaviour, exitCode: number | null = 0): Client {
+  const c = new EventEmitter() as EventEmitter & {
+    connect: () => void;
+    exec: (cmd: string, cb: (err: Error | undefined, s: FakeStream) => void) => void;
+    end: () => void;
+  };
+  c.end = () => {};
+  c.exec = (_cmd, cb) => {
+    if (behaviour === "exec-fail") {
+      cb(new Error("Channel open failure"), undefined as unknown as FakeStream);
+      return;
+    }
+    const s = new FakeStream();
+    cb(undefined, s);
+    setImmediate(() => {
+      s.emit("data", Buffer.from("OUT"));
+      s.stderr.emit("data", Buffer.from("ERR"));
+      s.emit("close", exitCode);
+    });
+  };
+  c.connect = () => {
+    setImmediate(() => {
+      if (behaviour === "refuse") {
+        c.emit("error", Object.assign(new Error("connect ECONNREFUSED"), { level: "client-socket" }));
+      } else if (behaviour === "timeout") {
+        c.emit("error", Object.assign(new Error("Timed out while waiting for handshake"), { level: "client-timeout" }));
+      } else {
+        c.emit("ready");
+      }
+    });
+  };
+  return c as unknown as Client;
+}
+
+describe("executeCommand error classification", () => {
+  it("wraps connection refusal in SshUnreachableError with the ssh2 level", async () => {
+    const err = await executeCommand("1.2.3.4", "KEY", "true", () => fakeClient("refuse")).catch((e) => e);
+    expect(err).toBeInstanceOf(SshUnreachableError);
+    expect(err.level).toBe("client-socket");
+    expect(err.message).toContain("1.2.3.4");
+  });
+
+  it("wraps handshake timeout in SshUnreachableError", async () => {
+    await expect(
+      executeCommand("1.2.3.4", "KEY", "true", () => fakeClient("timeout")),
+    ).rejects.toBeInstanceOf(SshUnreachableError);
+  });
+
+  it("wraps exec channel failure in SshUnreachableError", async () => {
+    await expect(
+      executeCommand("1.2.3.4", "KEY", "true", () => fakeClient("exec-fail")),
+    ).rejects.toBeInstanceOf(SshUnreachableError);
+  });
+
+  it("resolves non-zero exit as a normal result (not an error)", async () => {
+    const result = await executeCommand("1.2.3.4", "KEY", "false", () => fakeClient("ok", 3));
+    expect(result).toEqual({ stdout: "OUT", stderr: "ERR", code: 3 });
+  });
+
+  it("treats a signal-killed process (null exit code) as failure code 1", async () => {
+    const result = await executeCommand("1.2.3.4", "KEY", "x", () => fakeClient("ok", null));
+    expect(result.code).toBe(1);
+  });
+});
+
+describe("listPairingRequests", () => {
+  it("runs `openclaw pairing list <channel> --json` under OPENCLAW_ENV and parses", async () => {
+    const calls: string[] = [];
+    const exec: ExecFn = async (_h, _k, command) => {
+      calls.push(command);
+      return {
+        stdout: '{"channel":"telegram","requests":[{"id":"1","code":"ABC","createdAt":"t","lastSeenAt":"t","meta":{"senderId":"1","firstName":"Ana"}}]}',
+        stderr: "",
+        code: 0,
+      };
+    };
+    const result = await listPairingRequests("1.2.3.4", "KEY", "telegram", exec);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toContain("XDG_RUNTIME_DIR=/run/user/0");
+    expect(calls[0]).toContain("openclaw pairing list telegram --json");
+    expect(result).toEqual([{ code: "ABC", senderId: "1", senderName: "Ana", timestamp: "t" }]);
+  });
+
+  it("throws CliError with stderr on non-zero exit", async () => {
+    const exec: ExecFn = async () => ({ stdout: "", stderr: "Channel \"x\" does not support pairing", code: 1 });
+    const err = await listPairingRequests("1.2.3.4", "KEY", "telegram", exec).catch((e) => e);
+    expect(err).toBeInstanceOf(CliError);
+    expect(err.stderr).toContain("does not support pairing");
+  });
+});
+
+describe("approvePairingRequest", () => {
+  it("runs `openclaw pairing approve <channel> <code>` and resolves on exit 0", async () => {
+    const calls: string[] = [];
+    const exec: ExecFn = async (_h, _k, command) => {
+      calls.push(command);
+      return { stdout: "Approved telegram sender 1.", stderr: "", code: 0 };
+    };
+    await expect(approvePairingRequest("1.2.3.4", "KEY", "ABC", "telegram", exec)).resolves.toBeUndefined();
+    expect(calls[0]).toContain("openclaw pairing approve telegram ABC");
+  });
+
+  it("throws CliError when the code is unknown", async () => {
+    const exec: ExecFn = async () => ({ stdout: "", stderr: 'No pending pairing request found for code "ABC".', code: 1 });
+    await expect(approvePairingRequest("1.2.3.4", "KEY", "ABC", "telegram", exec)).rejects.toBeInstanceOf(CliError);
+  });
+});
+
+describe("listAgents", () => {
+  it("runs under OPENCLAW_ENV and returns parsed agents", async () => {
+    const calls: string[] = [];
+    const exec: ExecFn = async (_h, _k, command) => {
+      calls.push(command);
+      return { stdout: '[{"id":"main","isDefault":true}]', stderr: "", code: 0 };
+    };
+    const agents = await listAgents("1.2.3.4", "KEY", exec);
+    expect(calls[0]).toContain("XDG_RUNTIME_DIR=/run/user/0");
+    expect(calls[0]).toContain("openclaw agents list --bindings --json");
+    expect(agents).toEqual([{ id: "main", isDefault: true, bindingDetails: [] }]);
+  });
+
+  it("throws CliError on non-zero exit", async () => {
+    const exec: ExecFn = async () => ({ stdout: "", stderr: "Config invalid", code: 1 });
+    await expect(listAgents("1.2.3.4", "KEY", exec)).rejects.toBeInstanceOf(CliError);
+  });
+
+  it("throws CliError when stdout is not a JSON array", async () => {
+    const exec: ExecFn = async () => ({ stdout: "not json", stderr: "", code: 0 });
+    await expect(listAgents("1.2.3.4", "KEY", exec)).rejects.toBeInstanceOf(CliError);
   });
 });
