@@ -1,0 +1,135 @@
+---
+title: "Convertí n8n en el cerebro de workflows de mi agente autónomo"
+date: "2026-09-18"
+summary: "El patrón proxy que deja a OpenClaw construir integraciones con n8n vía webhooks, sin que el agente llegue a ver una sola credencial."
+---
+
+# Convertí n8n en el cerebro de workflows de mi agente autónomo
+
+Cada integración nueva en mi setup de agentes terminaba igual: otra API key apilada en `.env.local`, otra superficie de ataque esperando a que el agente la filtre en un mal commit.
+
+Y lo peor es que el agente era quien manejaba esas claves directamente, dentro de scripts que nadie revisaba.
+
+Implementé el patrón que voy a contarte y el problema desapareció. Hoy OpenClaw no ve ni una credencial. n8n hace de escudo, cada integración es visualmente inspeccionable, y de paso dejo de quemar tokens en tareas deterministas.
+
+## El problema real (no es la seguridad, son tres cosas a la vez)
+
+Cuando el agente gestiona todo directamente, arrastras tres problemas que se refuerzan entre sí:
+
+- **Cero visibilidad**: lo que el agente construyó queda enterrado en archivos de skills en JavaScript o scripts de shell. Imposible inspeccionar.
+- **Sprawl de credenciales**: cada API key vive en el entorno del agente, a un commit de distancia de filtrarse.
+- **Tokens quemados**: enviar un email o actualizar una hoja de cálculo son tareas deterministas. No necesitan razonamiento de LLM, pero ahí va el agente, gastando tokens como si fueran gratis.
+
+La tercera es la que más duele en la factura a fin de mes. La primera es la que te va a hacer pasar una noche mala.
+
+## El patrón: el agente como arquitecto, no como ejecutor
+
+La idea es simple. OpenClaw deja de llamar APIs directamente y pasa a hacer dos cosas:
+
+1. **Diseña y construye workflows de n8n** (con trigger de webhook entrante) vía la API de n8n.
+2. **Llama a esos webhooks** para todas las interacciones futuras con servicios externos.
+
+Las API keys viven en el almacén de credenciales de n8n. El agente solo conoce la URL del webhook.
+
+```text
+┌──────────────┐     webhook call      ┌─────────────────┐     API call     ┌──────────────┐
+│   OpenClaw   │ ───────────────────→  │   n8n Workflow   │ ─────────────→  │  External    │
+│   (agent)    │   (no credentials)    │  (locked, with   │  (credentials   │  Service     │
+│              │                       │   API keys)      │   stay here)    │  (Slack, etc)│
+└──────────────┘                       └─────────────────┘                  └──────────────┘
+```
+
+El flujo completo queda así:
+
+1. **El agente diseña el workflow**: le pides, por ejemplo, "crea un workflow que mande un mensaje a Slack cuando un issue de GitHub se etiquete como `urgent`".
+2. **El agente lo construye en n8n**: OpenClaw crea el workflow vía API, incluyendo el webhook de entrada.
+3. **Tú añades las credenciales**: abres la UI de n8n y pegas tu token de Slack y de GitHub manualmente.
+4. **Tú bloqueas el workflow**: el agente ya no puede modificar cómo interactúa con la API.
+5. **El agente llama al webhook**: a partir de aquí, OpenClaw manda payloads JSON a `http://n8n:5678/webhook/my-workflow`. La API key nunca pasa por sus manos.
+
+Ese paso 4 es el que casi todos se saltan, y es el más importante del patrón. Sin bloquear, el agente puede modificar workflows en silencio. Ciclo obligatorio: **construir → probar → bloquear**.
+
+## Cómo montarlo
+
+### Opción 1: stack de Docker preconfigurado
+
+Existe un setup mantenido por la comunidad, [openclaw-n8n-stack](https://github.com/caprihan/openclaw-n8n-stack), que preconfigura todo en una red Docker compartida:
+
+```bash
+git clone https://github.com/caprihan/openclaw-n8n-stack.git
+cd openclaw-n8n-stack
+cp .env.template .env
+# Añade tu API key de Anthropic a .env
+docker-compose up -d
+```
+
+Con esto tienes:
+
+- OpenClaw en el puerto 3456
+- n8n en el puerto 5678
+- Una red Docker compartida, así que OpenClaw llama a `http://n8n:5678/webhook/...` directamente
+- Plantillas de workflows ya listas: fact-checking multi-LLM, triaje de emails, monitoreo de redes sociales
+
+Si quieres probar el patrón hoy, empieza por aquí. Diez minutos y estás corriendo.
+
+### Opción 2: setup manual
+
+Si prefieres controlar cada pieza:
+
+1. Instala n8n (`npm install n8n -g` o vía Docker)
+2. Configura OpenClaw para que conozca la URL base de n8n
+3. Añade esto a tu `AGENTS.md`:
+
+```text
+## n8n Integration Pattern
+
+Cuando necesite interactuar con APIs externas:
+
+1. NUNCA almacenar API keys en mi entorno ni en archivos de skills
+2. Comprobar si ya existe un workflow de n8n para esta integración
+3. Si no existe, crear uno vía la API de n8n con trigger de webhook
+4. Avisar al usuario para que añada las credenciales y bloquee el workflow
+5. Para todas las llamadas futuras, usar la URL del webhook con un payload JSON
+
+Nomenclatura de workflows: openclaw-{servicio}-{accion}
+Ejemplo: openclaw-slack-send-message
+
+Formato de llamada al webhook:
+curl -X POST http://n8n:5678/webhook/{workflow-name} \
+  -H "Content-Type: application/json" \
+  -d '{"channel": "#general", "message": "Hello from OpenClaw"}'
+```
+
+Ese bloque en `AGENTS.md` es la clave del setup manual. Le dice al agente, en su propio contexto, que la regla del juego es: nunca tocar credenciales, siempre pasar por webhooks.
+
+## Por qué este patrón funciona tan bien
+
+**Tres victorias con un solo cambio.** Observabilidad (todo se inspecciona en la UI visual de n8n), seguridad (las credenciales quedan aisladas) y rendimiento (las subtareas deterministas corren como workflows, no como llamadas a un LLM).
+
+**n8n tiene más de 400 integraciones.** Slack, GitHub, Notion, hojas de cálculo, lo que necesites casi seguro ya tiene un nodo oficial. El agente no tiene que escribir llamadas a la API a mano: enchufa nodos.
+
+**Auditoría gratis.** n8n registra cada ejecución de workflow con sus datos de entrada y salida. Cuando algo sale mal, tienes el log completo en vez de adivinar qué hizo el agente.
+
+**Puertas de aprobación donde quieras.** Como el workflow de n8n es tuyo, puedes meter validación, rate limiting o pasos de aprobación humana antes de que cualquier llamada externa se ejecute. El agente no puede saltárselos porque ni sabe que existen.
+
+Este patrón lo describió [Simon Høiberg](https://x.com/SimonHoiberg/status/2020843874382487959) con estos mismos tres argumentos, y el stack de Docker es la implementación lista para correr.
+
+## Mi opinión después de usarlo
+
+Dejar que tu agente gestione API keys en crudo no es "flexibilidad". Es negligencia evitable.
+
+Lo que me convenció de este patrón no fue la seguridad, sino la combinación con el ahorro de tokens. Ver al agente delegar "envía este email" a un webhook en 200ms en lugar de razonar sobre un skill de JavaScript durante 15 segundos cambia por completo la economía del setup.
+
+Y cuando algo se rompe, abro la UI de n8n y veo exactamente qué nodo falló y con qué datos. Eso solo ya vale la migración.
+
+Si tienes un agente autónomo tocando servicios externos directamente, tienes una bomba de relojería en tu `.env`. Este patrón la desactiva.
+
+---
+
+¿Lo pruebas? Cuéntame qué workflows bloqueas primero. Y si quieres más patrones de orquestación agente + automatización, tenemos más guías en [papayaclaw.com](https://papayaclaw.com).
+
+**Enlaces relacionados:**
+
+- [Documentación de n8n](https://docs.n8n.io/)
+- [openclaw-n8n-stack (setup de Docker)](https://github.com/caprihan/openclaw-n8n-stack)
+- [Docs del Webhook Trigger de n8n](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.webhook/)
