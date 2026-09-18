@@ -1,0 +1,138 @@
+---
+title: "I Turned n8n Into an Autonomous Workflow Brain"
+date: "2026-09-18"
+summary: "How I let OpenClaw design, deploy, and run its own n8n workflows — without ever touching an API key."
+---
+
+# I Turned n8n Into an Autonomous Workflow Brain
+
+What happens when your workflows start making decisions without you?
+
+I found out. My AI agent now designs n8n workflows, deploys them through n8n's API, and calls them whenever it needs to talk to the outside world. I haven't written integration glue code in weeks.
+
+Here's the twist that sold me: the agent has never seen a single API key.
+
+OpenClaw is the brain. n8n is the hands. And the hands are the only things holding credentials.
+
+## The problem: my agent was a liability
+
+Letting an agent call external APIs directly gave me three compounding problems.
+
+**Credential sprawl.** Every new integration meant another API key sitting in `.env.local`. Each one was one bad commit away from ending up in a public repo.
+
+**No visibility.** When the agent builds an integration, it buries the logic in JavaScript skill files or shell scripts. Debugging means reading code the agent wrote in one shot, at whatever temperature it felt like that day.
+
+**Wasted tokens.** Sending an email is deterministic. Updating a spreadsheet is deterministic. Watching an LLM reason through those steps burns tokens for zero benefit — it's an expensive way to run a `POST` request.
+
+None of this blows up immediately. That's the trap. It works fine for months, and then you actually think about what happens when it leaks something.
+
+## The fix: the agent builds, n8n executes
+
+The pattern is a proxy. OpenClaw doesn't call external APIs anymore. It creates n8n workflows with incoming webhook triggers — then calls those webhooks for every future interaction.
+
+```text
+┌──────────────┐     webhook call      ┌─────────────────┐     API call     ┌──────────────┐
+│   OpenClaw   │ ───────────────────→  │   n8n Workflow   │ ─────────────→  │  External    │
+│   (agent)    │   (no credentials)    │  (locked, with   │  (credentials   │  Service     │
+│              │                       │   API keys)      │   stay here)    │  (Slack, etc)│
+└──────────────┘                       └─────────────────┘                  └──────────────┘
+```
+
+The day-to-day loop looks like this:
+
+1. **You describe what you need.** "Create a workflow that sends a Slack message when a new GitHub issue is labeled `urgent`."
+2. **The agent builds it.** OpenClaw creates the workflow via n8n's API, webhook trigger included.
+3. **You add credentials.** Open n8n's UI and paste in the Slack and GitHub tokens yourself.
+4. **You lock the workflow.** This blocks the agent from modifying it.
+5. **The agent calls the webhook.** From now on, it just POSTs JSON to `http://n8n:5678/webhook/{name}`.
+
+The agent knows the webhook URL. That's it. The keys live in n8n's credential store, and every workflow is inspectable in the drag-and-drop UI.
+
+## The concrete setup
+
+Two ways to run this. I'll show both.
+
+### Option 1: the pre-wired Docker stack
+
+A community-maintained repo, [openclaw-n8n-stack](https://github.com/caprihan/openclaw-n8n-stack), wires everything up on a shared Docker network:
+
+```bash
+git clone https://github.com/caprihan/openclaw-n8n-stack.git
+cd openclaw-n8n-stack
+cp .env.template .env
+# Add your Anthropic API key to .env
+docker-compose up -d
+```
+
+You get OpenClaw on port 3456 and n8n on port 5678, on the same network. That means the agent calls `http://n8n:5678/webhook/...` directly — no tunnels, no public endpoints.
+
+The stack also ships with pre-built workflow templates: multi-LLM fact-checking, email triage, social monitoring. Good starting points if you want to see the pattern before building your own.
+
+### Option 2: manual setup
+
+Install n8n (`npm install n8n -g` or via Docker), point OpenClaw at the n8n base URL, then teach it the pattern in your `AGENTS.md`:
+
+```text
+## n8n Integration Pattern
+
+When I need to interact with external APIs:
+
+1. NEVER store API keys in my environment or skill files
+2. Check if an n8n workflow already exists for this integration
+3. If not, create one via n8n API with a webhook trigger
+4. Notify the user to add credentials and lock the workflow
+5. For all future calls, use the webhook URL with a JSON payload
+
+Workflow naming: openclaw-{service}-{action}
+Example: openclaw-slack-send-message
+```
+
+This file is what makes it autonomous. The agent checks for an existing workflow before creating a new one, follows the `openclaw-{service}-{action}` naming convention, and asks you to add credentials before its first call.
+
+After that, every integration call is just:
+
+```bash
+curl -X POST http://n8n:5678/webhook/openclaw-slack-send-message \
+  -H "Content-Type: application/json" \
+  -d '{"channel": "#general", "message": "Hello from OpenClaw"}'
+```
+
+No key in the request. No key in the agent's environment. Ever.
+
+## The step everyone skips: locking
+
+Here's my strongest opinion in this whole setup: **build → test → lock**. The lock step is not optional.
+
+If you skip it, the agent can silently modify workflows after you've approved them. Change a channel. Add a node. Rewrite the logic you signed off on. Nothing stops it unless you lock the workflow.
+
+Lock it after testing, and the relationship changes. The agent can *use* the workflow but can't change *how it works*. That's the line between a well-behaved agent and a loose cannon with API access.
+
+## Why this beats direct API calls
+
+Three wins, stacked on top of each other:
+
+**Observability.** Every workflow lives in n8n's visual UI. I can see exactly what the agent built, node by node, without reading generated code.
+
+**Security.** Credentials stay in n8n's credential store. The agent's blast radius is a webhook URL.
+
+**Performance.** Deterministic sub-tasks run as workflows, not LLM reasoning. My tokens go toward decisions that actually need judgment.
+
+And two bonuses I didn't expect:
+
+n8n has 400+ integrations, so most services you'd connect already have nodes. The agent rarely writes custom API calls at all — it wires up existing pieces.
+
+n8n logs every workflow execution with input and output data. That's a full audit trail for free. When something goes sideways, I can see the exact payload that triggered it.
+
+You can also bolt safeguard steps onto any workflow — validation, rate limiting, approval gates — before the external call fires. The agent can't route around them, because it only knows the webhook entrance.
+
+## Start small
+
+My advice: pick one integration your agent already handles directly, and rebuild it through n8n. Slack message sending is a good first one — simple, low stakes, easy to test.
+
+Then lock it. Then watch how it feels to have an integration you can actually *see*.
+
+Once you do it once, you'll want to move everything behind that webhook wall. I did.
+
+---
+
+If you're running OpenClaw and your `.env.local` is starting to look like a breach waiting to happen, this pattern is the cleanest exit I've found. We collect more setups, skills, and honest production lessons like this over at [papayaclaw.com](https://papayaclaw.com) — come dig through them.
