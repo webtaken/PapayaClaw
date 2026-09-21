@@ -70,6 +70,9 @@ export interface CreateServerOptions {
   retryDelayMs?: number;
   /** Injectable for tests. */
   sleep?: (ms: number) => Promise<void>;
+  /** How long to wait for the async create_server action (default 90 s). */
+  actionTimeoutMs?: number;
+  actionPollMs?: number;
 }
 
 const defaultSleep = (ms: number) =>
@@ -234,9 +237,10 @@ async function hetznerFetch(
 
 export interface HetznerAction {
   id: number;
-  status: string;
+  status: string; // "running" | "success" | "error"
   command: string;
   progress: number;
+  error?: { code: string; message: string } | null;
 }
 
 export interface HetznerServer {
@@ -361,12 +365,54 @@ export async function deleteSSHKey(keyId: number): Promise<void> {
  * succeeded in all of them, and gating on it blocked all provisioning.
  * The returned object carries the location actually used.
  */
+/** How long to wait for Hetzner's async `create_server` action to settle. */
+export const CREATE_ACTION_TIMEOUT_MS = 90_000;
+export const CREATE_ACTION_POLL_MS = 2_000;
+
+type CreateOnceOptions = {
+  sleep: (ms: number) => Promise<void>;
+  actionTimeoutMs: number;
+  actionPollMs: number;
+};
+
+/**
+ * Waits for the `create_server` action to leave "running". Returns the final
+ * action. A 201 from POST /servers is NOT a created server: on 2026-09-21 the
+ * action failed 22 s later with `resource_unavailable` and Hetzner removed the
+ * server, leaving a DB row pointing at a phantom. If the action is still
+ * running after `actionTimeoutMs`, we give up waiting and let the SSH poller
+ * decide — better than holding the request forever.
+ */
+async function waitForCreateAction(
+  action: { id: number; status: string },
+  opts: CreateOnceOptions,
+): Promise<HetznerAction> {
+  let current: HetznerAction = { ...action, command: "create_server", progress: 0 };
+  const deadline = Date.now() + opts.actionTimeoutMs;
+  while (current.status === "running") {
+    if (Date.now() >= deadline) {
+      console.warn(
+        `[createServer] action ${action.id} still running after ${opts.actionTimeoutMs}ms, proceeding without confirmation`,
+      );
+      return current;
+    }
+    await opts.sleep(opts.actionPollMs);
+    current = await getAction(action.id);
+  }
+  return current;
+}
+
 async function createServerOnce(
   name: string,
   userData: string,
   sshKeyNames?: string[],
   imageId?: string,
   serverType: string = "cx23",
+  opts: CreateOnceOptions = {
+    sleep: defaultSleep,
+    actionTimeoutMs: CREATE_ACTION_TIMEOUT_MS,
+    actionPollMs: CREATE_ACTION_POLL_MS,
+  },
 ): Promise<HetznerServer & { location: string }> {
   const preference = getLocationPreference();
   let previousFailure: string | null = null;
@@ -411,19 +457,40 @@ async function createServerOnce(
 
     const data: CreateServerResponse = await res.json();
 
+    // 201 only means "accepted". Wait for the async create_server action.
+    const action = await waitForCreateAction(data.action, opts);
+    if (action.status === "error") {
+      const code = action.error?.code ?? "unknown";
+      console.warn(
+        `[createServer] ${location}: create_server action ${action.id} for server ${data.server.id} failed (${code}: ${action.error?.message ?? ""}), cleaning up and trying next location`,
+      );
+      try {
+        await deleteServer(data.server.id);
+      } catch (error) {
+        if (!(error instanceof HetznerApiError && error.status === 404)) {
+          console.error(
+            `[createServer] failed to delete phantom server ${data.server.id}:`,
+            error instanceof Error ? error.message : error,
+          );
+        }
+      }
+      previousFailure = `${location} (action ${code})`;
+      continue;
+    }
+
     const reason = previousFailure
-      ? `fallback after ${previousFailure}: ${STOCK_ERROR_CODE}`
+      ? `fallback after ${previousFailure}`
       : "first preference";
 
     console.log(
-      `[createServer] Server ${data.server.id} created in ${location} (${reason}) — status: ${data.server.status}, action: ${data.action.status}`,
+      `[createServer] Server ${data.server.id} created in ${location} (${reason}) — status: ${data.server.status}, action: ${action.status}`,
     );
 
     return { ...data.server, location };
   }
 
   console.error(
-    `[createServer] every location returned ${STOCK_ERROR_CODE} for ${serverType}: ${preference.join(", ")}`,
+    `[createServer] every location refused ${serverType} (412 ${STOCK_ERROR_CODE} or failed create action): ${preference.join(", ")}`,
   );
   throw new HetznerNoCapacityError(serverType, preference);
 }
@@ -448,7 +515,11 @@ export async function createServer(
 
   for (let attempt = 1; ; attempt++) {
     try {
-      return await createServerOnce(name, userData, sshKeyNames, imageId, serverType);
+      return await createServerOnce(name, userData, sshKeyNames, imageId, serverType, {
+        sleep,
+        actionTimeoutMs: options.actionTimeoutMs ?? CREATE_ACTION_TIMEOUT_MS,
+        actionPollMs: options.actionPollMs ?? CREATE_ACTION_POLL_MS,
+      });
     } catch (error) {
       if (!(error instanceof HetznerNoCapacityError) || attempt >= maxAttempts) {
         throw error;

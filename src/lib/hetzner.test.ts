@@ -15,7 +15,7 @@ function jsonResponse(status: number, body: unknown): Response {
   });
 }
 
-function createdResponse(id: number) {
+function createdResponse(id: number, actionStatus = "success") {
   return jsonResponse(201, {
     server: {
       id,
@@ -25,8 +25,27 @@ function createdResponse(id: number) {
       server_type: { name: "cx23", description: "CX23" },
       created: "2026-09-16T00:00:00Z",
     },
-    action: { id: 99, status: "running" },
+    action: { id: 99, status: actionStatus },
   });
+}
+
+function actionResponse(
+  status: "running" | "success" | "error",
+  error: { code: string; message: string } | null = null,
+) {
+  return jsonResponse(200, {
+    action: { id: 99, command: "create_server", status, progress: 100, error },
+  });
+}
+
+function deletedResponse() {
+  return jsonResponse(200, { action: { id: 100, command: "delete_server", status: "running" } });
+}
+
+function deleteCalls(fetchMock: FetchMock) {
+  return fetchMock.mock.calls
+    .filter(([, init]) => (init as RequestInit)?.method === "DELETE")
+    .map(([url]) => String(url));
 }
 
 function outOfStockResponse() {
@@ -124,7 +143,7 @@ describe("createServer location fallback", () => {
 
     const server = await createServer("srv", "#cloud-config");
 
-    expect(getCalls(fetchMock)).toEqual([]);
+    expect(getCalls(fetchMock).filter((u) => u.includes("/server_types"))).toEqual([]);
     for (const [url, init] of fetchMock.mock.calls) {
       expect(String(url)).toBe("https://api.hetzner.cloud/v1/servers");
       expect((init as RequestInit).method).toBe("POST");
@@ -322,6 +341,114 @@ describe("createServer location fallback", () => {
     await expect(createServer("n", "ud")).rejects.toBeInstanceOf(HetznerNoCapacityError);
     // 3 POSTs, one walk only, no pre-check
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("createServer waits for the create_server action", () => {
+  let fetchMock: FetchMock;
+  const originalToken = process.env.HETZNER_API_TOKEN;
+  const originalLocations = process.env.HETZNER_LOCATIONS;
+  const noSleep = vi.fn(async () => {});
+
+  beforeEach(() => {
+    process.env.HETZNER_API_TOKEN = "test-token";
+    delete process.env.HETZNER_LOCATIONS;
+    fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    noSleep.mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+    if (originalLocations === undefined) delete process.env.HETZNER_LOCATIONS;
+    else process.env.HETZNER_LOCATIONS = originalLocations;
+    if (originalToken === undefined) delete process.env.HETZNER_API_TOKEN;
+    else process.env.HETZNER_API_TOKEN = originalToken;
+  });
+
+  it("polls GET /actions/:id while running and returns once it succeeds", async () => {
+    fetchMock
+      .mockResolvedValueOnce(createdResponse(20, "running"))
+      .mockResolvedValueOnce(actionResponse("running"))
+      .mockResolvedValueOnce(actionResponse("success"));
+
+    const server = await createServer("srv", "#cloud-config", undefined, undefined, "cx23", {
+      sleep: noSleep,
+      actionPollMs: 2000,
+    });
+
+    expect(server.id).toBe(20);
+    expect(getCalls(fetchMock)).toEqual([
+      "https://api.hetzner.cloud/v1/actions/99",
+      "https://api.hetzner.cloud/v1/actions/99",
+    ]);
+    expect(noSleep).toHaveBeenCalledTimes(2);
+    expect(noSleep).toHaveBeenCalledWith(2000);
+  });
+
+  it("does not poll when POST already reports the action as success", async () => {
+    fetchMock.mockResolvedValueOnce(createdResponse(21, "success"));
+    await createServer("srv", "#cloud-config");
+    expect(getCalls(fetchMock)).toEqual([]);
+  });
+
+  it("treats a failed create_server action as out of stock: deletes the phantom and tries the next location (2026-09-21: 201 then resource_unavailable 22 s later)", async () => {
+    fetchMock
+      .mockResolvedValueOnce(createdResponse(30, "running")) // hel1
+      .mockResolvedValueOnce(actionResponse("error", { code: "resource_unavailable", message: "resource is currently unavailable" }))
+      .mockResolvedValueOnce(deletedResponse()) // DELETE /servers/30
+      .mockResolvedValueOnce(createdResponse(31, "success")); // nbg1
+
+    const server = await createServer("srv", "#cloud-config", undefined, undefined, "cx23", {
+      sleep: noSleep,
+    });
+
+    expect(server.id).toBe(31);
+    expect(server.location).toBe("nbg1");
+    expect(postCalls(fetchMock).map((p) => p.body.location)).toEqual(["hel1", "nbg1"]);
+    expect(deleteCalls(fetchMock)).toEqual(["https://api.hetzner.cloud/v1/servers/30"]);
+  });
+
+  it("ignores 404 when the phantom server is already gone", async () => {
+    fetchMock
+      .mockResolvedValueOnce(createdResponse(40, "running"))
+      .mockResolvedValueOnce(actionResponse("error", { code: "resource_unavailable", message: "gone" }))
+      .mockResolvedValueOnce(jsonResponse(404, { error: { code: "not_found", message: "server not found", details: {} } }))
+      .mockResolvedValueOnce(createdResponse(41, "success"));
+
+    const server = await createServer("srv", "#cloud-config", undefined, undefined, "cx23", { sleep: noSleep });
+    expect(server.id).toBe(41);
+  });
+
+  it("throws HetznerNoCapacityError when every location's create action fails", async () => {
+    for (let i = 0; i < 3; i++) {
+      fetchMock
+        .mockResolvedValueOnce(createdResponse(50 + i, "running"))
+        .mockResolvedValueOnce(actionResponse("error", { code: "resource_unavailable", message: "x" }))
+        .mockResolvedValueOnce(deletedResponse());
+    }
+    await expect(
+      createServer("srv", "#cloud-config", undefined, undefined, "cx23", { sleep: noSleep }),
+    ).rejects.toBeInstanceOf(HetznerNoCapacityError);
+    expect(deleteCalls(fetchMock)).toHaveLength(3);
+  });
+
+  it("gives up waiting after actionTimeoutMs and returns the server for the SSH poller to judge", async () => {
+    fetchMock
+      .mockResolvedValueOnce(createdResponse(60, "running"))
+      .mockResolvedValue(actionResponse("running"));
+
+    const server = await createServer("srv", "#cloud-config", undefined, undefined, "cx23", {
+      sleep: noSleep,
+      actionTimeoutMs: 0,
+    });
+
+    expect(server.id).toBe(60);
+    expect(getCalls(fetchMock)).toEqual([]);
   });
 });
 
