@@ -117,7 +117,7 @@ function ToolbarButton({
       className={cn(
         "inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 font-mono text-[11px] uppercase tracking-wider transition-colors disabled:opacity-50",
         emphasis
-          ? "border-emerald-600/30 bg-emerald-500/10 text-emerald-800 hover:bg-emerald-500/20"
+          ? "border-terminal/30 bg-terminal/10 text-terminal hover:bg-terminal/20"
           : "border-border bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
@@ -191,7 +191,7 @@ function EnvRow({
           spellCheck={false}
           aria-invalid={issue ? true : undefined}
           aria-label={labels.keyPlaceholder}
-          className="h-8 border-border/70 bg-background/60 font-mono text-xs text-emerald-800 placeholder:text-muted-foreground/40 placeholder:normal-case"
+          className="h-8 border-border/70 bg-background/60 font-mono text-xs text-terminal placeholder:text-muted-foreground/40 placeholder:normal-case"
         />
         {issue && labels.issue ? (
           <p className="flex items-center gap-1 font-mono text-[11px] text-destructive">
@@ -234,7 +234,7 @@ function EnvRow({
             disabled={row.value === ""}
             aria-label={copied ? labels.copied : labels.copy}
             title={copied ? labels.copied : labels.copy}
-            className={cn(copied && "text-emerald-700")}
+            className={cn(copied && "text-success")}
           >
             {copied ? <Check /> : <Copy />}
           </InputGroupButton>
@@ -401,10 +401,10 @@ export function EnvVarsPanel({ instanceId }: { instanceId: string }) {
             </span>
           ) : null}
           {dirty ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider text-amber-800">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-warning/30 bg-warning/10 px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider text-warning">
               <span className="relative flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500 opacity-60" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-amber-600" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-warning opacity-60" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-warning" />
               </span>
               {te("unsaved")}
             </span>
@@ -430,7 +430,7 @@ export function EnvVarsPanel({ instanceId }: { instanceId: string }) {
       {/* Path + restart notice */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-border/60 px-4 py-2 font-mono text-[11px] text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
-          <FileKey2 className="h-3 w-3 text-emerald-700" />
+          <FileKey2 className="h-3 w-3 text-terminal" />
           <span className="text-foreground/70">/root/.openclaw/.env</span>
         </span>
         <span className="hidden text-border sm:inline">·</span>
@@ -465,7 +465,7 @@ export function EnvVarsPanel({ instanceId }: { instanceId: string }) {
         <>
           {/* Warnings */}
           {(data?.skippedLines ?? 0) > 0 || removedProviderKeys.length > 0 ? (
-            <div className="flex flex-col gap-1 border-b border-amber-500/20 bg-amber-500/[0.06] px-4 py-2 font-mono text-[11px] text-amber-900/90">
+            <div className="flex flex-col gap-1 border-b border-warning/20 bg-warning/[0.06] px-4 py-2 font-mono text-[11px] text-warning">
               {(data?.skippedLines ?? 0) > 0 ? (
                 <p className="flex items-center gap-1.5">
                   <AlertTriangle className="h-3 w-3 shrink-0" />
@@ -574,7 +574,7 @@ export function EnvVarsPanel({ instanceId }: { instanceId: string }) {
                   size="sm"
                   onClick={save}
                   disabled={!canSave}
-                  className="gap-2 border border-emerald-600/40 bg-emerald-500/15 font-mono text-xs uppercase tracking-wider text-emerald-900 shadow-none hover:bg-emerald-500/25 disabled:opacity-50"
+                  className="gap-2 border border-success/40 bg-success/10 font-mono text-xs uppercase tracking-wider text-success shadow-none hover:bg-success/20 disabled:opacity-50"
                 >
                   {saving ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -620,7 +620,7 @@ export function EnvVarsPanel({ instanceId }: { instanceId: string }) {
               importText.trim() === ""
                 ? "text-muted-foreground/60"
                 : importHasChanges
-                  ? "text-emerald-700"
+                  ? "text-success"
                   : "text-muted-foreground",
             )}
             aria-live="polite"
