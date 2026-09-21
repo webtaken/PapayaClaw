@@ -1,0 +1,117 @@
+---
+title: "Mi teléfono acaba de convertirse en un asistente personal de verdad"
+date: "2026-09-21"
+summary: "ClawdTalk + OpenClaw + Telnyx: llamas a un número de teléfono y hablas con tu propio agente de IA, sin apps ni navegador."
+---
+
+# Mi teléfono acaba de convertirse en un asistente personal de verdad
+
+Estaba conduciendo hacia una reunión cuando me di cuenta de que no recordaba el piso.
+
+La opción sensata: aparcar, desbloquear el móvil, abrir el calendario, buscar el evento. Con una mano y con prisa, no.
+
+Hice otra cosa: marqué un número de teléfono y pregunté en voz alta. Diez segundos después tenía la respuesta.
+
+No era Siri. No era un chatbot en el navegador. Era mi propio agente de IA, con número de teléfono propio.
+
+## El problema: todo asume que tienes las dos manos libres
+
+Vivimos pegados al móvil, pero casi todas las herramientas de IA están pensadas para una app o un navegador.
+
+Escribir caminando es incómodo. Escribir conduciendo es peligroso. Y los asistentes de voz de siempre sirven para poner temporizadores y poco más.
+
+Nadie te deja preguntar "¿qué tickets tengo abiertos en Jira?" o "¿qué tengo esta tarde?" mientras paseas al perro o cocinas.
+
+Ahí es donde entra esta combinación: [ClawdTalk](https://clawdtalk.com), OpenClaw y [Telnyx](https://telnyx.com/).
+
+## Qué hace exactamente
+
+ClawdTalk le da a tu agente OpenClaw una línea telefónica real. Recibe llamadas y también las hace.
+
+Llamas a un número, hablas con tu agente por voz y te responde. Sin app. Sin navegador. Cualquier teléfono vale, incluido ese Nokia del cajón.
+
+En la práctica:
+
+- Marcas un número y hablas con tu agente de IA
+- Le pides recordatorios del calendario, actualizaciones de Jira o resultados de búsqueda web, todo por voz
+- Telnyx se encarga de la conectividad telefónica, así que la voz es estable, no un apaño raro
+
+Un detalle importante: el soporte de SMS está en camino, pero todavía no está disponible. Por ahora, voz.
+
+Y la pieza que lo cambia todo: no hablas con un asistente genérico. Hablas con TU agente, con sus skills, su contexto y acceso a tus herramientas.
+
+## Cómo lo monté
+
+Te resumo el flujo. No es complicado, pero hay que hacerlo en orden.
+
+**1. Un número de Telnyx.** Creas una cuenta en Telnyx, generas una API key y consigues un número de teléfono. Es el puente entre la llamada y tu agente. Es un servicio de pago, así que revisa sus precios antes.
+
+**2. El cliente de ClawdTalk.** Está en GitHub ([team-telnyx/clawdtalk-client](https://github.com/team-telnyx/clawdtalk-client)). La idea general es clonar el repo y configurar tus credenciales de Telnyx:
+
+```bash
+git clone https://github.com/team-telnyx/clawdtalk-client
+cd clawdtalk-client
+
+# credenciales de Telnyx
+export TELNYX_API_KEY="tu-api-key-aqui"
+export TELNYX_PHONE_NUMBER="+34600000000"
+```
+
+El README tiene los pasos exactos según tu sistema. Esto es el esqueleto.
+
+**3. Los skills de OpenClaw.** Aquí está lo interesante. Instalas los skills desde el repo de [OpenClaw Skills](https://github.com/openclaw/skills):
+
+- Skill de calendario (Google Calendar u Outlook)
+- Skill de Jira
+- Skill de búsqueda web
+
+Sin estos skills, el agente solo charla. Con ellos, responde cosas reales sobre tu día.
+
+**4. El prompt del sistema.** Este es el que uso:
+
+```
+Estás disponible por teléfono. Cuando llame, salúdame y pregúntame en qué puedo ayudarte.
+
+Para consultas de calendario: "¿Qué tengo hoy en el calendario?"
+Para actualizaciones de Jira: "Muéstrame mis tickets abiertos"
+Para búsqueda web: "Busca las últimas noticias sobre agentes de IA"
+```
+
+Parece poco, pero marca el comportamiento: saluda, espera la pregunta y sabe qué skill usar para cada tipo de consulta. Lo puedes extender con tu tono, tu idioma o reglas como "si no entiendes algo, pídeme que lo repita".
+
+## Cómo lo uso en el día a día
+
+**Al volante.** Antes de llegar a una reunión: "¿de qué va la reunión de las 16:00?". Respuesta sin tocar el móvil.
+
+**Paseando.** Antes del daily: "muéstrame mis tickets abiertos en Jira". Llego a la reunión sabiendo qué voy a decir.
+
+**Cocinando.** Manos llenas de harina, surge una duda: "busca cuánto tiempo se hornea esto". El skill de búsqueda web hace el resto.
+
+Lo bueno no es la voz en sí. Es que el agente ya tiene contexto de tu calendario y tus tickets. No tienes que explicarle nada: llamas y preguntas.
+
+## Mi opinión: el teléfono es la interfaz más infravalorada
+
+Los asistentes de voz de las grandes tecnológicas son jardines cerrados con trucos de fiesta. Te ponen un temporizador, te dicen el tiempo y hasta ahí.
+
+Esto es distinto por una razón simple: conectas la llamada a TU agente con TUS herramientas. El teléfono solo es el canal.
+
+Y como canal, es difícil de superar. Está en todos los teléfonos del planeta, no requiere instalar nada, funciona sin datos móviles y no tiene curva de aprendizaje. Tu madre sabría usarlo.
+
+Para un perfil mobile-first como el mío, que vive fuera de la mesa de trabajo, esto no es un juguete. Es la forma más práctica de usar un agente de IA que he probado.
+
+## Cosas a tener en cuenta
+
+Sé honesto contigo antes de montarlo:
+
+- **SMS todavía no.** Está anunciado pero no disponible. Si tu caso depende de mensajes de texto, espera.
+- **Consigue un número dedicado.** No mezcles la línea del agente con tu número personal. También te permite colgarlo de la web o compartirlo con tu equipo.
+- **La voz tiene latencia.** Es aceptable para preguntas y respuestas, pero no esperes la fluidez de una llamada humana.
+- **Telnyx cuesta dinero.** Es la pieza de infraestructura seria de todo esto. Mira su pricing según el volumen de llamadas que esperas.
+
+## Pruébalo tú
+
+Si pasas más tiempo lejos del teclado que delante de él, esto te encaja. Un número de Telnyx, el cliente de ClawdTalk, tres skills de OpenClaw y un prompt de cinco líneas.
+
+Y si quieres más guías como esta, skills listos para instalar y configuraciones de agente probadas por gente que las usa de verdad, pásate por [papayaclaw.com](https://papayaclaw.com).
+
+La próxima vez que estés conduciendo sin saber a dónde vas, ya sabes: llama a tu agente.
