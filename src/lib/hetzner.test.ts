@@ -15,24 +15,6 @@ function jsonResponse(status: number, body: unknown): Response {
   });
 }
 
-function serverTypesResponse(availability: Record<string, boolean>) {
-  return jsonResponse(200, {
-    server_types: [
-      {
-        id: 1,
-        name: "cx23",
-        locations: Object.entries(availability).map(([name, available], i) => ({
-          id: i + 1,
-          name,
-          deprecation: null,
-          recommended: false,
-          available,
-        })),
-      },
-    ],
-  });
-}
-
 function createdResponse(id: number) {
   return jsonResponse(201, {
     server: {
@@ -115,12 +97,8 @@ describe("createServer location fallback", () => {
     else process.env.HETZNER_API_TOKEN = originalToken;
   });
 
-  it("skips locations the pre-check reports unavailable and creates in the first available one", async () => {
-    fetchMock
-      .mockResolvedValueOnce(
-        serverTypesResponse({ hel1: false, nbg1: true, fsn1: true }),
-      )
-      .mockResolvedValueOnce(createdResponse(10));
+  it("creates in the first preferred location", async () => {
+    fetchMock.mockResolvedValueOnce(createdResponse(10));
 
     const server = await createServer(
       "srv",
@@ -130,23 +108,64 @@ describe("createServer location fallback", () => {
       "cx23",
     );
 
-    expect(getCalls(fetchMock)).toEqual([
-      "https://api.hetzner.cloud/v1/server_types?name=cx23",
-    ]);
     const posts = postCalls(fetchMock);
     expect(posts).toHaveLength(1);
     expect(posts[0].url).toBe("https://api.hetzner.cloud/v1/servers");
-    expect(posts[0].body.location).toBe("nbg1");
+    expect(posts[0].body.location).toBe("hel1");
     expect(posts[0].body.server_type).toBe("cx23");
     expect(server.id).toBe(10);
+    expect(server.location).toBe("hel1");
+  });
+
+  it("never calls GET /server_types on the create path (2026-09-21: the available flag gated every provision off while POST succeeded)", async () => {
+    fetchMock
+      .mockResolvedValueOnce(outOfStockResponse())
+      .mockResolvedValueOnce(createdResponse(15));
+
+    const server = await createServer("srv", "#cloud-config");
+
+    expect(getCalls(fetchMock)).toEqual([]);
+    for (const [url, init] of fetchMock.mock.calls) {
+      expect(String(url)).toBe("https://api.hetzner.cloud/v1/servers");
+      expect((init as RequestInit).method).toBe("POST");
+    }
+    expect(postCalls(fetchMock).map((p) => p.body.location)).toEqual([
+      "hel1",
+      "nbg1",
+    ]);
     expect(server.location).toBe("nbg1");
+  });
+
+  it("passes ssh_keys only when provided", async () => {
+    fetchMock
+      .mockResolvedValueOnce(createdResponse(20))
+      .mockResolvedValueOnce(createdResponse(21));
+
+    await createServer("srv", "#cloud-config", ["key-a", "key-b"]);
+    await createServer("srv", "#cloud-config");
+
+    const posts = postCalls(fetchMock);
+    expect(posts[0].body.ssh_keys).toEqual(["key-a", "key-b"]);
+    expect(posts[1].body.ssh_keys).toBeUndefined();
+  });
+
+  it("uses the requested server type and image, defaulting the image to ubuntu-24.04", async () => {
+    fetchMock
+      .mockResolvedValueOnce(createdResponse(22))
+      .mockResolvedValueOnce(createdResponse(23));
+
+    await createServer("srv", "#cloud-config", undefined, "12345", "cx33");
+    await createServer("srv", "#cloud-config");
+
+    const posts = postCalls(fetchMock);
+    expect(posts[0].body.server_type).toBe("cx33");
+    expect(posts[0].body.image).toBe("12345");
+    expect(posts[1].body.server_type).toBe("cx23");
+    expect(posts[1].body.image).toBe("ubuntu-24.04");
   });
 
   it("falls back to the next location when POST /servers returns resource_unavailable", async () => {
     fetchMock
-      .mockResolvedValueOnce(
-        serverTypesResponse({ hel1: true, nbg1: true, fsn1: true }),
-      )
       .mockResolvedValueOnce(outOfStockResponse())
       .mockResolvedValueOnce(createdResponse(11));
 
@@ -159,15 +178,11 @@ describe("createServer location fallback", () => {
   });
 
   it("rethrows non-stock errors without trying other locations", async () => {
-    fetchMock
-      .mockResolvedValueOnce(
-        serverTypesResponse({ hel1: true, nbg1: true, fsn1: true }),
-      )
-      .mockResolvedValueOnce(
-        jsonResponse(422, {
-          error: { code: "invalid_input", message: "bad name", details: null },
-        }),
-      );
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(422, {
+        error: { code: "invalid_input", message: "bad name", details: null },
+      }),
+    );
 
     await expect(createServer("srv", "#cloud-config")).rejects.toBeInstanceOf(
       HetznerApiError,
@@ -175,10 +190,11 @@ describe("createServer location fallback", () => {
     expect(postCalls(fetchMock)).toHaveLength(1);
   });
 
-  it("throws HetznerNoCapacityError without POSTing when pre-check shows no stock anywhere", async () => {
-    fetchMock.mockResolvedValueOnce(
-      serverTypesResponse({ hel1: false, nbg1: false, fsn1: false }),
-    );
+  it("throws HetznerNoCapacityError only after every location returns resource_unavailable", async () => {
+    fetchMock
+      .mockResolvedValueOnce(outOfStockResponse())
+      .mockResolvedValueOnce(outOfStockResponse())
+      .mockResolvedValueOnce(outOfStockResponse());
 
     const err = await createServer(
       "srv",
@@ -191,21 +207,6 @@ describe("createServer location fallback", () => {
     expect(err).toBeInstanceOf(HetznerNoCapacityError);
     expect(err.message).toContain("cx23");
     expect(err.message).toContain("hel1, nbg1, fsn1");
-    expect(postCalls(fetchMock)).toHaveLength(0);
-  });
-
-  it("throws HetznerNoCapacityError after every location returns resource_unavailable", async () => {
-    fetchMock
-      .mockResolvedValueOnce(
-        serverTypesResponse({ hel1: true, nbg1: true, fsn1: true }),
-      )
-      .mockResolvedValueOnce(outOfStockResponse())
-      .mockResolvedValueOnce(outOfStockResponse())
-      .mockResolvedValueOnce(outOfStockResponse());
-
-    await expect(createServer("srv", "#cloud-config")).rejects.toBeInstanceOf(
-      HetznerNoCapacityError,
-    );
     expect(postCalls(fetchMock).map((p) => p.body.location)).toEqual([
       "hel1",
       "nbg1",
@@ -213,42 +214,9 @@ describe("createServer location fallback", () => {
     ]);
   });
 
-  it("still attempts creation in preference order when the pre-check request fails", async () => {
-    fetchMock
-      .mockResolvedValueOnce(
-        jsonResponse(500, {
-          error: { code: "server_error", message: "boom", details: null },
-        }),
-      )
-      .mockResolvedValueOnce(createdResponse(12));
-
-    const server = await createServer("srv", "#cloud-config");
-
-    expect(postCalls(fetchMock).map((p) => p.body.location)).toEqual(["hel1"]);
-    expect(server.location).toBe("hel1");
-  });
-
-  it("attempts every preferred location when the server type is unknown to the pre-check", async () => {
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse(200, { server_types: [] }))
-      .mockResolvedValueOnce(outOfStockResponse())
-      .mockResolvedValueOnce(createdResponse(13));
-
-    const server = await createServer("srv", "#cloud-config");
-
-    expect(postCalls(fetchMock).map((p) => p.body.location)).toEqual([
-      "hel1",
-      "nbg1",
-    ]);
-    expect(server.location).toBe("nbg1");
-  });
-
   it("honors HETZNER_LOCATIONS override for the fallback order", async () => {
     process.env.HETZNER_LOCATIONS = "fsn1,hel1";
     fetchMock
-      .mockResolvedValueOnce(
-        serverTypesResponse({ hel1: true, nbg1: true, fsn1: true }),
-      )
       .mockResolvedValueOnce(outOfStockResponse())
       .mockResolvedValueOnce(createdResponse(14));
 
@@ -261,13 +229,43 @@ describe("createServer location fallback", () => {
     expect(server.location).toBe("hel1");
   });
 
+  it("keeps the server type fixed across the location walk (location fallback, never type fallback)", async () => {
+    fetchMock
+      .mockResolvedValueOnce(outOfStockResponse())
+      .mockResolvedValueOnce(outOfStockResponse())
+      .mockResolvedValueOnce(createdResponse(30));
+
+    await createServer("srv", "#cloud-config", undefined, undefined, "cx33");
+
+    const posts = postCalls(fetchMock);
+    expect(posts.map((p) => p.body.location)).toEqual(["hel1", "nbg1", "fsn1"]);
+    expect(posts.every((p) => p.body.server_type === "cx33")).toBe(true);
+  });
+
+  it("names the overridden HETZNER_LOCATIONS in HetznerNoCapacityError", async () => {
+    process.env.HETZNER_LOCATIONS = "fsn1,hel1";
+    fetchMock
+      .mockResolvedValueOnce(outOfStockResponse())
+      .mockResolvedValueOnce(outOfStockResponse());
+
+    const err = await createServer("srv", "#cloud-config").catch((e) => e);
+
+    expect(err).toBeInstanceOf(HetznerNoCapacityError);
+    expect(err.message).toContain("fsn1, hel1");
+    expect(err.message).not.toContain("nbg1");
+    expect(postCalls(fetchMock)).toHaveLength(2);
+  });
+
   it("retries the whole location walk on no-capacity, sleeping between attempts", async () => {
     const sleep = vi.fn(async () => {});
     fetchMock
-      .mockResolvedValueOnce(serverTypesResponse({ hel1: false, nbg1: false, fsn1: false })) // attempt 1 pre-check
-      .mockResolvedValueOnce(serverTypesResponse({ hel1: false, nbg1: false, fsn1: false })) // attempt 2 pre-check
-      .mockResolvedValueOnce(serverTypesResponse({ hel1: true, nbg1: true, fsn1: true }))    // attempt 3 pre-check
-      .mockResolvedValueOnce(createdResponse(77));                                         // attempt 3 POST hel1
+      .mockResolvedValueOnce(outOfStockResponse()) // attempt 1: hel1
+      .mockResolvedValueOnce(outOfStockResponse()) //            nbg1
+      .mockResolvedValueOnce(outOfStockResponse()) //            fsn1
+      .mockResolvedValueOnce(outOfStockResponse()) // attempt 2: hel1
+      .mockResolvedValueOnce(outOfStockResponse()) //            nbg1
+      .mockResolvedValueOnce(outOfStockResponse()) //            fsn1
+      .mockResolvedValueOnce(createdResponse(77)); // attempt 3: hel1
 
     const server = await createServer("n", "ud", undefined, undefined, "cx23", {
       maxAttempts: 3,
@@ -279,15 +277,17 @@ describe("createServer location fallback", () => {
     expect(server.location).toBe("hel1");
     expect(sleep).toHaveBeenCalledTimes(2);
     expect(sleep).toHaveBeenNthCalledWith(1, 20_000);
-    expect(postCalls(fetchMock)).toHaveLength(1);
+    expect(postCalls(fetchMock)).toHaveLength(7);
   });
 
   it("throws HetznerNoCapacityError with code no_capacity after maxAttempts", async () => {
     const sleep = vi.fn(async () => {});
-    fetchMock
-      .mockResolvedValueOnce(serverTypesResponse({ hel1: false, nbg1: false, fsn1: false }))
-      .mockResolvedValueOnce(serverTypesResponse({ hel1: false, nbg1: false, fsn1: false }))
-      .mockResolvedValueOnce(serverTypesResponse({ hel1: false, nbg1: false, fsn1: false }));
+    for (let attempt = 0; attempt < 3; attempt++) {
+      fetchMock
+        .mockResolvedValueOnce(outOfStockResponse())
+        .mockResolvedValueOnce(outOfStockResponse())
+        .mockResolvedValueOnce(outOfStockResponse());
+    }
 
     const err = await createServer("n", "ud", undefined, undefined, "cx23", {
       maxAttempts: 3,
@@ -299,13 +299,14 @@ describe("createServer location fallback", () => {
     expect(err.code).toBe("no_capacity");
     expect(err.serverType).toBe("cx23");
     expect(sleep).toHaveBeenCalledTimes(2);
+    expect(postCalls(fetchMock)).toHaveLength(9);
   });
 
   it("does not retry non-capacity errors", async () => {
     const sleep = vi.fn(async () => {});
-    fetchMock
-      .mockResolvedValueOnce(serverTypesResponse({ hel1: true, nbg1: true, fsn1: true }))
-      .mockResolvedValueOnce(jsonResponse(403, { error: { code: "forbidden", message: "nope" } }));
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(403, { error: { code: "forbidden", message: "nope" } }),
+    );
 
     await expect(
       createServer("n", "ud", undefined, undefined, "cx23", { maxAttempts: 3, sleep }),
@@ -314,9 +315,13 @@ describe("createServer location fallback", () => {
   });
 
   it("defaults to a single attempt (no sleep) when options are omitted", async () => {
-    fetchMock.mockResolvedValueOnce(serverTypesResponse({ hel1: false, nbg1: false, fsn1: false }));
+    fetchMock
+      .mockResolvedValueOnce(outOfStockResponse())
+      .mockResolvedValueOnce(outOfStockResponse())
+      .mockResolvedValueOnce(outOfStockResponse());
     await expect(createServer("n", "ud")).rejects.toBeInstanceOf(HetznerNoCapacityError);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // 3 POSTs, one walk only, no pre-check
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 });
 
@@ -339,17 +344,15 @@ describe("HetznerApiError", () => {
   });
 
   it("exposes status and the parsed Hetzner error code", async () => {
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse(200, { server_types: [] }))
-      .mockResolvedValueOnce(
-        jsonResponse(403, {
-          error: {
-            code: "resource_limit_exceeded",
-            message: "server limit exceeded",
-            details: null,
-          },
-        }),
-      );
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(403, {
+        error: {
+          code: "resource_limit_exceeded",
+          message: "server limit exceeded",
+          details: null,
+        },
+      }),
+    );
 
     const err = await createServer("srv", "#cloud-config").catch((e) => e);
 
@@ -361,11 +364,9 @@ describe("HetznerApiError", () => {
   });
 
   it("leaves code null when the error body is not JSON", async () => {
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse(200, { server_types: [] }))
-      .mockResolvedValueOnce(
-        new Response("<html>bad gateway</html>", { status: 502 }),
-      );
+    fetchMock.mockResolvedValueOnce(
+      new Response("<html>bad gateway</html>", { status: 502 }),
+    );
 
     const err = await createServer("srv", "#cloud-config").catch((e) => e);
 
