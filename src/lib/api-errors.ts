@@ -4,6 +4,7 @@
  * Relative imports only — this module is unit-tested and imported by client code.
  */
 import { SshUnreachableError, CliError } from "./ssh-errors";
+import type { EnvValidationError } from "./env-file";
 
 export const API_ERROR_CODES = [
   "ssh_unreachable",
@@ -11,6 +12,7 @@ export const API_ERROR_CODES = [
   "config_invalid",
   "invalid_channel",
   "invalid_code",
+  "invalid_env",
   "internal",
 ] as const;
 
@@ -27,6 +29,8 @@ export interface ApiErrorBody {
   error: string;
   code: ApiErrorCode;
   detail?: string;
+  /** Per-row problems for `invalid_env`; the panel maps them back to rows. */
+  issues?: EnvValidationError[];
 }
 
 /** `openclaw config validate` failed before or after a change. */
@@ -41,11 +45,17 @@ export class ConfigInvalidError extends Error {
 
 /** Request input rejected before touching the VPS. */
 export class InvalidInputError extends Error {
-  readonly code: "invalid_channel" | "invalid_code";
-  constructor(code: "invalid_channel" | "invalid_code", message: string) {
+  readonly code: "invalid_channel" | "invalid_code" | "invalid_env";
+  readonly issues: EnvValidationError[] | undefined;
+  constructor(
+    code: "invalid_channel" | "invalid_code" | "invalid_env",
+    message: string,
+    issues?: EnvValidationError[],
+  ) {
     super(message);
     this.name = "InvalidInputError";
     this.code = code;
+    this.issues = issues;
   }
 }
 
@@ -83,7 +93,14 @@ export function toErrorResponse(err: unknown): {
     };
   }
   if (err instanceof InvalidInputError) {
-    return { status: 400, body: { error: err.message, code: err.code } };
+    return {
+      status: 400,
+      body: {
+        error: err.message,
+        code: err.code,
+        ...(err.issues ? { issues: err.issues } : {}),
+      },
+    };
   }
   return {
     status: 500,

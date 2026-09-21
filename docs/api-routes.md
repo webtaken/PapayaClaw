@@ -159,6 +159,68 @@ No DB writes.
 
 ---
 
+## Environment Variables
+
+The instance's OpenClaw runtime env, stored in `/root/.openclaw/.env` on the VPS (OpenClaw's global env file, read with dotenv semantics at gateway start). The VPS file is the source of truth — nothing is persisted in the database. Reserved `OPENCLAW_*` runtime keys (`OPENCLAW_HOME`, `OPENCLAW_STATE_DIR`, `OPENCLAW_CONFIG_PATH`, `OPENCLAW_PROFILE`, `OPENCLAW_GATEWAY_PORT`, `OPENCLAW_GATEWAY_TOKEN`, `OPENCLAW_GATEWAY_PASSWORD`, `OPENCLAW_GATEWAY_URL`) are omitted from reads, rejected on writes and preserved verbatim by the write script.
+
+### Get Variables
+
+```
+GET /api/instances/[id]/env
+```
+
+Response `200`:
+
+```json
+{
+  "vars": [{ "key": "BRAVE_API_KEY", "value": "bsa_…" }],
+  "skippedLines": 0
+}
+```
+
+`skippedLines` counts non-blank, non-comment lines that are not `KEY=value`; they are dropped on the next write.
+
+| Status | When |
+|--------|------|
+| `400` | Instance has no server IP / SSH key yet |
+| `401` | Not authenticated |
+| `404` | Instance not found or not accessible (`canAccessInstance`) |
+| `500` | `cli_error` — file unreadable or over 1 MiB |
+| `502` | `ssh_unreachable` |
+
+### Replace Variables
+
+```
+PUT /api/instances/[id]/env
+```
+
+Body: `{ "vars": [{ "key": string, "value": string }] }` — the complete list; anything not included is removed (last writer wins).
+
+Validated before touching the VPS (`validateEnvVars` in `src/lib/env-file.ts`): key `^[A-Za-z_][A-Za-z0-9_]*$` ≤ 128 chars, not reserved, no duplicates; value ≤ 8 KB, no control characters; ≤ 100 vars; serialized file ≤ 64 KiB (it travels as one base64 argument inside the SSH command). Then one SSH command rewrites the file atomically (backup → tmp → `mv` → `chmod 600`, restored on any failure), and the gateway is restarted exactly like `POST …/restart`.
+
+Response `200`:
+
+```json
+{
+  "success": true,
+  "vars": [{ "key": "BRAVE_API_KEY", "value": "bsa_…" }],
+  "health": "healthy",
+  "healthReason": null
+}
+```
+
+| Status | When |
+|--------|------|
+| `400` | `invalid_env` — body malformed or validation failed; `issues: [{ index, key, issue }]` (index `-1` = file-level) |
+| `401` | Not authenticated |
+| `404` | Instance not found or not accessible |
+| `500` | `cli_error` — write script or restart exited non-zero; `detail` = stderr tail. The file may already have been replaced when the restart fails. |
+| `502` | `ssh_unreachable` |
+
+No DB writes.
+
+---
+
 ## Telegram Pairing
 
 ### List Pairing Requests
@@ -275,11 +337,12 @@ Verified via `POLAR_WEBHOOK_SECRET`.
 
 ## Error codes (instance SSH/CLI routes)
 
-`pairing`, `agents` and `reconfigure` return `{ error, code, detail? }`:
+`pairing`, `agents`, `reconfigure` and `env` return `{ error, code, detail? }`:
 
 | status | code | meaning |
 |---|---|---|
 | 400 | `invalid_channel` / `invalid_code` | rejected before touching the VPS |
+| 400 | `invalid_env` | env vars failed validation; `issues[]` lists row problems |
 | 400 | (no code) | reconfigure: API key contains control characters, or the provider cannot be reconfigured with an API key from the dashboard |
 | 409 | `config_invalid` | `openclaw config validate` failed (before or after the change; config restored) |
 | 409 | `checkout_pending` | (`POST /api/instances`) a fresh checkout for this account is still provisioning; `retryAfterSeconds` |

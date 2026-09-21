@@ -50,6 +50,14 @@ describe("toErrorResponse", () => {
     expect(res.body.error).toBe("Unsupported channel");
   });
 
+  it("maps InvalidInputError invalid_env to 400 and carries issues", () => {
+    const issues = [{ index: 0, key: "1BAD", issue: "invalid_key" as const }];
+    const res = toErrorResponse(new InvalidInputError("invalid_env", "Invalid env", issues));
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("invalid_env");
+    expect(res.body.issues).toEqual(issues);
+  });
+
   it("maps unknown errors to 500 internal without leaking the message", () => {
     const res = toErrorResponse(new Error("secret db string"));
     expect(res.status).toBe(500);
@@ -67,6 +75,7 @@ describe("stderrTail", () => {
 describe("isApiErrorCode", () => {
   it("accepts known codes and rejects others", () => {
     expect(isApiErrorCode("cli_error")).toBe(true);
+    expect(isApiErrorCode("invalid_env")).toBe(true);
     expect(isApiErrorCode("no_capacity")).toBe(false);
     expect(isApiErrorCode(undefined)).toBe(false);
   });

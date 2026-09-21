@@ -9,6 +9,8 @@ import {
   listPairingRequests,
   approvePairingRequest,
   listAgents,
+  readEnvVars,
+  writeEnvVars,
   type ExecFn,
 } from "./ssh";
 import { SshUnreachableError, CliError } from "./ssh-errors";
@@ -310,5 +312,73 @@ describe("listAgents", () => {
   it("throws CliError when stdout is not a JSON array", async () => {
     const exec: ExecFn = async () => ({ stdout: "not json", stderr: "", code: 0 });
     await expect(listAgents("1.2.3.4", "KEY", exec)).rejects.toBeInstanceOf(CliError);
+  });
+});
+
+describe("readEnvVars", () => {
+  const b64 = (text: string) => Buffer.from(text, "utf8").toString("base64");
+
+  it("decodes the base64 file and drops reserved keys", async () => {
+    const calls: string[] = [];
+    const exec: ExecFn = async (_h, _k, command) => {
+      calls.push(command);
+      return {
+        stdout: b64("A='1'\nOPENCLAW_GATEWAY_TOKEN=secret\nB=2\nbad line\n") + "\n",
+        stderr: "",
+        code: 0,
+      };
+    };
+
+    const result = await readEnvVars("1.2.3.4", "KEY", exec);
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toContain('base64 -w0 "$F"');
+    expect(result).toEqual({
+      vars: [
+        { key: "A", value: "1" },
+        { key: "B", value: "2" },
+      ],
+      skippedLines: 1,
+    });
+  });
+
+  it("returns an empty list when the file is absent", async () => {
+    const exec: ExecFn = async () => ({ stdout: "\n", stderr: "", code: 0 });
+    expect(await readEnvVars("1.2.3.4", "KEY", exec)).toEqual({
+      vars: [],
+      skippedLines: 0,
+    });
+  });
+
+  it("throws CliError on a nonzero exit", async () => {
+    const exec: ExecFn = async () => ({ stdout: "", stderr: "", code: 51 });
+    await expect(readEnvVars("1.2.3.4", "KEY", exec)).rejects.toBeInstanceOf(CliError);
+  });
+});
+
+describe("writeEnvVars", () => {
+  it("ships the serialized file as base64 in one command and resolves on success", async () => {
+    const calls: string[] = [];
+    const exec: ExecFn = async (_h, _k, command) => {
+      calls.push(command);
+      return { stdout: "ENV_WRITTEN\n", stderr: "", code: 0 };
+    };
+
+    await writeEnvVars("1.2.3.4", "KEY", [{ key: "A", value: "it's $x" }], exec);
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).not.toContain("it's");
+    const b64 = Buffer.from(
+      calls[0].match(/echo '([A-Za-z0-9+/=]+)' \| base64 -d/)![1],
+      "base64",
+    ).toString("utf8");
+    expect(b64).toContain("A=`it's $x`");
+  });
+
+  it("throws CliError on a nonzero exit", async () => {
+    const exec: ExecFn = async () => ({ stdout: "", stderr: "disk full", code: 54 });
+    await expect(
+      writeEnvVars("1.2.3.4", "KEY", [{ key: "A", value: "1" }], exec),
+    ).rejects.toBeInstanceOf(CliError);
   });
 });

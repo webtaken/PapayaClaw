@@ -19,6 +19,18 @@ import {
   type PairingChannel,
   type PairingRequest,
 } from "./pairing";
+import {
+  isReservedEnvKey,
+  parseEnvFile,
+  serializeEnvFile,
+  type EnvVar,
+  type ParsedEnvFile,
+} from "./env-file";
+import {
+  buildReadEnvScript,
+  buildWriteEnvScript,
+  decodeReadEnvOutput,
+} from "./env-vars-script";
 
 export type { PairingRequest } from "./pairing";
 
@@ -362,4 +374,44 @@ export async function restartGateway(
 
   const result = await exec(host, privateKey, command);
   return { ...result, probe: parseProbeOutput(result.stdout) };
+}
+
+/**
+ * Reads `/root/.openclaw/.env` (OpenClaw's global env file). Reserved
+ * `OPENCLAW_*` runtime keys never leave the VPS. An absent file is an empty
+ * list; a non-zero exit (unreadable / oversized) is a CliError.
+ */
+export async function readEnvVars(
+  host: string,
+  privateKey: string,
+  exec: ExecFn = executeCommand,
+): Promise<ParsedEnvFile> {
+  const result = await exec(host, privateKey, buildReadEnvScript());
+  if (result.code !== 0) {
+    throw new CliError(`env read script exited ${result.code}`, result);
+  }
+  const parsed = parseEnvFile(decodeReadEnvOutput(result.stdout));
+  return {
+    vars: parsed.vars.filter((v) => !isReservedEnvKey(v.key)),
+    skippedLines: parsed.skippedLines,
+  };
+}
+
+/**
+ * Atomically replaces `/root/.openclaw/.env` with `vars` (reserved lines on
+ * the VPS are preserved by the script). Callers validate with
+ * `validateEnvVars` first and restart the gateway afterwards — OpenClaw only
+ * reads the file at start. Non-zero exit is a CliError.
+ */
+export async function writeEnvVars(
+  host: string,
+  privateKey: string,
+  vars: EnvVar[],
+  exec: ExecFn = executeCommand,
+): Promise<void> {
+  const script = buildWriteEnvScript(serializeEnvFile(vars));
+  const result = await exec(host, privateKey, script);
+  if (result.code !== 0) {
+    throw new CliError(`env write script exited ${result.code}`, result);
+  }
 }

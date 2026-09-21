@@ -5,6 +5,7 @@ import { Loader2, Info } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { getProviderIcon } from "@/lib/ai-config-ui";
+import { EnvVarsPanel } from "../env-vars-panel";
 
 const SshTerminal = dynamic(
   () => import("../ssh-terminal").then((m) => m.SshTerminal),
@@ -38,55 +39,59 @@ export function SshTab({
   }
 
   return (
-    <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xl">
-      <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-mono font-semibold tracking-wide text-foreground/80 uppercase">
-            {t("ssh.title")}
-          </span>
-        </div>
-        {isTerminalOpen ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsTerminalOpen(false)}
-            className="h-6 px-2 text-xs font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded uppercase tracking-wider"
-          >
-            {t("ssh.disconnect")}
-          </Button>
-        ) : (
-          <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
-            {t("ssh.idleLabel")}
-          </span>
-        )}
-      </div>
+    <div className="flex flex-col gap-6">
+      <EnvVarsPanel instanceId={instanceId} />
 
-      <div className="flex flex-col h-[550px] sm:h-[650px]">
-        {!isTerminalOpen ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-card/50">
-            <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-muted/50 border border-border/80">
-              {getProviderIcon("opencode", "h-8 w-8 text-muted-foreground")}
-            </div>
-            <p className="mb-4 max-w-[260px] text-sm text-muted-foreground leading-relaxed font-mono">
-              {t("ssh.description")}
-            </p>
-            <div className="mb-6 flex items-center gap-1.5 text-xs text-muted-foreground/60 font-mono">
-              <Info className="h-3 w-3 shrink-0" />
-              <span>{t("ssh.reconnectNotice")}</span>
-            </div>
+      <div className="flex flex-col rounded-xl border border-border bg-card shadow-2xl">
+        <div className="flex items-center justify-between border-b border-border bg-muted/50 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono font-semibold tracking-wide text-foreground/80 uppercase">
+              {t("ssh.title")}
+            </span>
+          </div>
+          {isTerminalOpen ? (
             <Button
-              onClick={() => setIsTerminalOpen(true)}
-              className="bg-muted text-foreground/90 hover:bg-muted border border-border hover:text-foreground font-medium shadow-none gap-2 font-mono text-xs uppercase tracking-wider"
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsTerminalOpen(false)}
+              className="h-6 px-2 text-xs font-mono hover:bg-muted hover:text-foreground text-muted-foreground border border-border/50 rounded uppercase tracking-wider"
             >
-              <span className="text-emerald-400">root@</span>{" "}
-              {t("ssh.connect")}
+              {t("ssh.disconnect")}
             </Button>
-          </div>
-        ) : (
-          <div className="flex-1 overflow-hidden bg-black w-full h-full p-2">
-            <SshTerminal instanceId={instanceId} />
-          </div>
-        )}
+          ) : (
+            <span className="text-xs font-mono text-muted-foreground uppercase tracking-widest">
+              {t("ssh.idleLabel")}
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-col h-[550px] sm:h-[650px]">
+          {!isTerminalOpen ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-card/50">
+              <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-muted/50 border border-border/80">
+                {getProviderIcon("opencode", "h-8 w-8 text-muted-foreground")}
+              </div>
+              <p className="mb-4 max-w-[260px] text-sm text-muted-foreground leading-relaxed font-mono">
+                {t("ssh.description")}
+              </p>
+              <div className="mb-6 flex items-center gap-1.5 text-xs text-muted-foreground/60 font-mono">
+                <Info className="h-3 w-3 shrink-0" />
+                <span>{t("ssh.reconnectNotice")}</span>
+              </div>
+              <Button
+                onClick={() => setIsTerminalOpen(true)}
+                className="bg-muted text-foreground/90 hover:bg-muted border border-border hover:text-foreground font-medium shadow-none gap-2 font-mono text-xs uppercase tracking-wider"
+              >
+                <span className="text-emerald-400">root@</span>{" "}
+                {t("ssh.connect")}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex-1 overflow-hidden bg-black w-full h-full p-2">
+              <SshTerminal instanceId={instanceId} />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
