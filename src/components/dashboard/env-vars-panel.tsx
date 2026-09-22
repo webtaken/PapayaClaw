@@ -309,7 +309,7 @@ export function EnvVarsPanel({ instanceId }: { instanceId: string }) {
 
   const addRow = () => {
     if (draft.length >= ENV_LIMITS.maxVars) return;
-    const row: Row = { id: newRowId(), key: "", value: "", revealed: true };
+    const row: Row = { id: newRowId(), key: "", value: "", revealed: false };
     updateDraft([...draft, row]);
     setFocusRowId(row.id);
   };
