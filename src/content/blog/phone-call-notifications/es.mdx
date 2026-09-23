@@ -1,0 +1,103 @@
+---
+title: "Dejé que la IA se encargue de mis llamadas para poder concentrarme"
+date: "2026-09-23"
+summary: "Convertí mi teléfono en un canal de notificaciones que solo suena cuando algo de verdad importa, con un agente de OpenClaw y clawr.ing."
+---
+
+# Dejé que la IA se encargue de mis llamadas para poder concentrarme
+
+Mi teléfono casi nunca suena.
+
+Y no es por disciplina ni por el modo concentración de turno. Es porque un agente de IA decide cuándo mi teléfono merece interrumpirme.
+
+Suena poco. Pero cuando suena, es porque de verdad importa.
+
+## El problema: todo es urgente, así que nada lo es
+
+Trabajo en bloques de trabajo profundo. Cada interrupción tiene un precio: según los estudios clásicos de atención, tardas unos 20 minutos en volver al punto exacto donde estabas. Con tres o cuatro interrupciones por mañana, un bloque de dos horas se convierte en pura fragmentación.
+
+Antes tenía dos opciones, ambas malas:
+
+**Silenciar todo.** Pierdo lo importante. El email del cliente que se cae, la alerta de precio que esperaba, la cita que olvidé mover.
+
+**Dejar pasar todo.** Las notificaciones push se acumulan, los chats se entierran bajo memes y recordatorios. El teléfono vibra cada diez minutos por cosas que podían esperar.
+
+Ahí está la trampa: las notificaciones son fáciles de ignorar. Justo por eso, cuando algo urgente aparece de verdad, compite con cien cosas que no lo eran. Una notificación que puedes deslizar y olvidar no es un canal serio para lo importante.
+
+## La solución: que el agente te llame a ti
+
+Le di a mi agente de OpenClaw una capacidad nueva: hacer llamadas de teléfono reales. Y algo más importante: el criterio para decidir cuándo usarla.
+
+El servicio se llama [clawr.ing](https://clawr.ing). Es telefonía gestionada: no tienes que montar Twilio, no hay números que provisionar, no hay webhooks que configurar. Cubre más de 100 países con llamadas por la red PSTN real, no VoIP disfrazado.
+
+La idea clave es la dirección de la llamada. **El agente te llama a ti.** Tú no llamas al agente. Cuando algo merece tu atención, mi teléfono suena, descuelgo, escucho el resumen, y si necesito más detalle, pregunto. Es conversación de ida y vuelta, no un robocall.
+
+"Espera, ¿cuál email exactamente?" — y me lo dice. "¿Cuál es el precio ahora mismo?" — me lo responde en tiempo real.
+
+Eso ya lo cambia todo frente a una notificación push.
+
+## El setup: un solo paso
+
+Instalé la skill [clawr.ing desde ClawHub](https://clawhub.ai/marcospgp/clawring), y el proceso fue literalmente pegar el prompt de configuración del [dashboard de clawr.ing](https://clawr.ing) en el chat de OpenClaw.
+
+Eso es todo. No hay instalación por CLI. El prompt incluye la API key y los enlaces a la documentación de la skill — el agente la lee y resuelve el resto solo.
+
+Lo que queda de tu parte es decidir **qué es digno de llamada**. Ahí es donde se define si esto funciona o no.
+
+## Mi configuración actual
+
+Tres triggers, cada uno con su umbral claro.
+
+**El briefing de la mañana.** Un cron que me llama antes de empezar a trabajar, para no abrir el correo ni las noticias a primera hora:
+
+```
+Todos los días laborables a las 7:30 AM, llámame con un briefing
+matutino. Incluye:
+- El pronóstico del tiempo en mi ciudad
+- Mi calendario de hoy
+- Emails urgentes que llegaron durante la noche
+- Los 3 titulares más relevantes para mis intereses
+
+Sé conciso: objetivo de menos de 2 minutos. Si hago preguntas,
+respóndelas. Si no descuelgo, no lo reintentes.
+```
+
+**La alerta de precio.** Vigilancia continua con un umbral concreto:
+
+```
+Monitorea el precio de NVDA. Si cae más de un 5% en un solo día,
+llámame de inmediato y cuéntame qué pasó. Incluye cualquier noticia
+que pueda explicar la caída.
+```
+
+**El filtro de email.** Este es el que más me protege durante el trabajo profundo:
+
+```
+Durante horario laboral, revisa mi bandeja de entrada cada 15 minutos.
+Si ves un email de mi jefe o cualquier email marcado como urgente,
+llámame con un resumen. Todo lo demás, mándalo solo por chat.
+```
+
+Ese último "todo lo demás, por chat" es la parte importante. El 95% de mi correo se convierte en texto que reviso cuando termino el bloque. El 5% que puede costarme dinero se convierte en una llamada.
+
+## Lo que aprendí configurándolo
+
+**No lo uses en exceso.** Todo el valor de este sistema depende de la escasez. Una llamada significa "esto importa de verdad". Si tu agente te llama diez veces al día, en una semana vuelves a ignorar el teléfono y vuelves al punto de partida. Define con claridad qué es digno de llamada y qué va por chat. Yo prefiero errar por debajo: prefiero perder una alerta poco importante a diluir el canal.
+
+**clawr.ing es el canal, no el disparador.** Sigues necesitando algo que active al agente. Para monitoreo continuo funcionan los heartbeat checks (cada 30 minutos en mi caso). Para cosas programadas como el briefing, cron. El agente evalúa si la situación pasa el umbral y actúa.
+
+**Asigna un modelo rápido a las llamadas.** Una conversación de teléfono necesita respuestas inmediatas. Si tu OpenClaw soporta enrutamiento de modelos por skill, asigna clawr.ing a un modelo rápido de clase Haiku. El silencio de procesamiento se disimula en una llamada, pero rápido siempre gana.
+
+**La privacidad está resuelta.** clawr.ing no guarda grabaciones ni transcripciones. El audio va cifrado en tránsito y se descarta después de procesarse. Para mí esto era innegociable antes de dar un número de teléfono real a un agente.
+
+## El resultado real
+
+Mi teléfono ahora funciona al revés que antes. Recibo menos interrupciones y pierdo menos cosas importantes.
+
+Durante un bloque de trabajo profundo, el volumen está puesto. Si suena, descuelgo sabiendo que valió la pena interrumpirme. Todo lo demás — emails, mensajes, recordatorios — me espera en texto, agrupado, para cuando termino.
+
+El insight de fondo: una llamada telefónica dejó de significar "urgente" hace años porque todo el mundo la usaba para todo. Devolverle el significado requiere un filtro, y ese filtro es exactamente para lo que sirve un agente.
+
+---
+
+Si quieres montar algo así, en [papayaclaw.com](https://papayaclaw.com) tienes más guías sobre agentes de OpenClaw: desde los primeros pasos hasta automatizaciones con cron y heartbeat como estas. Empieza con un solo trigger — el briefing matutino es el más fácil de probar — y ajusta los umbrales desde ahí.
