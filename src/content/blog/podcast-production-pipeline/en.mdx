@@ -1,0 +1,139 @@
+---
+title: "I Built an Entire Podcast Production Pipeline With AI"
+date: "2026-09-25"
+summary: "A chained agent pipeline that turns a topic and a transcript into guest research, show notes, and a full social kit — with almost no manual steps in between."
+---
+
+# I Built an Entire Podcast Production Pipeline With AI
+
+My recording sessions run about 90 minutes. The work around them used to eat an entire day.
+
+Guest research. Episode outlines. Show notes. Descriptions for three platforms. Promo posts for three more. By the time I finished the admin, I'd lost the momentum to plan the next episode.
+
+Now I hand an agent a topic and a transcript. I get back a full production package. From recording to published episode with almost no manual steps in between.
+
+Here's the whole pipeline.
+
+## The math that broke me
+
+Solo podcasting has a dirty secret: the conversation is maybe 30% of the total effort.
+
+The other 70% is production overhead. Guest research takes hours. Show notes become an afterthought — or don't happen at all. Social promotion is the first thing you skip when you're tired.
+
+And skipped promotion compounds. Episode 12 gets a quarter of the downloads of episode 3, not because it's worse, but because nobody heard about it.
+
+This pipeline attacks the 70%. You keep the 30% that's actually the podcast.
+
+## The architecture: five outputs, two prompts
+
+It's a chain of agent tasks, not one mega-prompt:
+
+1. **Episode research** — given a topic or guest name, it compiles background research, talking points, and suggested questions
+2. **Outline & script** — cold open hook, intro script, ordered interview questions, closing remarks
+3. **Show notes** — after recording, it processes the transcript into timestamped notes with links to everything mentioned
+4. **Social media kit** — promo posts for X, LinkedIn, and Instagram with highlights and pull quotes
+5. **Episode description** — SEO-optimized copy for Spotify, Apple Podcasts, and YouTube
+
+Steps 1–2 run before you hit record. Steps 3–5 run after. Everything lands in a folder on disk, organized per episode.
+
+## Skills you need
+
+- **Web search / research** — for guest research and topic deep-dives
+- **File system access** — to read transcripts and write output files
+- **Slack, Discord, or Telegram integration** — for delivering assets to wherever you actually look
+- Optional: `sessions_spawn` — runs the research and writing agents in parallel
+- Optional: RSS feed skill — monitors competitor podcasts
+
+Nothing exotic. If your agent can search the web and write files, you can build this today.
+
+## Prompt 1: before you hit record
+
+This is where the agent earns its keep. I give it a topic and a guest:
+
+```text
+I'm recording a podcast episode about [TOPIC]. My guest is [NAME].
+
+Please:
+1. Research the guest — their background, recent work, hot takes, and
+   anything controversial or interesting they've said publicly.
+2. Research the topic — key trends, recent news, common misconceptions,
+   and what the audience likely already knows vs. what would surprise them.
+3. Generate an episode outline:
+   - Cold open hook (1-2 sentences to grab attention)
+   - Intro script (30 seconds, casual tone)
+   - 5-7 interview questions, ordered from easy/rapport-building to deep/provocative
+   - 2-3 "back pocket" questions in case the conversation stalls
+   - Closing segment with call-to-action
+
+Save everything to ~/podcast/episodes/[episode-number]/prep/
+```
+
+The "back pocket" questions are the sleeper feature. Every interviewer knows the panic of a conversation stalling — now I have an escape hatch I wrote when I was calm.
+
+## Prompt 2: after you hit record
+
+I generate the transcript locally with Whisper, then feed it in:
+
+```text
+Here's the transcript for Episode [NUMBER]: [paste or point to file]
+
+Please:
+1. Write timestamped show notes — every major topic shift gets a timestamp
+   and one-line summary. Include links to anything mentioned (tools, books,
+   articles, people).
+2. Write an episode description (max 200 words) optimized for podcast
+   search. Include 3-5 relevant keywords naturally.
+3. Create social media posts:
+   - X/Twitter: 3 tweets — one pull quote, one key insight, one question
+     to spark discussion. Each under 280 chars.
+   - LinkedIn: 1 post, professional tone, 100-150 words.
+   - Instagram caption: 1 post with emoji, casual tone, include relevant hashtags.
+4. Extract a "highlights" list — the 3 most interesting/surprising moments
+   with timestamps.
+
+Save everything to ~/podcast/episodes/[episode-number]/publish/
+```
+
+One transcript in. Timestamped show notes, a 200-word SEO description, five social posts, and a highlights list out. The highlights list doubles as a shot list if you're cutting clips for YouTube or Reels.
+
+## Optional: competitor radar
+
+This one runs in the background and pings me on Telegram:
+
+```text
+Monitor these podcast RSS feeds daily:
+- [feed URL 1]
+- [feed URL 2]
+
+When a new episode drops that covers a topic relevant to my podcast,
+send me a Telegram message with:
+- Episode title and link
+- One-sentence summary
+- Whether this is something I should respond to or cover from my angle
+```
+
+It's a content idea engine that watches other people's feeds so you don't have to. When a competitor covers a topic, you get a nudge with an opinion on whether to respond — sometimes the best episode is a counterpoint.
+
+## Where the value actually is
+
+My take: the pre-recording research is the highest-value step, and it's not close.
+
+Walking into an interview with deep guest research makes the conversation dramatically better. You ask about the take they posted last month instead of summarizing their LinkedIn bio. You can't fake that in post-production — no edit saves a flat interview.
+
+Second: timestamped show notes are a real listener retention tool, and most podcasters skip them because they're tedious. The agent makes them effortless, so suddenly you're one of the few shows that actually has them.
+
+Third: the social media kit saves the most *recurring* time. You need promo for every single episode, forever, and it's always the same structure. Same structure, every time — that's exactly the job automation is good at.
+
+For me, that's roughly six hours back per episode. The first episode paid for the setup time.
+
+## One pipeline, five pieces of content
+
+If you want to squeeze harder on each recording, this chains naturally into a multi-agent content factory. Same transcript, different outputs: blog post, newsletter, video clip scripts. Record once, publish five times.
+
+Start small. Run Prompt 1 on your next episode and see how the prep folder changes your interview. Add Prompt 2 the episode after. The competitor radar can wait — it's a bonus, not the core.
+
+## Stop producing, start podcasting
+
+I document every agent pipeline I build — including this one — at [papayaclaw.com](https://papayaclaw.com). Grab the prompts, adapt the folder structure to your show, and ship your next episode with the busywork handled.
+
+Your listeners won't notice the automation. They'll notice you showed up prepared.

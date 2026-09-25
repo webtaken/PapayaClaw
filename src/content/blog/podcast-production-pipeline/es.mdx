@@ -1,0 +1,128 @@
+---
+title: "Monté un pipeline completo de producción de podcasts con IA"
+date: "2026-09-25"
+summary: "Cómo encadenar agentes de IA para automatizar la investigación, los show notes y la promoción de cada episodio de tu podcast."
+---
+
+# Monté un pipeline completo de producción de podcasts con IA
+
+Grabar un episodio es la parte fácil. Lo que nadie te cuenta es todo lo que pasa antes y después.
+
+La semana pasada grabé una conversación de 50 minutos. El episodio completo me costó cerca de seis horas de trabajo. ¿Cuántas fueron de grabación? Menos de una.
+
+El resto fue investigar al invitado, escribir el guion del intro, armar la estructura, hacer show notes con timestamps, redactar la descripción y preparar los posts de promoción.
+
+Ahí está el problema en una frase: la conversación —lo único que tus oyentes escuchan— es el 30% del esfuerzo. El otro 70% es producción.
+
+Y ese 70% es justo el que se cae cuando estás cansado. Los show notes quedan "para después". La promoción nunca se publica. La descripción son dos líneas genéricas que escribiste a las 2 a.m.
+
+## La mayoría automatiza lo equivocado
+
+Cuando los podcasters piensan en IA, piensan en editar audio o clonar voces. Yo creo que es al revés: el cuello de botella real no es la edición, es todo el texto aburrido alrededor del episodio.
+
+Ese texto tiene una ventaja: es predecible. Los show notes siguen siempre la misma estructura. Los posts de promoción también. Y lo predecible es exactamente lo que un agente hace bien.
+
+## Qué construí
+
+Un pipeline de agentes que se encarga de casi todo ese 70%. Le das un tema —o el nombre de un invitado— y te devuelve un paquete de producción completo.
+
+**Pre-grabación:**
+
+- **Investigación del episodio**: trayectoria del invitado, puntos de conversación y preguntas sugeridas
+- **Guion y estructura**: intro, transiciones entre segmentos y cierre
+
+**Post-grabación:**
+
+- **Show notes**: procesa la transcripción y genera notas con timestamps y enlaces a todo lo mencionado
+- **Kit de redes sociales**: posts para X, LinkedIn e Instagram con citas y momentos destacados
+- **Descripción del episodio**: texto optimizado para búsqueda en Spotify, Apple Podcasts y YouTube
+
+## Lo que necesitas
+
+- Skill de búsqueda web, para la investigación de invitados y temas
+- Acceso al sistema de archivos, para leer transcripciones y escribir los archivos de salida
+- Integración con Slack, Discord o Telegram, para recibir los assets
+- Opcional: `sessions_spawn`, para correr los agentes de investigación y redacción en paralelo
+- Opcional: skill de feeds RSS, para monitorear podcasts de la competencia
+
+Para las transcripciones uso Whisper en local. Va bien y no mando el audio a ningún servicio externo.
+
+## Cómo se arma
+
+Dos prompts en dos momentos: uno antes de grabar, otro después.
+
+### Antes de grabar
+
+```text
+Voy a grabar un episodio de podcast sobre [TEMA]. Mi invitado es [NOMBRE].
+
+Por favor:
+1. Investiga al invitado — su trayectoria, trabajo reciente, opiniones
+   fuertes y todo lo interesante o controvertido que haya dicho en público.
+2. Investiga el tema — tendencias clave, noticias recientes, errores
+   comunes y qué sabe la audiencia vs. qué la sorprendería.
+3. Genera la estructura del episodio:
+   - Gancho de cold open (1-2 frases para captar la atención)
+   - Guion del intro (30 segundos, tono casual)
+   - 5-7 preguntas de entrevista, ordenadas de fácil/rompehielos
+     a profunda/provocativa
+   - 2-3 preguntas "de reserva" por si la conversación se atasca
+   - Cierre con llamada a la acción
+
+Guarda todo en ~/podcast/episodes/[numero-episodio]/prep/
+```
+
+### Después de grabar
+
+```text
+Aquí tienes la transcripción del episodio [NÚMERO]: [pega el texto o apunta al archivo]
+
+Por favor:
+1. Escribe show notes con timestamps — cada cambio de tema lleva su
+   timestamp y un resumen de una línea. Incluye enlaces a todo lo
+   mencionado (herramientas, libros, artículos, personas).
+2. Escribe la descripción del episodio (máx. 200 palabras) optimizada
+   para búsqueda en podcasts. Incluye 3-5 keywords relevantes de
+   forma natural.
+3. Crea las publicaciones para redes:
+   - X/Twitter: 3 tweets — una cita destacada, un insight clave y una
+     pregunta para abrir debate. Cada uno bajo los 280 caracteres.
+   - LinkedIn: 1 post, tono profesional, 100-150 palabras.
+   - Instagram: 1 caption con emojis, tono casual y hashtags relevantes.
+4. Extrae una lista de momentos destacados — los 3 instantes más
+   interesantes o sorprendentes, con sus timestamps.
+
+Guarda todo en ~/podcast/episodes/[numero-episodio]/publish/
+```
+
+Para la parte de SEO, me guié por las [especificaciones de Apple Podcasts](https://podcasters.apple.com/support/823-podcast-requirements) y [Spotify for Podcasters](https://podcasters.spotify.com/). Son las referencias oficiales de cómo indexan el contenido.
+
+### Bonus: vigilar la competencia
+
+```text
+Monitorea estos feeds RSS de podcasts a diario:
+- [URL feed 1]
+- [URL feed 2]
+
+Cuando salga un episodio nuevo que cubra un tema relevante para mi
+podcast, mándame un mensaje de Telegram con:
+- Título del episodio y enlace
+- Resumen en una frase
+- Si conviene responderlo o cubrirlo desde mi ángulo
+```
+
+## Lo que aprendí
+
+**La investigación pre-grabación es donde está el mayor valor.** Llegar a una entrevista con una investigación profunda sobre el invitado cambia por completo la calidad de la conversación. Y eso no se puede arreglar en postproducción.
+
+**Los show notes con timestamps son una herramienta enorme de retención.** El oyente salta directo al minuto que le interesa y se queda. Casi nadie los hace porque son tediosos. El agente los hace sin quejarse, en cada episodio.
+
+**El kit de redes es el ahorro de tiempo que más se repite.** Necesitas promoción en cada episodio y la estructura es siempre la misma: una cita, una idea clave, una pregunta. Eso es puro patrón, y los patrones son terreno de los agentes.
+
+## Qué sigue
+
+Este pipeline se combina bien con un Multi-Agent Content Factory si quieres reutilizar cada episodio en posts de blog, newsletters o clips de video. Grabas una vez, publicas en cinco formatos.
+
+Si quieres montar algo así, en [papayaclaw.com](https://papayaclaw.com) están las skills de búsqueda web, sistema de archivos y Telegram que uso aquí. El setup completo me tomó una tarde.
+
+Tu próximo episodio puede empezar con un prompt, no con seis horas de papeleo.
