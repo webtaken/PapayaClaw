@@ -1,0 +1,161 @@
+---
+title: "Dejé que una IA opere en Polymarket mientras duermo"
+date: "2026-09-28"
+summary: "Monta un autopiloto de paper trading en Polymarket con OpenClaw: estrategias TAIL, BONDING y SPREAD, registro en Postgres e informe diario en Discord."
+---
+
+# Dejé que una IA opere en Polymarket mientras duermo
+
+Cada mañana a las 8:00 AM me espera un mensaje en Discord: qué operó mi agente durante la noche, con qué resultado y qué mercados conviene vigilar hoy.
+
+Dinero real arriesgado: cero.
+
+Esto no es trading algorítmico con capital en juego. Es paper trading automatizado en Polymarket, montado en una tarde, y me ha enseñado más sobre cómo se mueven estos mercados que meses de mirar gráficos a mano.
+
+## El problema: los mercados de predicción no perdonan
+
+Polymarket se mueve rápido. Una noticia cae, el precio de un mercado pasa del 70% al 30% en minutos, y si no estabas mirando, te lo perdiste.
+
+Operar a mano tiene tres fallas:
+
+- **Oportunidades perdidas**: no puedes vigilar decenas de mercados las 24 horas.
+- **Decisiones emocionales**: compras por FOMO, vendes por pánico.
+- **Cero registro**: sin datos, no sabes qué estrategia funciona y cuál te vacía la cartera.
+
+Y probar ideas con dinero real es la forma más cara de aprender. Pierdes antes de entender el comportamiento del mercado.
+
+Mi opinión sin rodeos: antes de poner un solo dólar en Polymarket, deberías dejar que un agente juegue dos semanas con capital ficticio. El paper trading no tiene glamour, pero te da lo único que importa: datos de tu propia estrategia.
+
+## Qué hace el autopiloto
+
+El flujo es un ciclo continuo:
+
+1. Escanea datos de la API de Polymarket: precios, volumen, spreads.
+2. Detecta oportunidades según tres estrategias configurables.
+3. Simula las operaciones y las guarda en una base de datos.
+4. Actualiza el portafolio: P&L, win rate, posiciones abiertas.
+5. Cada mañana publica el resumen en Discord, con registro de operaciones e ideas.
+
+Las tres estrategias con las que arranca:
+
+- **TAIL** (seguidora de tendencia): compra a favor cuando la probabilidad supera el 60% y hay un pico de volumen claro. Momentum confirmado.
+- **BONDING** (contraria): entra cuando un mercado cae más del 10% de golpe por una noticia. La hipótesis: el mercado sobrerreacciona y el precio vuelve.
+- **SPREAD** (arbitraje): caza mercados mal valorados cuando la suma de YES + NO supera 1.05. Precio mal puesto = oportunidad.
+
+Ninguna es magia. Son reglas simples y medibles, que es justo lo que necesitas para iterar sin engañarte a ti mismo.
+
+## Qué necesitas
+
+Nada exótico:
+
+- `web_search` o `web_fetch` para leer los datos de la API de Polymarket
+- Postgres o SQLite para el registro de operaciones y el portafolio
+- Integración con Discord para los informes diarios
+- Cron jobs para el monitoreo continuo
+- Sub-agentes para analizar varios mercados en paralelo
+
+Si ya usas OpenClaw, tienes todo esto disponible como skills. Si no, es buen momento para empezar.
+
+## Montarlo: cuatro pasos
+
+### 1. La base de datos
+
+Postgres o SQLite, da igual. Dos tablas:
+
+```sql
+CREATE TABLE paper_trades (
+  id SERIAL PRIMARY KEY,
+  market_id TEXT,
+  market_name TEXT,
+  strategy TEXT,
+  direction TEXT,
+  entry_price DECIMAL,
+  exit_price DECIMAL,
+  quantity DECIMAL,
+  pnl DECIMAL,
+  timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE portfolio (
+  id SERIAL PRIMARY KEY,
+  total_value DECIMAL,
+  cash DECIMAL,
+  positions JSONB,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+Cada operación simulada queda en `paper_trades`; el estado global del portafolio, en `portfolio`. Con esto ya puedes calcular win rate por estrategia y P&L acumulado con un `SELECT`.
+
+### 2. El canal de Discord
+
+Crea un canal, por ejemplo `#polymarket-autopilot`. Ahí llegará el informe diario. Conectar Discord a tu agente lleva minutos.
+
+### 3. El prompt
+
+Aquí está el corazón del sistema. Se lo das a OpenClaw y él hace el resto:
+
+```text
+Eres un autopiloto de paper trading en Polymarket. Corre de forma continua
+(vía cron cada 15 minutos):
+
+1. Obtén los datos actuales del mercado desde la API de Polymarket
+2. Analiza oportunidades con estas estrategias:
+   - TAIL: sigue tendencias fuertes (>60% de probabilidad + pico de volumen)
+   - BONDING: jugadas contrarias ante sobrerreacciones (caídas súbitas >10% por noticias)
+   - SPREAD: arbitraje cuando YES+NO > 1.05
+3. Ejecuta operaciones simuladas en la base de datos (capital inicial: $10,000)
+4. Registra el estado del portafolio y actualiza posiciones
+
+Cada mañana a las 8 AM, publica un resumen en Discord #polymarket-autopilot:
+- Operaciones del día anterior (precios de entrada/salida, P&L)
+- Valor actual del portafolio y posiciones abiertas
+- Win rate y rendimiento por estrategia
+- Ideas de mercado y recomendaciones
+
+Usa sub-agentes para analizar varios mercados en paralelo en períodos de alto volumen.
+
+Nunca uses dinero real. Esto es solo paper trading.
+```
+
+Dos detalles que me gustan de esta configuración:
+
+- El cron corre cada 15 minutos: suficiente para no perder movimientos, sin bombardear la API.
+- Los sub-agentes se activan en momentos de alto volumen (noches electorales, resultados deportivos) para analizar varios mercados a la vez.
+
+Y la instrucción clave es la última línea: nunca dinero real. Paper trading. Punto.
+
+### 4. Qué verás cada mañana
+
+El informe llega con este formato:
+
+```text
+📊 Resumen Autopiloto — 22 jul
+Operaciones cerradas: 6 | Ganadoras: 4 (66% win rate)
+Mejor trade: BONDING en "¿X antes de septiembre?" +$412
+Peor trade: TAIL en mercado deportivo -$180
+Portafolio: $10,847 | Posiciones abiertas: 3
+Idea: el spread YES+NO > 1.05 se repite en mercados de cripto. Vigilar.
+```
+
+Esta parte vale más que el trading en sí. Ves, en números fríos, qué estrategia tira bien y cuál arrastras por terquedad.
+
+## Itera con datos, no con corazonadas
+
+A las dos semanas ya tienes algo que ninguna intuición te da: historial propio. Quizá descubres que TAIL funciona en mercados deportivos pero falla en política. O que el umbral del 10% en BONDING te genera demasiadas operaciones basura.
+
+El siguiente paso es iterar: ajusta umbrales, añade estrategias nuevas y, sobre todo, haz backtesting con datos históricos antes de cambiar parámetros.
+
+Cambiar la estrategia porque un día fue malo es exactamente el sesgo emocional que estás intentando eliminar. Que lo decida el agente con datos, no tú con rabia.
+
+## La parte honesta
+
+Paper trading no garantiza nada en real. La liquidez, el slippage y el hecho de que tu propia orden mueve el precio hacen que los resultados simulados sean un techo, no una promesa.
+
+Pero la alternativa es peor: aprender pagando. Con $10,000 ficticios y un registro completo de cada decisión, en un mes sabes si tu enfoque tiene filo o no. Y todo mientras duermes.
+
+## Pruébalo
+
+El setup completo —base de datos, prompt, cron e informe a Discord— lleva menos de una tarde. La [documentación de la API de Polymarket](https://docs.polymarket.com/) es clara y no necesitas nada más para arrancar.
+
+En [papayaclaw.com](https://papayaclaw.com) tienes esta y más guías de agentes que trabajan mientras tú no estás: monitoreo, reportes, automatizaciones que corren solas. Echa un vistazo y monta el tuyo esta semana. Tu yo del futuro — con portafolio medido y sin madrugadas mirando gráficos — te lo agradecerá.

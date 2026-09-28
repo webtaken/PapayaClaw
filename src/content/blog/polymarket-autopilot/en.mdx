@@ -1,0 +1,121 @@
+---
+title: "I Let AI Trade on Polymarket While I Sleep"
+date: "2026-09-28"
+summary: "An agent paper-trades Polymarket around the clock with TAIL, BONDING, and SPREAD strategies, then drops a full P&L report in Discord every morning."
+---
+
+# I Let AI Trade on Polymarket While I Sleep
+
+Quick honesty check before the clickbait police show up: this is paper trading. No real money changes hands.
+
+Everything else in the title holds up. An agent scans Polymarket every 15 minutes, trades against $10,000 in fake capital, and posts a full report to my Discord before I finish my coffee. Overnight moves, overreactions, mispricings — it catches what I'd sleep straight through.
+
+If you've ever lost money on a prediction market because you tested a strategy with real cash before you understood the market's behavior, this one's for you.
+
+## Why manual trading on Polymarket is a losing setup
+
+Prediction markets don't keep business hours. News drops at 2 AM, probabilities swing 15 points in minutes, and by the time you check your phone, the trade is gone.
+
+Even when you're awake, you're fighting yourself. Emotional entries. Panic exits. And worst of all: no clean record of what actually worked, so you keep repeating the same mistakes with fresh conviction.
+
+The standard fix — throwing real money at a half-tested strategy — is just paying tuition to the market. Paper trading fixes that, but manual paper trading has the same problem as manual trading: you can't watch everything.
+
+So let an agent do it. It never sleeps, never gets scared, and never talks itself into a bad trade because it "has a feeling about this one."
+
+## The autopilot: three strategies, zero emotions
+
+The agent runs continuously on a 15-minute cron. Each cycle it fetches market data from the Polymarket API — prices, volume, spreads — and checks every market against three strategies:
+
+- **TAIL** (trend-following): buy when a market sits above 60% probability *and* volume spikes. Momentum, but with confirmation.
+- **BONDING** (contrarian): buy the overreaction when a market drops more than 10% on news. An agent has no fear and no FOMO, which is exactly the temperament a contrarian needs.
+- **SPREAD** (arbitrage): fire when YES + NO adds up to more than 1.05. Fair warning: on an efficient market this trigger rarely goes off. When it does, it's the closest thing to free money these markets offer.
+
+Every simulated trade gets logged with entry price, exit price, quantity, and P&L. Every morning at 8 AM, the agent posts to Discord: yesterday's trades, current portfolio value, open positions, win rate per strategy, and its read on the market.
+
+My honest take: the daily Discord report is quietly the best part. Most traders never build a real dataset of their own decisions. This gives you one in a week.
+
+## Building it
+
+You need four pieces:
+
+- `web_search` or `web_fetch` for pulling Polymarket API data
+- `postgres` or SQLite for trade logs and portfolio tracking
+- Discord integration for the daily reports
+- Cron jobs for continuous monitoring, plus sub-agent spawning for parallel market analysis during high-volume periods
+
+Start with the database. Two tables carry everything:
+
+```sql
+CREATE TABLE paper_trades (
+  id SERIAL PRIMARY KEY,
+  market_id TEXT,
+  market_name TEXT,
+  strategy TEXT,
+  direction TEXT,
+  entry_price DECIMAL,
+  exit_price DECIMAL,
+  quantity DECIMAL,
+  pnl DECIMAL,
+  timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE portfolio (
+  id SERIAL PRIMARY KEY,
+  total_value DECIMAL,
+  cash DECIMAL,
+  positions JSONB,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+The `paper_trades` table is your experiment log. The `portfolio` table tracks fake cash and open positions. Tag a `strategy` on every trade and you can later answer "which strategy actually makes money?" with a single query.
+
+Next, create a Discord channel — mine is `#polymarket-autopilot` — and connect it.
+
+Then give the agent its job. This is close to the prompt I run:
+
+```text
+You are a Polymarket paper trading autopilot. Run continuously (via cron every 15 minutes):
+
+1. Fetch current market data from Polymarket API
+2. Analyze opportunities using these strategies:
+   - TAIL: Follow strong trends (>60% probability + volume spike)
+   - BONDING: Contrarian plays on overreactions (sudden drops >10% on news)
+   - SPREAD: Arbitrage when YES+NO > 1.05
+3. Execute paper trades in the database (starting capital: $10,000)
+4. Track portfolio state and update positions
+
+Every morning at 8 AM, post a summary to Discord #polymarket-autopilot:
+- Yesterday's trades (entry/exit prices, P&L)
+- Current portfolio value and open positions
+- Win rate and strategy performance
+- Market insights and recommendations
+
+Use sub-agents to analyze multiple markets in parallel during high-volume periods.
+
+Never use real money. This is paper trading only.
+```
+
+Note the last line. It's not decoration — bake the guardrail into the prompt itself so there's zero ambiguity about what the agent is allowed to touch.
+
+That's the whole setup. Database, Discord channel, prompt, cron.
+
+## Week one is not the point. The record is.
+
+Don't expect the first week to print fake money. Expect noise.
+
+What you're actually collecting is evidence. After a few weeks you can look at the logs and ask real questions: Does TAIL work better on politics or crypto markets? Is BONDING's 10% drop threshold too loose? Does SPREAD ever fire at all, or should I replace it with something else?
+
+Then iterate. Tighten the TAIL probability threshold. Backtest against historical data. Add a fourth strategy. Adjust, run, compare. Your strategy tuning now happens against a logged dataset instead of vibes and screenshots.
+
+That loop — trade, log, review, adjust — is the entire edge. The agent handles the first two parts around the clock; you only show up for the parts that require judgment.
+
+## Start on paper. Graduate only if you earn it.
+
+The trap most crypto traders fall into is going live immediately, blowing up, and concluding "bots don't work" when the actual conclusion was "I shipped an untested strategy."
+
+Run the paper version first. Let it log a month of trades. If the numbers hold up across different market conditions, *then* you can have a conversation about real capital — with an audit trail to back it up.
+
+Full docs for the Polymarket API are at [docs.polymarket.com](https://docs.polymarket.com/), and the whole setup above runs on OpenClaw with standard skills you already know: web fetch, Postgres, Discord, cron.
+
+Build your autopilot at [papayaclaw.com](https://papayaclaw.com) — and let it lose fake money so you don't lose real money.
