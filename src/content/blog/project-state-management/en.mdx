@@ -1,0 +1,145 @@
+---
+title: "My Projects Finally Know Their Own State (Without Me Updating Everything)"
+date: "2026-09-30"
+summary: "Replace stale Kanban boards with an event-driven project state system: log progress conversationally, auto-link git commits, and generate daily standups from real data."
+---
+
+# My Projects Finally Know Their Own State (Without Me Updating Everything)
+
+Be honest about your Kanban board for a second.
+
+When did a card last move because the work actually finished — versus because someone remembered the board existed? If your project state lives in a tool that requires manual updates, your project state is fiction with extra steps.
+
+I stopped updating boards. My projects now track their own state: I talk, the system logs events, git commits get linked automatically, and standup summaries write themselves. Here's the whole setup.
+
+## The board is always lying
+
+Kanban rots in three predictable ways:
+
+You forget to move cards. The work is done but the card sits in "In Progress" until someone notices.
+
+Context evaporates between sessions. Three months later, nobody remembers why you pivoted on the billing feature. The decision happened in a Slack thread and an 11pm commit. The board just says "Blocked."
+
+And nothing connects code to progress. Your git history knows exactly what happened this week. Your board knows nothing until a human files a status report.
+
+For a project manager, that means every standup starts with 15 minutes of archaeology. For a tech lead, it means sprint planning runs on vibes.
+
+The root problem: manual state maintenance is unpaid labor, and nobody does unpaid labor consistently.
+
+## Flip the model: log events, derive state
+
+Stop maintaining state. Log what happens, then derive state from the log. It's the [event sourcing pattern](https://martinfowler.com/eaaDev/EventSourcing.html) applied to project management — the same idea behind event-sourced databases, pointed at your roadmap.
+
+The workflow looks like this:
+
+Instead of dragging a card, I message my assistant: "Finished the auth flow, starting on the dashboard."
+
+The system logs a progress event, updates the project's current phase, and keeps the context attached. Later, when someone asks "Where are we on the dashboard?", the answer comes from the event log: what's done, what's next, what's blocking it, and why each decision got made.
+
+Git commits get scanned and linked to projects automatically. Decisions get stored with their reasoning. The daily standup assembles itself from real data instead of recollection.
+
+## The setup
+
+Three pieces: a state database, a chat interface, and a cron job.
+
+### 1. The project state database
+
+Postgres (SQLite works too) with three tables — `projects`, `events`, and `blockers`:
+
+```sql
+CREATE TABLE projects (
+  id SERIAL PRIMARY KEY,
+  name TEXT UNIQUE,
+  status TEXT,          -- "active", "blocked", "completed"
+  current_phase TEXT,
+  last_update TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE events (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER REFERENCES projects(id),
+  event_type TEXT,      -- "progress", "blocker", "decision", "pivot"
+  description TEXT,
+  context TEXT,
+  timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE blockers (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER REFERENCES projects(id),
+  blocker_text TEXT,
+  status TEXT DEFAULT 'open',  -- "open", "resolved"
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  resolved_at TIMESTAMPTZ
+);
+```
+
+The `events` table is where this pays off. Full history, every entry typed and timestamped. Blockers get a real lifecycle (open → resolved) instead of living and dying in someone's memory.
+
+One note: the schema above is Postgres-flavored. On SQLite, swap `SERIAL` and `TIMESTAMPTZ` for the local equivalents.
+
+### 2. The chat interface
+
+Create a Discord channel — `#project-state` (Telegram works too). Then give OpenClaw a prompt that maps conversational statements to events:
+
+```text
+You are my project state manager. Instead of Kanban, I'll tell you what I'm working on conversationally.
+
+When I say things like:
+- "Finished [task]" → log a "progress" event, update project state
+- "Blocked on [issue]" → create a blocker entry, update project status to "blocked"
+- "Starting [new task]" → log a "progress" event, update current phase
+- "Decided to [decision]" → log a "decision" event with full context
+- "Pivoting to [new approach]" → log a "pivot" event with reasoning
+
+When I ask:
+- "What's the status of [project]?" → fetch latest events, blockers, and current phase
+- "Why did we decide [X]?" → search events for decision context
+- "What's blocking us?" → list all open blockers across projects
+
+Every morning at 9 AM, run a cron job to:
+1. Scan git commits from the past 24 hours (via gh CLI)
+2. Link commits to projects based on branch names or commit messages
+3. Post a daily standup summary to Discord #project-state:
+   - What happened yesterday (events + commits)
+   - What's planned today (based on current phase and recent conversations)
+   - What's blocked (open blockers)
+
+When I'm planning a sprint, spawn a sub-agent to analyze each project's state and suggest priorities.
+```
+
+The mapping is the whole trick. Plain sentences trigger structured events. "Blocked on waiting for the vendor API keys" creates a blocker row and flips the project status to `blocked` — no board interaction required.
+
+The decision and pivot events are the underrated part. Six months from now: "Why did we delay the API rewrite?" The answer is in the log, in the words of whoever made the call, with the reasoning attached.
+
+### 3. The cron job
+
+Every morning at 9 AM, the system:
+
+1. Scans git commits from the past 24 hours using the `gh` CLI
+2. Links commits to projects by branch name or commit message
+3. Posts a standup summary to `#project-state`: what happened yesterday (events plus commits), what's planned today (from the current phase and recent conversations), and what's blocked (open blockers)
+
+For a PM, this turns standup from an interrogation into a readout. The summary is already in the channel before you pour your coffee.
+
+## What this looks like day to day
+
+Queries you just ask out loud:
+
+- "What's the status of the payments migration?" → latest events, open blockers, current phase
+- "Why did we decide to postpone the API rewrite?" → the decision event, with context
+- "What's blocking us?" → every open blocker, across every project
+
+When sprint planning rolls around, a sub-agent analyzes each project's state and suggests priorities. You review a summary instead of reconstructing one from stale cards.
+
+## Two honest caveats
+
+This runs on what you tell it. If nobody ever says "I'm blocked," the blockers table stays empty. The git scanning acts as an objective check, but the conversational layer depends on a two-second habit: narrate state changes as they happen.
+
+The trade is still lopsided in your favor. One sentence per state change buys you a permanent, queryable history. A Kanban board demands constant maintenance and still rots.
+
+## Stop updating. Start logging.
+
+My actual opinion: state maintenance shouldn't be a job. If your tracking system needs humans to keep it honest, it will lie. Make state a byproduct of work — events in, status out — and the stale-board problem disappears because there's no board to go stale.
+
+This walkthrough is one of many workflow deep-dives on papayaclaw.com. If you'd rather have your tools report to you than the other way around, come browse the rest.
