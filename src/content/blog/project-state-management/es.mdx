@@ -1,0 +1,148 @@
+---
+title: "Mis proyectos por fin saben su propio estado (sin que yo lo actualice todo)"
+date: "2026-09-30"
+summary: "Cambia el Kanban estático por un sistema dirigido por eventos: hablas con tu asistente, y el estado del proyecto, los blockers y el standup diario se gestionan solos."
+---
+
+# Mis proyectos por fin saben su propio estado (sin que yo lo actualice todo)
+
+Confiesa: ¿cuántas tarjetas hay ahora mismo en la columna "En progreso" de tu tablero que llevan ahí semanas?
+
+La mía tenía tres la semana pasada. Dos ya estaban terminadas hacía días.
+
+El problema no es Kanban como concepto. Es el impuesto de la actualización manual: cada vez que terminas algo, tienes que parar, abrir el tablero, arrastrar la tarjeta, escribir un comentario con contexto. Y cuando vas con prisa, ese paso desaparece. El tablero deja de reflejar la realidad y se convierte en decoración.
+
+Peor aún es lo que se pierde por el camino. ¿Te suena esta escena? Tres meses después de un pivot, alguien pregunta "¿por qué descartamos la opción X?" y nadie recuerda el razonamiento. La decisión se tomó en una llamada, se discutió en un hilo de Slack, y ahora no está en ninguna parte.
+
+Y por si fuera poco: tus commits y tu tablero viven en mundos separados. El código dice qué se hizo. El tablero, si alguien tuvo la disciplina de actualizarlo, dice qué se *cree* que se está haciendo.
+
+## La idea: eventos en vez de tarjetas
+
+Monté un sistema de estado de proyecto dirigido por eventos, y el cambio es más profundo de lo que parece. No arrastro tarjetas: hablo.
+
+"Terminé el flujo de auth, empiezo con el dashboard."
+
+Eso es todo. Con esa frase, el sistema registra un evento de progreso, actualiza la fase del proyecto y conserva el contexto. Cuando luego pregunto "¿cómo vamos con el dashboard?", me contesta con la historia completa: qué está hecho, qué sigue, qué está bloqueado y por qué.
+
+Básicamente es [event sourcing](https://martinfowler.com/eaaDev/EventSourcing.html) aplicado al estado de un proyecto. Fowler lo describe para dominios de negocio, pero el problema es el mismo: el estado actual importa menos que la secuencia de eventos que te llevó hasta él.
+
+## Qué necesitas
+
+- Postgres o SQLite para la base de datos de estado
+- `gh` CLI para rastrear commits de GitHub
+- Discord o Telegram para updates y consultas
+- Un cron job para los resúmenes diarios
+- Sub-agentes para analizar varios proyectos en paralelo
+
+Nada exótico.
+
+## El setup, paso a paso
+
+### 1. La base de datos
+
+Tres tablas hacen todo el trabajo:
+
+```sql
+CREATE TABLE projects (
+  id SERIAL PRIMARY KEY,
+  name TEXT UNIQUE,
+  status TEXT, -- "active", "blocked", "completed"
+  current_phase TEXT,
+  last_update TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE events (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER REFERENCES projects(id),
+  event_type TEXT, -- "progress", "blocker", "decision", "pivot"
+  description TEXT,
+  context TEXT,
+  timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE blockers (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER REFERENCES projects(id),
+  blocker_text TEXT,
+  status TEXT DEFAULT 'open', -- "open", "resolved"
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  resolved_at TIMESTAMPTZ
+);
+```
+
+La clave está en la tabla `events`. Cada evento guarda no solo qué pasó (`description`), sino el contexto completo (`context`): el razonamiento, las alternativas que descartaste, el link a la conversación donde se decidió. Esa columna es la que te salva tres meses después.
+
+Los `blockers` viven en su propia tabla con estado abierto/resuelto, así que "¿qué nos está bloqueando?" es una query, no una sesión de memoria colectiva.
+
+### 2. Un canal de Discord
+
+Creé `#project-state`. Ahí aterrizan los resúmenes diarios y ahí hago las consultas de estado. Telegram funciona igual si tu equipo ya vive allí.
+
+### 3. El prompt
+
+Este es el corazón del sistema:
+
+```text
+You are my project state manager. Instead of Kanban, I'll tell you what I'm working on conversationally.
+
+When I say things like:
+- "Finished [task]" → log a "progress" event, update project state
+- "Blocked on [issue]" → create a blocker entry, update project status to "blocked"
+- "Starting [new task]" → log a "progress" event, update current phase
+- "Decided to [decision]" → log a "decision" event with full context
+- "Pivoting to [new approach]" → log a "pivot" event with reasoning
+
+When I ask:
+- "What's the status of [project]?" → fetch latest events, blockers, and current phase
+- "Why did we decide [X]?" → search events for decision context
+- "What's blocking us?" → list all open blockers across projects
+
+Every morning at 9 AM, run a cron job to:
+1. Scan git commits from the past 24 hours (via gh CLI)
+2. Link commits to projects based on branch names or commit messages
+3. Post a daily standup summary to Discord #project-state:
+   - What happened yesterday (events + commits)
+   - What's planned today (based on current phase and recent conversations)
+   - What's blocked (open blockers)
+
+When I'm planning a sprint, spawn a sub-agent to analyze each project's state and suggest priorities.
+```
+
+Lo tengo en inglés por costumbre, pero funciona igual en español. Lo importante es el mapeo: frases conversacionales → tipos de evento.
+
+- "Terminé X" → evento de progreso
+- "Estoy bloqueado con Y" → blocker nuevo y proyecto en estado `blocked`
+- "Hemos decidido Z" → evento de decisión con todo el razonamiento
+- "Pivotamos hacia..." → evento de pivot
+
+### 4. El cron de las 9 AM
+
+Cada mañana, el sistema escanea los commits de las últimas 24 horas vía `gh` CLI, los vincula a proyectos por nombre de rama o mensaje de commit, y publica el resumen de standup en `#project-state`:
+
+- Qué pasó ayer (eventos + commits)
+- Qué toca hoy (fase actual + conversaciones recientes)
+- Qué está bloqueado (blockers abiertos)
+
+Este es el punto donde el sistema se auto-corrige. Aunque olvides reportar algo, si hiciste commit, aparece en el resumen. Los commits rellenan los huecos de la conversación.
+
+### 5. Sprints con sub-agentes
+
+Cuando planifico un sprint, lanzo un sub-agente por proyecto que analiza su estado (eventos recientes, blockers, fase actual) y sugiere prioridades. Yo decido; el agente me trae el contexto de cinco proyectos sin que yo abra cinco tableros.
+
+## Mi opinión honesta: la mejor parte no es la que esperaba
+
+Pensaba que el standup automático sería la estrella. No lo es.
+
+Lo es el log de decisiones. "¿Por qué elegimos esta arquitectura y no la otra?" → busca en `events` los de tipo `decision` y te devuelve el razonamiento completo, con fecha. Si lideras un equipo y onboardas gente, eso vale oro: los nuevos le preguntan al bot en vez de interrumpir a tres personas.
+
+Sobre la disciplina: sí, sigue haciendo falta un mínimo. Una frase conversacional cuando terminas algo o te bloqueas. Pero comparado con abrir el tablero, mover la tarjeta y redactar un comentario, es la diferencia entre mantener el sistema y abandonarlo al mes. Y si te callas, el cron de commits delata los huecos.
+
+Tampoco es para todos los equipos. Si tu organización exige un tablero para reporting corporativo, mantenlo y alimenta el tablero desde los eventos. Pero para equipos pequeños y leads técnicos que gestionan varios proyectos a la vez, el modelo de eventos devuelve algo que el Kanban estático nunca me dio: el *porqué*.
+
+## Empieza pequeño
+
+1. Una tabla `events`, un solo proyecto, un canal de Discord.
+2. Una semana reportando solo con frases conversacionales.
+3. Añade el cron de commits cuando el hábito esté asentado.
+
+Si quieres montar algo así sobre tu propio stack —o ver qué más puedes automatizar para dejar de vivir actualizando tableros— pasa por [papayaclaw.com](https://papayaclaw.com).
