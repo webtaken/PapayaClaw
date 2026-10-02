@@ -1,0 +1,145 @@
+---
+title: "My Home Server Now Fixes Itself When Things Break"
+date: "2026-10-02"
+summary: "How to turn an OpenClaw agent into a self-healing home server admin: SSH access, cron-driven health checks, autonomous fixes, and the security guardrails you need before you hand over the keys."
+---
+
+# My Home Server Now Fixes Itself When Things Break
+
+Your certificate expires at 3 AM. A pod starts crash-looping. Disk usage crosses 90% while you're asleep.
+
+In the old world, you find out the next morning and spend an hour SSHing in from your phone. In this setup, your agent finds out first. It diagnoses the failure, applies the fix, and logs what it did. You read about it over coffee.
+
+This isn't a thought experiment. Nathan documented his OpenClaw agent — Reef — doing exactly this on his home server. SSH access to every machine on his network, a K3s cluster under `kubectl`, and 15 active cron jobs quietly checking on everything.
+
+## The Problem: You're On-Call for Your Own Hobby
+
+Self-hosting has a dirty secret: you become the 24/7 NOC for infrastructure only you care about.
+
+- Services go down while you sleep or travel
+- Health checks and alerting require manual setup, then manual attention
+- Every incident means SSH, diagnose, fix, hope
+- Terraform, Ansible, and Kubernetes manifests drift out of date
+- The real documentation of your setup lives in your head
+
+Worst part: half these jobs are boring and predictable. Disk checks, log tails, "is ArgoCD happy" — you shouldn't be doing them at all.
+
+## What an Infrastructure Agent Actually Does
+
+The pattern is simple. OpenClaw runs persistently on your server with three things:
+
+1. **Access** — SSH to your machines, `kubectl` for the cluster, `terraform` and `ansible` for infrastructure-as-code
+2. **A schedule** — cron jobs that run health checks, triage email, and audit security on a fixed cadence
+3. **Authority to fix things** — restart pods, scale resources, correct configs
+
+Nathan's Reef runs 15 cron jobs and 24 custom scripts. It has autonomously built and deployed applications, including a full task management UI. Another user, `@georgedagg_`, described deployment monitoring, log review, configuration fixes, and PR submissions — all while walking the dog.
+
+## The Setup, Step by Step
+
+### 1. Define the Agent's Scope in AGENTS.md
+
+Name it, give it access, and set hard rules. Here's the shape of Nathan's config:
+
+```text
+## Infrastructure Agent
+
+You are Reef, an infrastructure management agent.
+
+Access:
+- SSH to all machines on the home network (192.168.1.0/24)
+- kubectl for the K3s cluster
+- 1Password vault (read-only for credentials, dedicated AI vault)
+- Gmail via gog CLI
+- Obsidian vault at ~/Documents/Obsidian/
+
+Rules:
+- NEVER hardcode secrets — always use 1Password CLI or environment variables
+- NEVER push directly to main — always create a PR
+- Run `openclaw doctor` as part of self-health checks
+- Log all infrastructure changes to ~/logs/infra-changes.md
+```
+
+That rules section matters more than the access section. More on that in a second.
+
+### 2. Wire Up the Cron Schedule in HEARTBEAT.md
+
+This is where the magic actually lives. Not clever chat — schedule:
+
+```text
+## Cron Schedule
+
+Every 15 minutes:
+- Check kanban board for in-progress tasks → continue work
+
+Every hour:
+- Monitor health checks (Gatus, ArgoCD, service endpoints)
+- Triage Gmail (label actionable items, archive noise)
+- Check for unanswered alerts
+
+Every 6 hours:
+- Knowledge base data entry (process new Obsidian notes)
+- Self health check (openclaw doctor, disk usage, memory, logs)
+
+Daily:
+- 8:00 AM: Morning briefing (weather, calendars, system stats, task board)
+
+Weekly:
+- Infrastructure security audit
+```
+
+Hourly health checks against Gatus and your service endpoints. Self-diagnostics via `openclaw doctor` — the agent checks its own disk, memory, and logs. When something fails a check, it has the context and the access to fix it immediately.
+
+### 3. Get the Morning Briefing
+
+Every day at 8 AM, Reef generates a briefing: CPU, RAM, and storage across all machines, UP/DOWN status for every service, recent ArgoCD deployments, alerts from the last 24 hours. Plus your calendar, your partner's calendar, and the task board.
+
+It reads like a status report from a junior sysadmin who never sleeps and never gets annoyed at you.
+
+## Do the Security Work First — Non-Negotiable
+
+Here's the part everyone skips and regrets. On Day 1, Nathan's agent hardcoded an API key into code. His words:
+
+> "AI assistants will happily hardcode secrets. They sometimes don't have the same instincts humans do."
+
+The agent isn't malicious. It's just optimizing for "make it work" without the scar tissue you have. So you build guardrails before you hand over SSH keys:
+
+**Secret scanning on everything.** Install TruffleHog pre-push hooks on ALL repositories. Block any commit containing keys, tokens, or passwords.
+
+**Local-first Git.** Run a private Gitea instance as a staging area. A CI pipeline (Woodpecker works) scans everything before any public push to GitHub. The agent never touches public repos directly.
+
+**Least privilege by default.** A dedicated 1Password vault for the agent, read-only where writes aren't needed. Branch protection on main that the agent cannot override — it submits PRs, you merge.
+
+**Daily audits.** The weekly security audit in the cron schedule checks for privileged containers, hardcoded secrets in configs, overly permissive access, and known vulnerabilities in deployed images.
+
+My honest take: if you skip this section, you don't have a self-healing server. You have a very confident outage generator. Do the checklist first.
+
+## Why the Cron Jobs Are the Real Product
+
+This is the insight that changed how I think about agents.
+
+Ad-hoc chat with an AI is fine. You ask, it answers, you move on. But the scheduled automation — hourly health checks, email triage, the 8 AM briefing, weekly audits — delivers more value every single day than any conversation ever will.
+
+You stop asking "is anything down?" because something checks every hour. You stop triaging low-value email because the agent labels the actionable stuff and archives the noise. Routine maintenance stops eating your evenings.
+
+The agent becomes infrastructure, not a chat window.
+
+## The Bonus That Compounds: Knowledge Extraction
+
+One more thing worth stealing from Nathan's setup. Every 6 hours, Reef processes new notes from his Obsidian vault — over 5,000 notes — into a structured, searchable knowledge base. A nightly 4 AM brainstorm explores connections between them.
+
+The payoff gets bigger over time. One user in this ecosystem extracted 49,079 atomic facts from their ChatGPT history alone. Your infrastructure knowledge stops living in your head and starts living somewhere searchable — which means the next incident, the agent already knows how your stack fits together.
+
+## Start Small, Then Sleep In
+
+You don't need the full 15-cron-job setup on day one. Start with:
+
+1. OpenClaw on your server with SSH access to one machine
+2. A single hourly health check
+3. The AGENTS.md rules — especially "never hardcode secrets"
+4. TruffleHog on your repos before you do anything else
+
+Then add the briefing. Then the email triage. Then the self-healing.
+
+The first morning you read about an incident your agent already fixed — instead of living it at 3 AM — is the morning this clicks.
+
+If you're building this and want more working configs, patterns, and war stories from people running agents in production, head over to [papayaclaw.com](https://papayaclaw.com). Bring your own 3 AM stories — we've all got them.
