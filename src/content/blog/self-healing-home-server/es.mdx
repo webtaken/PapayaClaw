@@ -1,0 +1,188 @@
+---
+title: "Mi servidor casero ahora se arregla solo cuando algo se rompe"
+date: "2026-10-02"
+summary: "Cómo monté un agente de OpenClaw con acceso SSH, cron jobs y control de mi clúster K3s para que mi home server detecte y repare fallos mientras duermo — sin hardcodear ni un solo secreto."
+---
+
+# Mi servidor casero ahora se arregla solo cuando algo se rompe
+
+Son las 3 de la mañana. Un pod lleva dos horas en crash-loop. El certificado de tu dominio expiró en silencio. Y tú duermes, porque nadie monta un home server para estar de guardia las 24 horas... aunque en la práctica, eso es exactamente lo que terminas haciendo.
+
+Si tienes un servidor casero, tú eres el equipo de on-call de tu propia casa.
+
+Hace poco monté algo distinto: un agente con OpenClaw que corre en el servidor, tiene acceso SSH a toda mi red, un sistema de tareas programadas y permisos para diagnosticar y reparar fallos por su cuenta. Ahora reinicia pods, aplica fixes de configuración y me deja un informe cada mañana.
+
+Te cuento la configuración completa, incluida la parte que casi todos se saltan: la seguridad.
+
+## El problema: tú eres el sistema de monitorización
+
+Montar servicios es la parte fácil. Mantenerlos es lo que desgasta:
+
+- Los health checks, el monitoreo de logs y las alertas requieren configuración manual y atención constante
+- Cuando algo se rompe, toca SSH, diagnosticar y arreglar — muchas veces desde el móvil, en la cola del supermercado
+- Tu infraestructura como código (Terraform, Ansible, manifiestos de Kubernetes) envejece si no la tocas
+- El conocimiento de tu setup vive en tu cabeza, no en documentación buscable
+- Las tareas rutinarias se comen horas cada semana
+
+Y lo peor: la mayoría de los fallos ocurren justo cuando no estás mirando.
+
+## La solución: un agente persistente, no un chat
+
+La diferencia entre "preguntarle cosas a un asistente de IA" y esto es la persistencia. OpenClaw corre en el servidor como agente permanente con tres ingredientes: acceso SSH, credenciales acotadas y cron jobs.
+
+Lo que necesitas antes de empezar:
+
+- SSH a las máquinas de tu red
+- `kubectl` si tienes clúster (K3s va de lujo en hardware modesto)
+- `terraform` y `ansible` para infraestructura como código
+- CLI de 1Password para los secretos
+- `gog` para el correo
+- Acceso a la API del calendario
+- Un directorio de notas (Obsidian en mi caso)
+- `openclaw doctor` para los auto-diagnósticos
+
+### 1. Definir el agente y su alcance
+
+Todo empieza en AGENTS.md. Aquí le pones nombre y, sobre todo, límites:
+
+```text
+## Agente de Infraestructura
+
+Eres Reef, un agente de gestión de infraestructura.
+
+Acceso:
+- SSH a todas las máquinas de la red doméstica (192.168.1.0/24)
+- kubectl para el clúster K3s
+- Bóveda de 1Password (solo lectura, bóveda dedicada para la IA)
+- Gmail vía CLI de gog
+- Calendario (tuyo + el de tu pareja)
+- Bóveda de Obsidian en ~/Documents/Obsidian/
+
+Reglas:
+- NUNCA hardcodear secretos — siempre usar 1Password CLI o variables de entorno
+- NUNCA hacer push directo a main — siempre crear un PR
+- Ejecutar `openclaw doctor` como parte de los auto-chequeos
+- Registrar cada cambio de infraestructura en ~/logs/infra-changes.md
+```
+
+Esas reglas no son decorativas. Ya llego a eso.
+
+### 2. Los cron jobs son el producto de verdad
+
+Aquí va mi opinión más firme de este post: todo el mundo piensa que el valor de un agente así está en chatear con él. Se equivocan. El valor está en las tareas programadas. Esta es mi configuración en HEARTBEAT.md:
+
+```text
+## Programación de Cron
+
+Cada 15 minutos:
+- Revisar el tablero kanban de tareas en progreso → continuar el trabajo
+
+Cada hora:
+- Monitorizar health checks (Gatus, ArgoCD, endpoints de servicios)
+- Triage de Gmail (etiquetar lo accionable, archivar el ruido)
+- Buscar alertas sin respuesta
+
+Cada 6 horas:
+- Alimentar la base de conocimiento (procesar notas nuevas de Obsidian)
+- Auto-chequeo (openclaw doctor, disco, memoria, logs)
+
+Cada 12 horas:
+- Auditoría de calidad de código y documentación
+- Análisis de logs vía Loki
+
+A diario:
+- 4:00 AM: lluvia de ideas nocturna (conexiones entre notas)
+- 8:00 AM: informe matutino (tiempo, calendarios, estado del sistema, tablero)
+- 1:00 AM: evaluación de mejoras de proceso
+
+Semanal:
+- Revisión de calidad de la base de conocimiento
+- Auditoría de seguridad de infraestructura
+```
+
+Mi setup tiene 15 cron jobs activos y 24 scripts propios. El chequeo horario es el que detecta el pod en crash-loop: el agente ejecuta `kubectl`, lee los logs, aplica el fix y me entero por el informe de la mañana. No por un ping a las 3 AM.
+
+### 3. Seguridad: la parte no negociable
+
+Ahora, la lección cara. Nathan, autor del writeup que inspiró este patrón, expuso una API key el primer día. Su conclusión duele porque es cierta:
+
+> Los asistentes de IA hardcodean secretos con total naturalidad. No siempre tienen los instintos que sí tenemos los humanos.
+
+Si le das SSH y acceso a repos a un agente, necesitas defensas antes de escribir una sola línea de configuración:
+
+```text
+## Checklist de Seguridad
+
+1. Pre-push hooks:
+   - TruffleHog (o similar) en TODOS los repositorios
+   - Bloquear cualquier commit con API keys, tokens o contraseñas
+
+2. Git local-first:
+   - Gitea autoalojado para código privado antes de subir nada a GitHub
+   - Pipeline de CI (Woodpecker u otro) escanea antes de cada push público
+   - Revisión humana obligatoria para merges a main
+
+3. Defensa en profundidad:
+   - Bóveda de 1Password dedicada al agente (alcance limitado)
+   - Segmentación de red para servicios sensibles
+   - Auditorías diarias automatizadas que revisan:
+     * Contenedores privilegiados
+     * Secretos hardcodeados en código o configs
+     * Permisos de archivo/red demasiado laxos
+     * Vulnerabilidades conocidas en imágenes desplegadas
+
+4. Restricciones del agente:
+   - Protección de rama: PR obligatorio para main, el agente no puede saltársela
+   - Solo lectura donde no hace falta escritura
+   - Todo cambio queda registrado y auditable vía git
+```
+
+No recortes nada de esta lista por pereza. Es literalmente lo que separa un agente útil de un incidente de seguridad casero.
+
+### 4. El informe de las 8:00 AM
+
+Cada mañana, antes de que te sientes frente al teclado, el agente ya te ha dejado el resumen del día:
+
+```text
+## Formato del Informe Diario
+
+### Tiempo
+- Condiciones actuales y previsión
+
+### Calendarios
+- Tus eventos de hoy
+- Eventos de tu pareja
+- Conflictos marcados
+
+### Salud del Sistema
+- CPU / RAM / almacenamiento de todas las máquinas
+- Servicios: estado UP/DOWN
+- Despliegues recientes (ArgoCD)
+- Alertas de las últimas 24h
+
+### Tablero de Tareas
+- Tarjetas completadas ayer
+- Tarjetas en progreso
+- Elementos bloqueados
+
+### Destacados
+- Notas de la lluvia de ideas nocturna
+- Emails que requieren acción
+- Plazos de esta semana
+```
+
+Parece un detalle menor. No lo es: es lo que convierte al agente de "herramienta que abres cuando hay fuego" en parte del equipo.
+
+## Lo que nadie te cuenta
+
+**Los cron jobs son el producto real.** Ya lo dije, pero merece repetirse. El valor diario no está en los comandos ad-hoc sino en lo programado: health checks, triage de correo, informes, auditorías.
+
+**La extracción de conocimiento se acumula.** Procesar notas y exportaciones de conversaciones en una base estructurada gana valor con el tiempo. Nathan extrajo 49.079 hechos atómicos solo de su historial de ChatGPT. Su bóveda de Obsidian supera las 5.000 notas y el agente las usa como memoria de largo plazo.
+
+**El agente también construye cosas.** Reef construyó y desplegó una interfaz de gestión de tareas por su cuenta, con PR incluido. Y en el showcase de OpenClaw, `@georgedagg_` describía monitorización de despliegues, revisión de logs, fixes de configuración y PRs enviados... mientras paseaba al perro. Ese es el nivel al que apunto.
+
+## Empieza pequeño, pero empieza con seguridad
+
+Si esto te tienta, mi consejo: no repliques las 15 tareas programadas el primer día. Empieza con el chequeo horario de health checks y el informe matutino. Añade el resto cuando confíes en el agente. Pero el checklist de seguridad ponlo completo desde el minuto uno — TruffleHog, Gitea local, bóveda dedicada. Un solo secreto filtrado estropea toda la diversión.
+
+¿Quieres montar algo parecido en tu homelab? En [papayaclaw.com](https://papayaclaw.com) tienes más guías de automatización y agentes para servidores caseros, sin humo y con las configs listas para copiar.
