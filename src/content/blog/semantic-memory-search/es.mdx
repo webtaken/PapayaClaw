@@ -1,0 +1,104 @@
+---
+title: "Le di memoria semántica a mis notas — y todo cambió"
+date: "2026-10-05"
+summary: "Cómo añadir búsqueda semántica vectorial a tu memoria de notas en markdown con memsearch, Milvus y búsqueda híbrida, sin tocar tus archivos originales."
+---
+
+# Le di memoria semántica a mis notas — y todo cambió
+
+Te suena esta escena: hace dos semanas tomaste una decisión importante sobre tu stack. La anotaste, claro. Está en alguna parte. Y ahora llevas veinte minutos haciendo scroll por tus notas sin encontrarla.
+
+Ese era yo, todas las semanas.
+
+Mi memoria vive en archivos markdown. Es portable, la puedo versionar con git, la puedo leer con cualquier editor. Todo bien, excepto una cosa: **no hay búsqueda**. Solo scroll infinito.
+
+Aquí va cómo lo arreglé con `memsearch`, en menos de diez minutos.
+
+## Tu segundo cerebro es de solo escritura
+
+OpenClaw guarda su memoria como archivos markdown planos. Como formato, me parece la decisión correcta: nada de bases de datos propietarias, nada de exportaciones imposibles. Tus notas son tuyas.
+
+Pero el sistema tiene un problema a medida que crece:
+
+- **grep solo busca palabras clave.** Si buscas "caché" y tu nota dice "almacenamiento temporal en Redis", no encuentras nada.
+- **Cargar archivos enteros en el contexto** quema tokens en contenido que no te sirve.
+
+Lo que necesitas es preguntar "¿qué decidí sobre X?" y recibir el fragmento exacto, sin importar cómo lo redactaste. Sin búsqueda semántica, tu segundo cerebro es un archivo donde escribes mucho y recuperas poco.
+
+## La solución: memsearch
+
+[memsearch](https://github.com/zilliztech/memsearch) es una CLI de Python (de Zilliz, los creadores de [Milvus](https://milvus.io/)) que añade búsqueda vectorial encima de tus markdown, sin tocarlos.
+
+Lo que hace:
+
+- Indexa todos tus archivos de memoria en Milvus con un solo comando
+- Busca por significado, no por coincidencia literal
+- Combina vectores densos + BM25 full-text con reranking RRF (más sobre esto abajo)
+- Detecta contenido sin cambios con hashing SHA-256 y no vuelve a pagar por re-embedirlo
+- Un file watcher reindexa solo cuando cambian los archivos
+
+Y funciona con el proveedor de embeddings que prefieras: OpenAI, Google, Voyage, Ollama, o 100% local sin API key.
+
+## Configúralo en cinco minutos
+
+Primero, instala (necesitas Python 3.10+, con pip o uv):
+
+```bash
+pip install memsearch
+```
+
+Después, el asistente de configuración interactivo te guía para elegir proveedor de embeddings y claves:
+
+```bash
+memsearch config init
+```
+
+Indexa tu directorio de memoria:
+
+```bash
+memsearch index ~/path/to/your/memory/
+```
+
+Y ahora la parte buena:
+
+```bash
+memsearch search "¿qué solución de caché elegimos?"
+```
+
+Encuentra la memoria aunque la palabra "caché" no aparezca ni una vez en la nota. Esto es lo que grep nunca va a hacer por ti.
+
+Para que el índice no se quede viejo, deja el watcher corriendo. Reindexa automáticamente en cada cambio de archivo:
+
+```bash
+memsearch watch ~/path/to/your/memory/
+```
+
+## Modo 100% local, sin API keys
+
+Si tus notas son sensibles o simplemente no quieres depender de ningún proveedor, instala el proveedor de embeddings local:
+
+```bash
+pip install "memsearch[local]"
+memsearch config set embedding.provider local
+memsearch index ~/path/to/your/memory/
+```
+
+Todo corre en tu máquina. Cero llamadas a APIs externas.
+
+## Tres detalles que me convencieron
+
+**1. El markdown sigue siendo la fuente de verdad.** El índice vectorial es solo una caché derivada. Puedes borrarlo y reconstruirlo cuando quieras con `memsearch index`. Tus archivos nunca se modifican. Esto es clave: no te casas con memsearch, tus notas siguen siendo markdown de toda la vida.
+
+**2. El dedup con SHA-256 te ahorra dinero.** Cada fragmento se identifica por un hash de su contenido. Si reejecutas `index`, solo se embeden los fragmentos nuevos o modificados. Puedes correr el comando cada hora si quieres, sin gastar un centavo de más en embeddings.
+
+**3. La búsqueda híbrida le gana a la vectorial pura.** memsearch combina similitud semántica (vectores densos) con matching de palabras clave (BM25) mediante Reciprocal Rank Fusion. ¿Por qué importa? Porque la búsqueda vectorial pura a veces falla con consultas exactas: nombres propios, siglas, identificadores. El BM25 rescata justo esos casos. Lo mejor de los dos mundos.
+
+## Mi veredicto
+
+No cambies tu sistema de notas. No migres a otra app. El movimiento correcto es el que hace memsearch: mantener el markdown como fuente de verdad y añadir una capa de búsqueda encima.
+
+El costo de entrada es un `pip install`. El beneficio es que tu segundo cerebro vuelve a ser útil cuando pasa de diez notas a mil.
+
+---
+
+En [papayaclaw.com](https://papayaclaw.com) escribimos justo sobre esto: tweaks prácticos para que tu setup de IA y productividad trabaje de verdad, no demos de marketing. Si este post te sirvió, date una vuelta — hay más guías como esta, con comandos reales y sin relleno.
