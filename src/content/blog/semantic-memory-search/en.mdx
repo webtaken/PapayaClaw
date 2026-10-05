@@ -1,0 +1,123 @@
+---
+title: "I Gave My Notes Semantic Memory — and Everything Changed"
+date: "2026-10-05"
+summary: "How to add vector-powered semantic search on top of your markdown second brain with memsearch, Milvus, and hybrid retrieval — so you find memories by meaning, not keywords."
+---
+
+# I Gave My Notes Semantic Memory — and Everything Changed
+
+Last week I needed one decision from my notes: which caching solution did we pick?
+
+I grepped for "cache." Nothing. Grepped for "Redis." Nothing. Thirty minutes of scrolling later, I found it — I'd written it as "going with the edge-layer approach" in a file called `infra-catchup`.
+
+That's the exact moment keyword search dies. You don't remember the *words* you used. You remember the *meaning*.
+
+So I added semantic search on top of my notes with [memsearch](https://github.com/zilliztech/memsearch). Now "what caching solution did we pick?" returns the right chunk, even though the word "caching" never appears in the file.
+
+Here's the whole setup. It took me ten minutes.
+
+## Capture was never the hard part
+
+If you run a second brain in markdown — and if you're reading this, you probably do — you already know the trade-off.
+
+Plain markdown is great. It's portable, it's versioned in git, it's readable in thirty years with zero dependencies.
+
+But it has no search. Your options, as your notes pile up over weeks and months:
+
+- **Grep for keywords.** Only works if your phrasing today matches your phrasing last Tuesday. It usually doesn't.
+- **Load entire files into an LLM context.** Now you're paying tokens for paragraphs of irrelevant content just to find one line.
+
+Both are retrieval strategies from a world where storage was expensive and search was dumb. Storage is free now. Search can be smart. Let's fix it.
+
+## memsearch: vector search for your markdown files
+
+[memsearch](https://github.com/zilliztech/memsearch) is a standalone Python CLI from the Zilliz team. It indexes your markdown files into [Milvus](https://milvus.io/), a vector database, and lets you query them by meaning.
+
+It's not tied to any particular agent or memory system. If your notes are markdown files in a folder, it works.
+
+The interesting part is what's under the hood:
+
+- **Hybrid search** — dense vector similarity *plus* BM25 full-text matching, reranked together with Reciprocal Rank Fusion (RRF).
+- **SHA-256 content hashing** — every chunk gets a content hash, so re-indexing only embeds what actually changed.
+- **A file watcher** — run it once and it re-indexes on every file change. Your index never goes stale.
+- **Any embedding provider** — OpenAI, Google, Voyage, Ollama, or fully local with no API key at all.
+
+That hybrid point matters more than people expect. Pure vector search is great at "same idea, different words" but quietly fumbles exact matches — library names, version numbers, error codes. Pure BM25 is the opposite. RRF reranking gives you both in one query.
+
+## The setup, start to finish
+
+You need Python 3.10+ with pip or uv. No agent skills, no plugins.
+
+**1. Install:**
+
+```bash
+pip install memsearch
+```
+
+**2. Run the interactive config wizard:**
+
+```bash
+memsearch config init
+```
+
+This walks you through picking an embedding provider and model.
+
+**3. Point it at your memory directory:**
+
+```bash
+memsearch index ~/path/to/your/memory/
+```
+
+**4. Search by meaning:**
+
+```bash
+memsearch search "what caching solution did we pick?"
+```
+
+**5. For live sync, start the watcher:**
+
+```bash
+memsearch watch ~/path/to/your/memory/
+```
+
+That's it. From now on, edits to your notes re-index automatically.
+
+**Fully local? No API keys needed:**
+
+```bash
+pip install "memsearch[local]"
+memsearch config set embedding.provider local
+memsearch index ~/path/to/your/memory/
+```
+
+I run this on a personal vault with a local provider. Zero cost, zero keys, nothing leaves the machine.
+
+## Three things I wish I'd known sooner
+
+**1. Markdown stays the source of truth.**
+
+This is the design decision that sold me. The vector index is a *derived cache*, not a second database. You can delete it and rebuild anytime with `memsearch index`. Your files are never modified.
+
+Why this matters: your second brain outlives any particular search tool. If memsearch disappears tomorrow, you're left with exactly what you started with — clean markdown. You're not marrying a vendor's storage format.
+
+**2. The SHA-256 dedup means you can index obsessively.**
+
+Each chunk is identified by a hash of its content. Re-run `memsearch index` and only new or changed content gets embedded. Zero wasted API calls.
+
+I have the watcher running all day, and I still cron a full `index` nightly as a safety net. It costs nothing when nothing changed.
+
+**3. Hybrid beats pure vector, and you'll feel it immediately.**
+
+My first semantic-search attempt years ago was pure embeddings, and exact-match queries drove me crazy — searching a specific function name returned fuzzy "related concepts" instead. The dense + BM25 + RRF combo here handles both ends. "What did I decide about X?" *and* "find the file mentioning `config.toml`" both just work.
+
+## The honest verdict
+
+My second brain didn't need more structure, more tags, or another plugin that adds friction to writing notes. It needed retrieval that matches how memory actually works — you recall meaning, not strings.
+
+One afternoon with memsearch did more for my notes than two years of folder-taxonomy tweaking.
+
+If you're a heavy note-taker, this is the cheapest, highest-leverage upgrade you can make to a plain-text system. Boring notes format, smart search layer. That's the right division of labor.
+
+---
+
+We write more breakdowns like this at [papayaclaw.com](https://papayaclaw.com) — practical retrofits that make plain-text workflows actually retrievable. Come dig through the archive. It's searchable. Obviously.
