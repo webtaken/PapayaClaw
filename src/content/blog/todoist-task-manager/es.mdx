@@ -1,0 +1,190 @@
+---
+title: "Hice que Todoist fuera 10x más inteligente con una capa de IA encima"
+date: "2026-10-07"
+summary: "Convierte Todoist en el panel de visibilidad de tus agentes de IA: plan, progreso y logs en tiempo real con tres scripts bash. Guía completa."
+---
+
+# Hice que Todoist fuera 10x más inteligente con una capa de IA encima
+
+Llevo años usando Todoist como mi segunda memoria. Cada tarea, cada idea, cada recordatorio vive ahí.
+
+La semana pasada me di cuenta de algo curioso: el usuario más activo de mi Todoist ya no soy yo.
+
+Es mi agente de IA.
+
+Le puse una capa encima que sincroniza todo su trabajo interno —plan, progreso, logs— directo a mi tablero. Y cambió completamente mi relación con las tareas largas.
+
+Te cuento cómo funciona y cómo montarlo en 15 minutos.
+
+## El problema: tu agente es una caja negra
+
+Cuando un agente ejecuta algo complejo —montar una app full-stack, hacer investigación profunda— corre durante 30 o 40 minutos sin parar.
+
+¿Qué pasa mientras tanto? No tienes idea.
+
+Tienes dos opciones malas: quedarte mirando el chat como si fuera una kettle hirviendo, o irte a hacer otra cosa y volver a revisar logs manualmente. Si el agente se atasca en el paso 4 de 12, no te enteras hasta mucho después.
+
+Y aquí va mi opinión: el problema no es que los agentes sean lentos. Es que son invisibles. La visibilidad es el cuello de botella real, no la velocidad.
+
+## La idea: deja de construir dashboards
+
+Mi primer instinto fue armar un dashboard web para monitorear agentes. Mal instinto.
+
+Ya pago por Todoist. Ya vivo en Todoist. Mi cerebro ya está ahí. ¿Para qué agregar otra app que abrir?
+
+Entonces invertí el planteamiento: en vez de traerme al agente a mi mundo, lo dejo escribir en el mío. El agente crea tareas, actualiza estados y publica logs en el tablero que ya tengo abierto 14 horas al día.
+
+Bonus inesperado: las notificaciones de Todoist se convierten en notificaciones del agente. Mi teléfono ya me vibra cuando algo cambia.
+
+## Cómo funciona
+
+El sistema hace cuatro cosas:
+
+1. **Visualiza el estado.** Cada tarea del agente vive en una sección: `🟡 In Progress`, `🟠 Waiting` o `🟢 Done`. Un vistazo al tablero y sabes qué corre ahora.
+2. **Externaliza el razonamiento.** El plan interno del agente va a la descripción de la tarea. Ya no adivinas qué pretende hacer; lo lees antes de que lo haga.
+3. **Striamea los logs.** Cada subpaso completado se publica como comentario en la tarea, en tiempo real.
+4. **Se auto-reconcilia.** Un script de heartbeat revisa tareas estancadas y te avisa.
+
+Y aquí está la parte que más me gusta: **no necesitas instalar ningún skill pre-construido**. OpenClaw maneja su propio sistema de archivos y ejecuta comandos de shell. Le pides que cree los scripts, y se construye su propia herramienta de visibilidad solo.
+
+El agente construye la herramienta que lo hace visible. Me parece un bucle hermoso.
+
+## Setup paso a paso
+
+### 1. Configura Todoist
+
+Crea un proyecto, por ejemplo `OpenClaw Workspace`, y consigue su Project ID (puedes sacarlo con un GET a `https://api.todoist.com/rest/v2/projects`).
+
+Crea tres secciones dentro del proyecto:
+
+- `🟡 In Progress`
+- `🟠 Waiting`
+- `🟢 Done`
+
+Anota los tres Section IDs. Sí, los nombres están en inglés a propósito: el script mapea esos estados literalmente. Si los renombras en español, ajusta el `case` del script. Tu decisión.
+
+Tu token de API está en Configuración → Integraciones de Todoist. Todo lo demás sale de la [documentación de la REST API](https://developer.todoist.com/rest/v2/).
+
+### 2. Los tres scripts
+
+Puedes crearlos a mano o pedirle al agente que los cree. Son tres piezas pequeñas:
+
+**`scripts/todoist_api.sh`** — el wrapper central:
+
+```bash
+#!/bin/bash
+# Uso: ./todoist_api.sh <endpoint> <metodo> [data_json]
+ENDPOINT=$1
+METHOD=$2
+DATA=$3
+TOKEN="YOUR_TODOIST_API_TOKEN"
+
+if [ -z "$DATA" ]; then
+  curl -s -X "$METHOD" "https://api.todoist.com/rest/v2/$ENDPOINT" \
+    -H "Authorization: Bearer $TOKEN"
+else
+  curl -s -X "$METHOD" "https://api.todoist.com/rest/v2/$ENDPOINT" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "$DATA"
+fi
+```
+
+**`scripts/sync_task.sh`** — crea o actualiza tareas y las mueve de sección según su estado:
+
+```bash
+#!/bin/bash
+# Uso: ./sync_task.sh <contenido> <estado> [task_id] [descripcion] [labels_json]
+CONTENT=$1
+STATUS=$2
+TASK_ID=$3
+DESCRIPTION=$4
+LABELS=$5
+PROJECT_ID="YOUR_PROJECT_ID"
+
+case $STATUS in
+  "In Progress") SECTION_ID="SECTION_ID_PROGRESS" ;;
+  "Waiting")     SECTION_ID="SECTION_ID_WAITING" ;;
+  "Done")        SECTION_ID="SECTION_ID_DONE" ;;
+  *)             SECTION_ID="" ;;
+esac
+
+PAYLOAD="{\"content\": \"$CONTENT\""
+[ -n "$SECTION_ID" ] && PAYLOAD="$PAYLOAD, \"section_id\": \"$SECTION_ID\""
+[ -n "$PROJECT_ID" ] && [ -z "$TASK_ID" ] && PAYLOAD="$PAYLOAD, \"project_id\": \"$PROJECT_ID\""
+if [ -n "$DESCRIPTION" ]; then
+  ESC_DESC=$(echo "$DESCRIPTION" | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
+  PAYLOAD="$PAYLOAD, \"description\": \"$ESC_DESC\""
+fi
+[ -n "$LABELS" ] && PAYLOAD="$PAYLOAD, \"labels\": $LABELS"
+PAYLOAD="$PAYLOAD}"
+
+if [ -n "$TASK_ID" ]; then
+  ./scripts/todoist_api.sh "tasks/$TASK_ID" POST "$PAYLOAD"
+else
+  ./scripts/todoist_api.sh "tasks" POST "$PAYLOAD"
+fi
+```
+
+Fíjate en el detalle del `sed`: escapa saltos de línea y comillas para que el plan multilínea quepa como JSON válido. Sin eso, la primera descripción de dos líneas te revienta el payload.
+
+**`scripts/add_comment.sh`** — publica el log de progreso:
+
+```bash
+#!/bin/bash
+# Uso: ./add_comment.sh <task_id> <texto>
+TASK_ID=$1
+TEXT=$2
+ESC_TEXT=$(echo "$TEXT" | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
+PAYLOAD="{\"task_id\": \"$TASK_ID\", \"content\": \"$ESC_TEXT\"}"
+./scripts/todoist_api.sh "comments" POST "$PAYLOAD"
+```
+
+Los scripts asumen que los llamas desde la raíz de tu proyecto (por eso el path relativo `./scripts/`). Mantén esa estructura y todo encaja.
+
+### 3. El prompt que lo arma todo
+
+Este es el prompt que le pasas al agente. Hace el setup y queda configurado para siempre:
+
+```text
+Quiero que construyas un sistema de visibilidad basado en Todoist para tus propias ejecuciones.
+
+Primero, crea tres scripts bash en una carpeta 'scripts/':
+1. todoist_api.sh (un wrapper de curl para la API REST de Todoist)
+2. sync_task.sh (para crear o actualizar tareas con section_id específicos para In Progress, Waiting y Done)
+3. add_comment.sh (para publicar logs de progreso como comentarios)
+
+Usa estas variables para la configuración:
+- Token: [Tu token de API de Todoist]
+- Project ID: [Tu Project ID]
+- Section IDs: [ID de In Progress, ID de Waiting, ID de Done]
+
+Una vez creados, para cada tarea compleja que te dé:
+1. Crea una tarea en 'In Progress' con tu PLAN completo en la descripción.
+2. Por cada subpaso que completes, llama a add_comment.sh con un log de lo que hiciste.
+3. Mueve la tarea a 'Done' cuando termines.
+```
+
+Una sola conversación y el sistema queda montado. Cero npm install, cero configuración YAML.
+
+## Cómo se ve en la práctica
+
+Le pedí al agente que investigara tres proveedores de hosting para un proyecto lateral. Esto fue lo que vi en mi tablero:
+
+A los 30 segundos, una tarea en `🟡 In Progress`: "Investigar hosting: Vercel vs Railway vs Fly.io". En la descripción, su plan completo con los criterios de comparación.
+
+Cada pocos minutos, un comentario nuevo: "Comparado precios de Vercel y Railway. Plan de Railway sale más barato para servicios que duermen." Encontré un error en su criterio de precios a mitad del run y corregí el rumbo antes de que malgastara 20 minutos.
+
+Al terminar, la tarea saltó a `🟢 Done` con el resumen completo en los comentarios.
+
+Yo revisé Todoist dos veces desde el móvil. Antes habría abierto el chat seis veces.
+
+## El toque final: el heartbeat
+
+Una cosa más. Pídele al agente un cuarto script que corra cada cierto tiempo, revise tareas en `🟡 In Progress` sin comentarios recientes y te notifique si algo lleva demasiado tiempo quieto.
+
+Con eso, un agente atascado ya no es silencio: es una notificación.
+
+Mi regla después de esto es simple: si un agente trabaja más de dos minutos en algo, debe dejar rastro donde yo ya miro. No donde le convenga a él.
+
+Si quieres que tus agentes trabajen en segundo plano sin perderles la pista, este setup completo (y muchos más) están en papayaclaw.com. Empieza con el prompt de arriba y ten tu primer run visible hoy.
