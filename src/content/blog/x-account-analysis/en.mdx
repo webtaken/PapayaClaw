@@ -1,0 +1,128 @@
+---
+title: "I Built an AI That Analyzes Any X Account in Seconds"
+date: "2026-10-09"
+summary: "Skip the $50/month analytics dashboards — OpenClaw's Bird skill fetches any account's recent tweets and gives you qualitative answers in plain English."
+---
+
+# I Built an AI That Analyzes Any X Account in Seconds
+
+You find a competitor on X whose posts consistently pull 1000+ likes. Yours average single digits. You want to know why.
+
+So you open their profile and start scrolling. Forty-five minutes later, you have vibes. Not answers.
+
+Here's how I fixed that: OpenClaw with the Bird skill fetches the last N tweets from any account and breaks down what works, what flops, and why — in seconds, for free.
+
+## Analytics Tools Tell You What. Not Why.
+
+X's built-in analytics shows you numbers: impressions, engagement rate, follower growth. All useful. None of it answers the questions that actually matter.
+
+Like these:
+
+- What patterns make my posts go viral?
+- Which topics I talk about get the most engagement?
+- Why do I get posts with 1000+ likes but sometimes posts with <5 likes? What am I doing wrong?
+
+That's qualitative analysis. It's about the quality of your posts, not the performance stats.
+
+There are plenty of websites that give you X analytics, but nearly all of them are dashboards. More stats, prettier charts. Only one or two sites let you actually talk with an AI about your performance — and they'll charge you $10-$50 per month for the privilege.
+
+I stopped paying for that. Here's the setup that replaced it.
+
+## This Isn't Just for Your Own Account
+
+The obvious use case is analyzing yourself. But once the setup is running, you can point it at any handle.
+
+If you're a growth hacker, that means competitor teardowns. You stop guessing what's working for accounts that outperform you.
+
+If you're a recruiter, you can vet a candidate's actual posting history before a call — their communication style, their technical depth, how they talk about past employers.
+
+If you're a researcher, you can pull a few hundred tweets from any public account and map topics, tone, and patterns without manually reading a single one.
+
+Same setup. Three very different jobs.
+
+## What You Need
+
+One skill: **Bird**.
+
+```bash
+clawhub install bird
+```
+
+Bird comes pre-bundled with OpenClaw, so there's a good chance it's already installed. Run the command anyway to confirm it's working before you go further.
+
+That's the whole dependency list.
+
+## The Setup, Step by Step
+
+**Step 1: Create a dedicated account for your ClawdBot.**
+
+This is a security and isolation move. Don't wire your bot directly into your main X presence. Give the bot its own account so its actions never touch your main identity, and if anything goes sideways, the blast radius is contained.
+
+**Step 2: Auth with your X account.**
+
+Log into x.com in Chrome or Brave. Then grab two cookies from the browser: `auth-token` and `ct0`.
+
+You'll find them in DevTools (F12) → Application tab → Cookies → x.com. Copy both values and provide them to OpenClaw so it can access your account.
+
+Treat those cookies like passwords. They're session credentials. Don't paste them into public repos, screenshots, or group chats.
+
+**Step 3: Point it at a real account and start asking.**
+
+Ask OpenClaw to take a look at the account, fetch the last N tweets, and fire away with any questions you like.
+
+```
+Fetch the last 50 tweets from @handle.
+Which topics got the most engagement?
+What do the top posts have in common?
+```
+
+That's it. No dashboard to configure, no data connector to debug.
+
+## Prompts That Pull Real Answers
+
+The generic "analyze this account" prompt gets you a generic summary. Ask like you'd ask a sharp analyst who's been staring at the profile all day.
+
+**For growth hackers:**
+
+```
+Compare the last 100 tweets from @competitor with my last 100.
+Which topics do they win on that I don't touch?
+What formats do their top 10 posts share?
+```
+
+**For recruiters:**
+
+```
+Fetch @candidate's last 30 tweets.
+Summarize their communication style and technical depth.
+Quote 3 posts that show how they handle disagreement.
+```
+
+**For researchers:**
+
+```
+Pull the last 200 tweets from @handle.
+Cluster them by topic. Show the distribution and the tone of each cluster.
+```
+
+The follow-ups are where this setup beats every report-style tool. When the bot says "tech commentary drives your best engagement," you can ask *which* posts, *why* those, and *what to try next* — until the answer actually lands.
+
+## Why Not Just Pay for the Subscription?
+
+Fair question. The $10-$50/month tools exist and some of them work fine.
+
+But here's what bugs me about them: they hand you a report. A static snapshot with charts and a verdict. If the report misses your actual question — and it usually does — your options are another tier or another tool.
+
+With OpenClaw, the analysis is a conversation. You interrogate the data. And when you hit the edge of what the prompts can do, you can ask it to write you specific scripts for whatever custom pull you need. The tool bends to your question instead of the other way around.
+
+There's also the cost math. Even the cheap tier runs $120/year for one account's insights. This setup costs nothing extra and analyzes any handle you point it at.
+
+One honest caveat: cookie-based auth is more hands-on than clicking "Sign in with X." You're managing session credentials yourself. For me, ten minutes of setup beats a monthly invoice — but if you're uncomfortable handling cookies, factor that in.
+
+## Try It This Afternoon
+
+The whole flow is: dedicated bot account → Bird skill → `auth-token` and `ct0` cookies → fetch the last N tweets → ask anything.
+
+The first time you ask "why does this account's posts hit 1000+ likes while mine get 5?" and get an actual answer in seconds, you won't go back to scrolling profiles and squinting at dashboards.
+
+Head over to **papayaclaw.com** to get OpenClaw running, install Bird, and run your first analysis before your coffee gets cold.
