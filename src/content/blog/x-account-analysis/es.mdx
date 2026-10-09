@@ -1,0 +1,111 @@
+---
+title: "Construí una IA que analiza cualquier cuenta de X en segundos"
+date: "2026-10-09"
+summary: "Cómo usar OpenClaw y la skill Bird para hacer análisis cualitativo de cuentas de X sin pagar suscripciones de $10 a $50 al mes."
+---
+
+# Construí una IA que analiza cualquier cuenta de X en segundos
+
+El martes un tweet tuyo hace 1,200 likes. El jueves, uno casi idéntico hace 4.
+
+¿Qué pasó?
+
+Si abres el panel de analytics de X, te dice *qué* pasó: impresiones, engagement rate, la curva de 24 horas. Lo que no te dice es *por qué*. Y el por qué es donde está todo el dinero.
+
+Esto es lo que descubrí cuando le di esta tarea a OpenClaw con la skill Bird. Menos de un minuto después tenía un desglose de patrones de mis últimos 200 tweets que ningún dashboard me había dado.
+
+Te muestro cómo montarlo. Son unos 10 minutos.
+
+## El problema: métricas de sobra, criterio de menos
+
+El ecosistema de herramientas de X está lleno de dashboards. Números, gráficas, rankings.
+
+Lo que casi nadie ofrece es análisis **cualitativo**:
+
+- ¿Qué patrones comparten mis tweets virales?
+- ¿Sobre qué temas recibo más engagement real?
+- ¿Por qué a veces paso de 1,000+ likes y a veces no llego a 5? ¿Qué estoy haciendo mal?
+
+Existen una o dos webs donde hablas con una IA sobre tu rendimiento. Genial, excepto por el detalle de la suscripción: **$10 a $50 al mes**, de por vida, para una pregunta que un agente local te responde gratis.
+
+Mi postura es simple: si ya corres un agente en tu máquina, no deberías pagar otra suscripción para hacerle preguntas a tus propios datos.
+
+## Lo que necesitas
+
+Una sola skill:
+
+```bash
+clawhub install bird
+```
+
+De hecho, Bird ya viene pre-instalada en OpenClaw. Solo verifica que funcione antes de seguir.
+
+Bird es la que le da a OpenClaw acceso a X: leer timelines, descargar tweets, interactuar con la plataforma. Con eso, el agente puede analizar cualquier cuenta que le apuntes.
+
+## La configuración, paso a paso
+
+### 1. Verifica que Bird funciona
+
+Abre tu sesión de OpenClaw y pregúntale directo si puede acceder a X. Si responde, sigues. Si no, reinstala la skill y revisa los logs.
+
+### 2. Crea una cuenta dedicada para tu bot
+
+Este paso es seguridad básica, no opcional.
+
+Vas a darle cookies de sesión a tu agente. No quieres que esas credenciales sean las de tu cuenta principal, con tus DMs y tu histórico. Crea una cuenta nueva de X para ClawdBot y trabaja desde ahí. Aislamiento total: si algo sale mal, solo pierdes una cuenta desechable.
+
+### 3. Autentica con tus cookies de X
+
+Inicia sesión en x.com desde Chrome o Brave (una ventana normal, no incógnito).
+
+Luego abre las dev tools, ve a la pestaña de Application → Cookies, y localiza dos valores:
+
+- `auth-token`
+- `ct0`
+
+Esos dos son los que Bird necesita para que OpenClaw acceda a tu cuenta. Pásalos al agente siguiendo el flujo de autenticación de la skill.
+
+Trata esas cookies como una contraseña: no las pegues en chats ajenos, no las subas a ningún repo.
+
+### 4. Pídele el análisis
+
+Aquí viene lo bueno. En vez de pelearme con dashboards, yo le tiré esto:
+
+```
+Analiza mi cuenta real de X:
+1. Descarga mis últimos 200 tweets
+2. Identifica los que superaron los 100 likes y busca
+   patrones comunes: tema, formato, hora, longitud
+3. Compara contra los que no llegaron a 10 likes
+4. Dame 3 hipótesis accionables para la próxima semana
+```
+
+Y si el análisis que quieres no existe como prompt, se lo pides como script. "Escríbeme un script que clasifique mis tweets por tema y calcule el engagement promedio de cada tema." El agente lo escribe, lo corre y te devuelve la tabla. Esa flexibilidad es la diferencia entre una herramienta y un analista.
+
+## Lo que encontré en mi caso
+
+Tres cosas que ningún dashboard me había dicho:
+
+1. Mis hilos con pregunta al final tienen 4x el engagement de los que terminan en afirmación.
+2. Los tweets que publico entre semana antes de las 9 am rinden peor que los de media tarde. Contraintuitivo para mí.
+3. Mi peor formato es el que más publiqué el mes pasado. Nadie me lo dijo porque es un patrón, no una métrica.
+
+Eso es análisis cualitativo: no te dice cuánto, te dice por qué.
+
+## Y no, no es solo para tu cuenta
+
+El mismo flujo funciona sobre **cualquier cuenta pública**. Aquí es donde se pone interesante según tu caso:
+
+- **Growth hackers:** corre el análisis sobre la cuenta de un competidor. Qué formatos le funcionan, qué temas ignora, dónde hay hueco para ti.
+- **Recruiters:** antes de una entrevista, pásale el perfil del candidato al agente y pídele un resumen de sus intereses técnicos reales, no los del CV.
+- **Researchers:** pide scripts que agrupen los tweets de una cuenta por tema y período. Es análisis de corpus sin escribir una línea de código de scraping.
+
+El agente no se cansa y cada análisis te cuesta lo que ya pagas por correr tu infraestructura: nada extra.
+
+## El punto
+
+Los dashboards te cuentan la historia de *qué* pasó. La ventaja competitiva está en *por qué*, y esa pregunta no la responde una gráfica.
+
+Por $10 a $50 al mes, las webs de analytics cualitativo te venden exactamente lo que puedes tener gratis con OpenClaw, Bird y dos cookies. Con la diferencia de que el agente es tuyo: le cambias los prompts, le pides scripts a medida y los datos nunca salen de tu máquina.
+
+Si quieres más guías como esta —casos de uso reales de OpenClaw con configuración incluida— pasa por [papayaclaw.com](https://papayaclaw.com). Publicamos un caso de uso nuevo cada semana.
